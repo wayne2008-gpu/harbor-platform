@@ -1,0 +1,3 @@
+[submodule "harbor"]
+	path = harbor
+	url = git@github.com:wayne2008-gpu/harbor-based-data-synthesis-platform.git
