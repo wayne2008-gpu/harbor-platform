@@ -1,0 +1,14 @@
+runner_id = "runner-1"
+jobs_dir = "$HARBOR_RUNNER_HOST_JOBS_DIR"
+max_running_jobs = 1
+poll_interval_sec = 2
+control_plane_url = "http://harbor-api:8080"
+poll_control_plane_jobs = true
+control_plane_queue_limit = 1
+rocketmq_namesrv = "rocketmq-namesrv:9876"
+rocketmq_topic = "harbor_jobs"
+rocketmq_consumer_group = "harbor-runners"
+rocketmq_ack_timeout_sec = 3600
+
+[capabilities]
+providers = ["docker", "ags", "tke"]

@@ -1,0 +1,13 @@
+[project]
+name = "harbor-service-contracts"
+version = "0.1.0"
+description = "Shared service contracts for Harbor Platform."
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.11.7"]
+
+[dependency-groups]
+dev = ["pytest>=8.4.2"]
+
+[build-system]
+requires = ["uv_build>=0.8.4,<0.9.0"]
+build-backend = "uv_build"

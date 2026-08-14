@@ -1,0 +1,20 @@
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+
+ARG ROCKETMQ_CLIENT_CPP_VERSION=2.0.0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget \
+    && wget -O /tmp/rocketmq-client-cpp.deb \
+        "https://github.com/apache/rocketmq-client-cpp/releases/download/${ROCKETMQ_CLIENT_CPP_VERSION}/rocketmq-client-cpp-${ROCKETMQ_CLIENT_CPP_VERSION}.amd64.deb" \
+    && dpkg -i /tmp/rocketmq-client-cpp.deb \
+    && rm -rf /var/lib/apt/lists/* /tmp/rocketmq-client-cpp.deb
+
+WORKDIR /workspace
+COPY harbor /workspace/harbor
+COPY packages/harbor-service-contracts /workspace/packages/harbor-service-contracts
+COPY services/harbor-control-plane /workspace/services/harbor-control-plane
+
+WORKDIR /workspace/services/harbor-control-plane
+RUN uv sync --no-dev
+
+EXPOSE 8080
+CMD ["uv", "run", "--no-sync", "uvicorn", "harbor_control_plane.main:app", "--host", "0.0.0.0", "--port", "8080"]

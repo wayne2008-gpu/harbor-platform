@@ -1,0 +1,10 @@
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+
+WORKDIR /workspace
+COPY services/synthetic-data-platform /workspace/services/synthetic-data-platform
+
+WORKDIR /workspace/services/synthetic-data-platform
+RUN uv sync --no-dev
+
+EXPOSE 8081
+CMD ["uv", "run", "--no-sync", "uvicorn", "synthetic_data_platform.main:app", "--host", "0.0.0.0", "--port", "8081"]

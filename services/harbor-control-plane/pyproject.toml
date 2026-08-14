@@ -1,0 +1,31 @@
+[project]
+name = "harbor-control-plane"
+version = "0.1.0"
+description = "Harbor Platform control plane API."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.128.0",
+    "harbor>=0.21.0",
+    "harbor-service-contracts>=0.1.0",
+    "pydantic>=2.11.7",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "pymysql>=1.1.0",
+    "uvicorn>=0.38.0",
+    "rocketmq-client-python>=2.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.4.2",
+    "ruff>=0.16.3",
+]
+
+[tool.uv.sources]
+harbor = { path = "../../harbor", editable = true }
+harbor-service-contracts = { path = "../../packages/harbor-service-contracts", editable = true }
+
+[build-system]
+requires = ["uv_build>=0.8.4,<0.9.0"]
+build-backend = "uv_build"

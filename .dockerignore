@@ -1,0 +1,15 @@
+.git
+**/.git
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.ty
+.codebase-memory
+harbor/generated
+harbor/jobs
+jobs
+**/jobs
+html_extra

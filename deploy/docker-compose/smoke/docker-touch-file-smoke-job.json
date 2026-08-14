@@ -1,0 +1,22 @@
+{
+  "job_config": {
+    "job_name": "m5-docker-compose-smoke",
+    "n_concurrent_trials": 1,
+    "environment": {
+      "type": "docker"
+    },
+    "agents": [
+      {
+        "name": "oracle"
+      }
+    ],
+    "datasets": [
+      {
+        "path": "/workspace/harbor/generated/harbor-platform-docker-smoke",
+        "task_names": [
+          "touch-file"
+        ]
+      }
+    ]
+  }
+}

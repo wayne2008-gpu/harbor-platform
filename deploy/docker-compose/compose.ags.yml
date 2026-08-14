@@ -1,0 +1,19 @@
+# Optional override for M5 real AGS smoke jobs.
+#
+# This file only references environment variables and mounts the AGS config file.
+# It does not contain secret values. Do not run `docker compose config` with real
+# secrets in the shell if the output will be shared.
+
+services:
+  harbor-runner-1: &ags-runner
+    environment:
+      HARBOR_AGS_CONFIG: /config/ags.toml
+      AGS_SECRET_ID: ${AGS_SECRET_ID:?set AGS_SECRET_ID}
+      AGS_SECRET_KEY: ${AGS_SECRET_KEY:?set AGS_SECRET_KEY}
+      AGS_E2B_API_KEY: ${AGS_E2B_API_KEY:?set AGS_E2B_API_KEY}
+      AGS_E2B_DOMAIN: ${AGS_E2B_DOMAIN:?set AGS_E2B_DOMAIN}
+    volumes:
+      - ${HARBOR_AGS_CONFIG:?set HARBOR_AGS_CONFIG}:/config/ags.toml:ro
+
+  harbor-runner-2:
+    <<: *ags-runner

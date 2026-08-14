@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+deploy/docker-compose/.local/
+deploy/docker-compose/rootless-docker-certs/

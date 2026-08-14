@@ -1,0 +1,335 @@
+from datetime import UTC, datetime, timedelta
+
+from harbor_service_contracts import (
+    ArtifactCreateRequest,
+    JobSnapshotRequest,
+    JobState,
+    RunnerHeartbeatRequest,
+    RunnerState,
+    TrialState,
+)
+from sqlalchemy import func, select
+
+from harbor_control_plane.db import create_schema, job_events_table, make_engine
+from harbor_control_plane.sql_repository import SqlJobRepository
+
+
+def _repo() -> SqlJobRepository:
+    engine = make_engine("sqlite+pysqlite:///:memory:")
+    create_schema(engine)
+    return SqlJobRepository(engine)
+
+
+def _trial_result_json(
+    *,
+    trial_id: str = "trial-1",
+    exception_type: str | None = None,
+    rewards: dict[str, int | float] | None = None,
+) -> dict:
+    result = {
+        "id": trial_id,
+        "task_name": "task-a",
+        "trial_name": "task-a__abc1234",
+        "agent_info": {
+            "name": "codex",
+            "version": "1",
+            "model_info": {"name": "gpt-5"},
+        },
+        "started_at": "2026-08-14T00:00:00Z",
+        "finished_at": "2026-08-14T00:01:00Z",
+    }
+    if rewards is not None:
+        result["verifier_result"] = {"rewards": rewards}
+    if exception_type is not None:
+        result["exception_info"] = {"exception_type": exception_type}
+    return result
+
+
+def test_sql_repository_create_get_and_event() -> None:
+    repo = _repo()
+
+    record = repo.create_job(
+        job_id="job-1",
+        job_config={"job_name": "job-1", "environment": {"type": "ags"}},
+        provider="ags",
+    )
+
+    assert record.state == JobState.QUEUED
+    assert record.provider == "ags"
+    assert repo.get_job("job-1").job_config["job_name"] == "job-1"
+
+    with repo.engine.begin() as connection:
+        count = connection.execute(
+            select(func.count()).select_from(job_events_table)
+        ).scalar_one()
+    assert count == 1
+
+
+def test_sql_repository_cancel_queued_job_moves_to_terminal_state() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    record = repo.request_cancel("job-1")
+
+    assert record.state == JobState.CANCELLED
+    assert record.cancel_requested_at is not None
+    assert record.finished_at is not None
+
+
+def test_sql_repository_mark_dispatch_failed_moves_to_terminal_state_and_event() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    record = repo.mark_dispatch_failed("job-1", error_message="topic unavailable")
+
+    assert record.state == JobState.FAILED
+    assert record.error_type == "dispatch_failed"
+    assert record.error_message == "topic unavailable"
+    assert record.finished_at is not None
+    assert repo.list_queued_job_ids(limit=10) == []
+    with repo.engine.begin() as connection:
+        events = connection.execute(
+            select(job_events_table.c.event_type, job_events_table.c.payload_json)
+            .where(job_events_table.c.job_id == "job-1")
+            .order_by(job_events_table.c.id)
+        ).all()
+    assert events[-1].event_type == "dispatch_failed"
+    assert events[-1].payload_json["previous_state"] == "queued"
+    assert events[-1].payload_json["error_message"] == "topic unavailable"
+
+
+def test_sql_repository_acquire_lease_is_conditional() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    expires_at = datetime.now(UTC) + timedelta(minutes=5)
+
+    assert repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=expires_at,
+    )
+    assert not repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-2",
+        lease_id="lease-2",
+        lease_expires_at=expires_at,
+    )
+
+    record = repo.get_job("job-1")
+    assert record.state == JobState.LEASED
+    assert record.runner_id == "runner-1"
+
+
+def test_sql_repository_requeues_expired_leases_and_records_event() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) - timedelta(minutes=5),
+    )
+
+    requeued = repo.requeue_expired_leases()
+
+    assert requeued == ["job-1"]
+    record = repo.get_job("job-1")
+    assert record.state == JobState.QUEUED
+    assert record.runner_id is None
+    assert record.lease_id is None
+    assert record.lease_expires_at is None
+    with repo.engine.begin() as connection:
+        events = connection.execute(
+            select(job_events_table.c.event_type, job_events_table.c.payload_json)
+            .where(job_events_table.c.job_id == "job-1")
+            .order_by(job_events_table.c.id)
+        ).all()
+    assert events[-1].event_type == "lease_expired"
+    assert events[-1].payload_json["lease_id"] == "lease-1"
+
+
+def test_sql_repository_list_queued_job_ids_requeues_expired_leases() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) - timedelta(minutes=5),
+    )
+
+    assert repo.list_queued_job_ids(limit=10) == ["job-1"]
+
+
+def test_sql_repository_acquire_lease_reclaims_expired_lease() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) - timedelta(minutes=5),
+    )
+
+    assert repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-2",
+        lease_id="lease-2",
+        lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+    record = repo.get_job("job-1")
+    assert record.state == JobState.LEASED
+    assert record.runner_id == "runner-2"
+    assert record.lease_id == "lease-2"
+
+
+def test_sql_repository_mark_stale_runners_offline() -> None:
+    repo = _repo()
+    runner = repo.heartbeat_runner(
+        RunnerHeartbeatRequest(runner_id="runner-1", running_jobs=0)
+    )
+    assert runner.state == RunnerState.ONLINE
+
+    marked = repo.mark_stale_runners_offline(stale_before=datetime.now(UTC) + timedelta(seconds=1))
+
+    assert marked == ["runner-1"]
+    assert repo.list_runners()[0].state == RunnerState.OFFLINE
+
+
+def test_sql_repository_does_not_lease_cancelled_job() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.request_cancel("job-1")
+
+    assert not repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+
+
+def test_sql_repository_lists_only_available_queued_job_ids() -> None:
+    repo = _repo()
+    for job_id in ["job-1", "job-2", "job-3", "job-4"]:
+        repo.create_job(job_id=job_id, job_config={"job_name": job_id}, provider=None)
+
+    repo.request_cancel("job-2")
+    repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+
+    assert repo.list_queued_job_ids(limit=1) == ["job-3"]
+    assert repo.list_queued_job_ids(limit=10) == ["job-3", "job-4"]
+
+
+def test_sql_repository_heartbeat_and_snapshot() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    runner = repo.heartbeat_runner(
+        RunnerHeartbeatRequest(
+            runner_id="runner-1",
+            running_jobs=1,
+            capabilities={"providers": ["docker"]},
+        )
+    )
+    assert runner.id == "runner-1"
+    assert runner.running_jobs == 1
+    assert repo.list_runners()[0].capabilities == {"providers": ["docker"]}
+
+    record = repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(
+            runner_id="runner-1",
+            state=JobState.RUNNING,
+            result_json={"n_total_trials": 2},
+        ),
+    )
+
+    assert record.state == JobState.RUNNING
+    assert record.runner_id == "runner-1"
+    assert record.result_json == {"n_total_trials": 2}
+
+
+def test_sql_repository_records_and_lists_artifacts() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    artifact = repo.record_artifact(
+        "job-1",
+        ArtifactCreateRequest(
+            kind="result",
+            storage_type="runner-local",
+            storage_key="jobs/job-1/result.json",
+            size_bytes=123,
+        ),
+    )
+
+    assert artifact.id == 1
+    assert repo.list_artifacts("job-1")[0].storage_key == "jobs/job-1/result.json"
+
+
+def test_sql_repository_snapshot_syncs_trial_results() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(
+            runner_id="runner-1",
+            state=JobState.SUCCEEDED,
+            result_json={
+                "n_total_trials": 2,
+                "trial_results": [
+                    _trial_result_json(rewards={"reward": 1}),
+                    _trial_result_json(
+                        trial_id="trial-2", exception_type="RuntimeError"
+                    ),
+                ],
+            },
+        ),
+    )
+
+    trials = repo.list_trials("job-1")
+
+    assert [trial.id for trial in trials] == ["trial-1", "trial-2"]
+    assert trials[0].state == TrialState.SUCCEEDED
+    assert trials[0].task_name == "task-a"
+    assert trials[0].agent_name == "codex"
+    assert trials[0].model_name == "gpt-5"
+    assert trials[0].reward == 1.0
+    assert trials[1].state == TrialState.FAILED
+    assert trials[1].exception_type == "RuntimeError"
+
+
+def test_sql_repository_snapshot_without_trial_results_preserves_existing_trials() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(
+            runner_id="runner-1",
+            state=JobState.RUNNING,
+            result_json={"trial_results": [_trial_result_json(rewards={"reward": 1})]},
+            started_at=datetime(2026, 8, 14, tzinfo=UTC),
+        ),
+    )
+
+    repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(
+            runner_id="runner-1",
+            state=JobState.RUNNING,
+            result_json={"n_total_trials": 1},
+        ),
+    )
+
+    record = repo.get_job("job-1")
+    assert record.started_at is not None
+    assert record.started_at.replace(tzinfo=UTC) == datetime(2026, 8, 14, tzinfo=UTC)
+    assert [trial.id for trial in repo.list_trials("job-1")] == ["trial-1"]
