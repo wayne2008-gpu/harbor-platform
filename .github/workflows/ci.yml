@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.13"
+  UV_VERSION: "0.12.3"
+
+jobs:
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Test contracts
+        working-directory: packages/harbor-service-contracts
+        run: |
+          uv sync --frozen --dev
+          uv run pytest tests -q
+
+  control-plane:
+    name: Control Plane
+    runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Checkout Harbor submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Lint and test control plane
+        working-directory: services/harbor-control-plane
+        run: |
+          uv sync --frozen --dev
+          uv run ruff check src tests
+          uv run pytest tests -q
+
+  synthetic-data-platform:
+    name: Synthetic Data Platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Lint and test synthetic data platform
+        working-directory: services/synthetic-data-platform
+        run: |
+          uv sync --frozen --dev
+          uv run ruff check src tests
+          uv run pytest tests -q
+
+  harbor-runner:
+    name: Harbor Runner
+    runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Checkout Harbor submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Lint and test runner
+        working-directory: harbor
+        run: |
+          uv sync --frozen --extra rocketmq --dev
+          uv run ruff check src/harbor/runner tests/unit/runner
+          uv run pytest tests/unit/runner -q
+
+  harbor-providers:
+    name: Harbor AGS/TKE Targeted Tests
+    runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Checkout Harbor submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Run AGS/TKE targeted tests
+        working-directory: harbor
+        run: |
+          uv sync --frozen --extra ags --extra tke --dev
+          uv run pytest \
+            tests/unit/environments/test_ags_clients.py \
+            tests/unit/environments/test_ags.py \
+            tests/unit/environments/test_ags_config.py \
+            tests/unit/environments/test_ags_queue.py \
+            tests/unit/environments/test_tke_config.py \
+            tests/unit/environments/test_tke.py \
+            tests/unit/environments/test_environment_definition.py \
+            tests/unit/environments/test_provider_resource_capabilities.py \
+            -q
+
+  compose-config:
+    name: Compose Config
+    runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Checkout Harbor submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      - name: Validate Compose files and smoke assets
+        working-directory: deploy/docker-compose
+        env:
+          HARBOR_RUNNER_DOCKER_HOST: tcp://host.docker.internal:2375
+          HARBOR_RUNNER_DOCKER_TLS_CERTS: ${{ github.workspace }}/deploy/docker-compose/.local/ci-rootless-docker-certs
+          HARBOR_PLATFORM_HOST_ROOT: ${{ github.workspace }}
+          HARBOR_RUNNER_HOST_JOBS_DIR: ${{ github.workspace }}/deploy/docker-compose/.local/ci-runner-jobs
+          HARBOR_AGS_CONFIG: ${{ github.workspace }}/deploy/docker-compose/.local/ci-ags.toml
+          AGS_SECRET_ID: ci-placeholder-secret-id
+          AGS_SECRET_KEY: ci-placeholder-secret-key
+          AGS_E2B_API_KEY: ci-placeholder-e2b-api-key
+          AGS_E2B_DOMAIN: ci.example.invalid
+        run: |
+          bash -n scripts/create-rootless-docker-tls-certs.sh
+          bash -n scripts/submit-and-wait-job.sh
+          mkdir -p .local/ci-runner-jobs
+          printf '# placeholder AGS config for compose rendering\n' > "$HARBOR_AGS_CONFIG"
+          ./scripts/create-rootless-docker-tls-certs.sh "$HARBOR_RUNNER_DOCKER_TLS_CERTS"
+          docker compose -f compose.dev.yml config >/tmp/harbor-compose-dev.yml
+          docker compose -f compose.dev.yml -f compose.rootless-docker.yml config >/tmp/harbor-compose-rootless.yml
+          docker compose -f compose.dev.yml -f compose.rootless-docker-tls.yml config >/tmp/harbor-compose-rootless-tls.yml
+          docker compose -f compose.dev.yml -f compose.rootless-docker-tls.yml -f compose.rootless-docker-host-paths.yml config >/tmp/harbor-compose-rootless-host-paths.yml
+          docker compose -f compose.dev.yml -f compose.ags.yml config >/tmp/harbor-compose-ags.yml
+          jq empty smoke/docker-touch-file-smoke-job.json
+          jq empty smoke/docker-touch-file-smoke-job.host-paths.json
+          jq empty smoke/ags-otel-bench-smoke-job.json
