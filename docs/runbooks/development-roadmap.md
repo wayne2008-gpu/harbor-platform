@@ -160,6 +160,10 @@ GET /synthetic-tasks/{id}/trials
 GET /synthetic-tasks/{id}/trials/{trial_id}/result
 GET /synthetic-tasks/{id}/trials/{trial_id}/artifacts
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
+GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory?schema=openai_messages
+POST /synthetic-tasks/{id}/cancel
+POST /synthetic-tasks/{id}/retry
+POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
 ```
 
@@ -172,7 +176,10 @@ Flow:
 5. poll/query Harbor status
 6. read trial results, trajectory, and artifact metadata through `harbor-api`
 7. parse samples into business tables when sample artifacts exist
-8. review and publish dataset version
+8. cancel active Harbor jobs from the synthetic task detail view
+9. retry terminal Harbor jobs as new synthetic task records
+10. request artifact retry for terminal jobs
+11. review and publish dataset version
 
 ## Phase 8: Input Dataset Materialization
 
