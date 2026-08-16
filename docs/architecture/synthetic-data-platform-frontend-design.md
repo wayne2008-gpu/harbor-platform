@@ -343,6 +343,8 @@ Settings
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
+- Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
+- Tasks/Results 列表搜索使用 deferred query value，减少快速输入时的列表请求抖动。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
 - Timeline 基础结构化审核视图：source、message、tool_calls、observation。
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
@@ -353,7 +355,6 @@ Settings
 
 需要继续优化：
 
-- Tasks/Results 列表需要更稳定的筛选状态保留和 URL query 同步。
 - Trial 页面后续可继续增加 trajectory 过滤、折叠、diff 和异常定位。
 - Result dataset 页面后续可继续增强 trial/artifact 筛选和大样本字段统计。
 - Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
