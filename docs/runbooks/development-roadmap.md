@@ -167,6 +167,8 @@ POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
 GET /result-datasets
 GET /result-datasets/{id}
+GET /result-datasets/{id}/download?format=jsonl
+GET /result-datasets/{id}/download?format=json
 ```
 
 Flow:
@@ -184,6 +186,8 @@ Flow:
 11. ingest samples from Harbor sample/trial-result artifacts
 12. publish those samples as an idempotent result dataset version
 13. query published result datasets from the Results console
+14. inspect result dataset samples and metadata from a detail page
+15. download result datasets as JSONL samples or full JSON metadata
 
 ## Phase 8: Input Dataset Materialization
 
