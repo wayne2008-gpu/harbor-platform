@@ -340,7 +340,7 @@ Settings
 - React 19 + Vite + React Router + TanStack Query。
 - 顶层 app shell、sidebar、skip link、route focus management。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
-- Dataset 上传/登记、详情、基于 dataset 创建任务。
+- Dataset 上传/登记、列表筛选、详情、task_name 过滤、基于 dataset 创建任务。
 - Task 创建、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作。
