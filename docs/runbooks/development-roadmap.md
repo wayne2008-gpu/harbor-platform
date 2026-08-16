@@ -165,6 +165,8 @@ POST /synthetic-tasks/{id}/cancel
 POST /synthetic-tasks/{id}/retry
 POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
+GET /result-datasets
+GET /result-datasets/{id}
 ```
 
 Flow:
@@ -179,7 +181,9 @@ Flow:
 8. cancel active Harbor jobs from the synthetic task detail view
 9. retry terminal Harbor jobs as new synthetic task records
 10. request artifact retry for terminal jobs
-11. review and publish dataset version
+11. ingest samples from Harbor sample/trial-result artifacts
+12. publish those samples as an idempotent result dataset version
+13. query published result datasets from the Results console
 
 ## Phase 8: Input Dataset Materialization
 
