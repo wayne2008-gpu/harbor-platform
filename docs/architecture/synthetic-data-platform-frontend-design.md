@@ -162,6 +162,7 @@ Settings
 - 展示 dataset source、COS/local URI、checksum、size、task_names。
 - 明确 readiness：是否具备 task_name、是否有 checksum、是否可创建任务。
 - 展示使用过该 dataset 的最近 synthetic tasks，并可跳转到完整任务列表。
+- 展示由该 dataset 发布出来的 result datasets，并可跳转到完整结果列表。
 - 主动作是 “Create task from dataset”。
 - 后续 dataset 管理能力增强后，补充版本差异和可复用的 task_name 映射。
 
@@ -341,7 +342,7 @@ Settings
 - React 19 + Vite + React Router + TanStack Query。
 - 顶层 app shell、sidebar、skip link、route focus management。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
-- Dataset 上传/登记、列表筛选、详情、task_name 过滤、使用记录、基于 dataset 创建任务。
+- Dataset 上传/登记、列表筛选、详情、task_name 过滤、使用记录、result datasets 回溯、基于 dataset 创建任务。
 - Task 创建、提交前 dataset readiness 检查、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作。
