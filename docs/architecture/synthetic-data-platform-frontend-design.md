@@ -363,7 +363,7 @@ Settings
 - Trajectory schema mapping：Summary tab 按 tool call id 映射 ATIF call/observation 与 OpenAI call/response，并标记 aligned / partial / unlinked 与基础 diff。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
-- Result dataset 列表、source task/source dataset 筛选和回跳、详情、JSONL/JSON 下载。
+- Result dataset 列表、source task/source dataset 筛选和回跳、详情、source dataset 直达、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
 - Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
