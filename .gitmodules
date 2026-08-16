@@ -1,3 +1,12 @@
 [submodule "harbor"]
 	path = harbor
 	url = git@github.com:wayne2008-gpu/harbor-based-data-synthesis-platform.git
+[submodule "packages/harbor-service-contracts"]
+	path = packages/harbor-service-contracts
+	url = git@github.com:wayne2008-gpu/harbor-service-contracts.git
+[submodule "services/harbor-control-plane"]
+	path = services/harbor-control-plane
+	url = git@github.com:wayne2008-gpu/harbor-control-plane.git
+[submodule "services/synthetic-data-platform"]
+	path = services/synthetic-data-platform
+	url = git@github.com:wayne2008-gpu/synthetic-data-platform.git
