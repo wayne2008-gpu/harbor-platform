@@ -186,8 +186,11 @@ Flow:
 11. ingest samples from Harbor sample/trial-result artifacts
 12. publish those samples as an idempotent result dataset version
 13. query published result datasets from the Results console
-14. inspect result dataset samples and metadata from a detail page
+14. inspect result dataset samples, metadata, source trials, and source artifacts
+    from a detail page
 15. download result datasets as JSONL samples or full JSON metadata
+16. jump from a result dataset back to source trajectories and source artifact
+    downloads
 
 ## Phase 8: Input Dataset Materialization
 
