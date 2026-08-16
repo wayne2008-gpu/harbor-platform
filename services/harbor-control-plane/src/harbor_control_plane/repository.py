@@ -5,9 +5,13 @@ from typing import Any
 from harbor_service_contracts import (
     ArtifactCreateRequest,
     ArtifactResponse,
+    ArtifactState,
+    InputDataset,
+    InputState,
     JobSnapshotRequest,
     JobState,
     JobStatusResponse,
+    MaterializedInputDataset,
     RunnerHeartbeatRequest,
     RunnerState,
     RunnerStatusResponse,
@@ -24,7 +28,11 @@ class JobNotFoundError(ValueError):
 class JobRecord:
     id: str
     state: JobState
+    input_state: InputState
+    artifact_state: ArtifactState
     job_config: dict[str, Any]
+    input_datasets: list[InputDataset]
+    materialized_inputs: list[MaterializedInputDataset]
     provider: str | None
     updated_at: datetime
     runner_id: str | None = None
@@ -41,7 +49,11 @@ class JobRecord:
         return JobStatusResponse(
             id=self.id,
             state=self.state,
+            input_state=self.input_state,
+            artifact_state=self.artifact_state,
             job_config=self.job_config,
+            input_datasets=self.input_datasets,
+            materialized_inputs=self.materialized_inputs,
             provider=self.provider,
             runner_id=self.runner_id,
             cancel_requested_at=self.cancel_requested_at,
@@ -85,13 +97,19 @@ class InMemoryJobRepository:
         *,
         job_id: str,
         job_config: dict[str, Any],
-        provider: str | None,
+        input_datasets: list[InputDataset] | None = None,
+        provider: str | None = None,
     ) -> JobRecord:
         now = _utcnow()
+        input_datasets = input_datasets or []
         record = JobRecord(
             id=job_id,
             state=JobState.QUEUED,
+            input_state=InputState.PENDING,
+            artifact_state=ArtifactState.PENDING,
             job_config=job_config,
+            input_datasets=input_datasets,
+            materialized_inputs=[],
             provider=provider,
             updated_at=now,
         )
@@ -208,9 +226,7 @@ class InMemoryJobRepository:
     def list_runners(self) -> list[RunnerRecord]:
         return list(self.runners.values())
 
-    def mark_stale_runners_offline(
-        self, *, stale_before: datetime
-    ) -> list[str]:
+    def mark_stale_runners_offline(self, *, stale_before: datetime) -> list[str]:
         marked: list[str] = []
         for record in self.runners.values():
             if (
@@ -234,6 +250,12 @@ class InMemoryJobRepository:
             storage_type=request.storage_type,
             storage_key=request.storage_key,
             size_bytes=request.size_bytes,
+            relative_path=request.relative_path,
+            checksum_sha256=request.checksum_sha256,
+            etag=request.etag,
+            content_type=request.content_type,
+            uploaded_at=request.uploaded_at,
+            metadata=request.metadata,
             created_at=_utcnow(),
         )
         self._next_artifact_id += 1
@@ -249,6 +271,56 @@ class InMemoryJobRepository:
             if artifact.id == artifact_id:
                 return artifact
         raise ValueError(str(artifact_id))
+
+    def update_artifact_state(
+        self,
+        job_id: str,
+        *,
+        artifact_state: ArtifactState,
+        error_message: str | None = None,
+    ) -> JobRecord:
+        record = self.get_job(job_id)
+        record.artifact_state = artifact_state
+        if error_message is not None:
+            record.error_message = error_message
+        record.updated_at = _utcnow()
+        return record
+
+    def update_input_state(
+        self,
+        job_id: str,
+        *,
+        input_state: InputState,
+        materialized_inputs: list[MaterializedInputDataset] | None = None,
+        error_message: str | None = None,
+    ) -> JobRecord:
+        record = self.get_job(job_id)
+        record.input_state = input_state
+        if materialized_inputs is not None:
+            record.materialized_inputs = materialized_inputs
+        if error_message is not None:
+            record.error_message = error_message
+        record.updated_at = _utcnow()
+        return record
+
+    def mark_input_materialization_failed(
+        self,
+        job_id: str,
+        *,
+        error_message: str,
+        materialized_inputs: list[MaterializedInputDataset] | None = None,
+    ) -> JobRecord:
+        record = self.get_job(job_id)
+        now = _utcnow()
+        record.state = JobState.FAILED
+        record.input_state = InputState.FAILED
+        if materialized_inputs is not None:
+            record.materialized_inputs = materialized_inputs
+        record.error_type = "input_materialization_failed"
+        record.error_message = error_message
+        record.updated_at = now
+        record.finished_at = now
+        return record
 
 
 def _utcnow() -> datetime:

@@ -117,28 +117,41 @@ Run real jobs:
 
 ## Phase 6: Logs and Artifacts
 
-PoC:
+Implemented storage modes:
 
-- runner-local `jobs/`
-- MySQL has `job_id -> runner_id -> runner_internal_url`
-- API proxies logs/artifacts to the runner
+- `runner-local`: default local mode. Runner records local artifact paths; API can serve only from an explicitly allowed root.
+- `cos`: runner uploads artifacts to Tencent Cloud COS and records durable `cos://<bucket>/<key>` addresses in MySQL.
 
-Production:
+Current COS behavior:
 
-- runner uploads logs/artifacts to object storage
-- DB stores artifact keys
-- API reads artifacts from object storage
+- TOML config uses literal `secret_id` and `secret_key` in this iteration.
+- Runner stores deterministic keys: `{prefix}/jobs/{job_id}/{relative_path}`.
+- Runner records `relative_path`, `checksum_sha256`, `etag`, `content_type`, `metadata`, and `uploaded_at`.
+- Job execution state and artifact persistence state are separated through `artifact_state`.
+- API can return COS signed URLs or proxy object bytes.
+
+Hardening backlog:
+
+- replace literal COS credentials with env/K8s Secret references
+- add scheduled local retention cleanup beyond immediate `retain_local = false`
+- add real-COS integration smoke gated by credentials
 
 ## Phase 7: Synthetic Data Platform
 
 Create `services/synthetic-data-platform/` after Harbor API is stable.
 
-First version:
+Current first version:
 
 ```text
 POST /synthetic-tasks
 GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
+GET /synthetic-tasks/{id}/results
+GET /synthetic-tasks/{id}/artifacts
+GET /synthetic-tasks/{id}/trials
+GET /synthetic-tasks/{id}/trials/{trial_id}/result
+GET /synthetic-tasks/{id}/trials/{trial_id}/artifacts
+GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
 POST /synthetic-tasks/{id}/publish
 ```
 
@@ -149,11 +162,44 @@ Flow:
 3. call `harbor-api POST /jobs`
 4. store `synthetic_task_id -> harbor_job_id`
 5. poll/query Harbor status
-6. read artifacts
-7. parse samples into business tables
+6. read trial results, trajectory, and artifact metadata through `harbor-api`
+7. parse samples into business tables when sample artifacts exist
 8. review and publish dataset version
 
-## Phase 8: Cloud Deployment
+## Phase 8: Input Dataset Materialization
+
+Current target:
+
+- `synthetic-data-platform` can submit `input_datasets` with COS URIs.
+- `harbor-api` stores original input declarations and materialization state in
+  MySQL.
+- `harbor-runner` fetches full job status, downloads COS archives, verifies
+  checksum, safely extracts task datasets, rewrites Harbor `JobConfig.datasets`
+  to runner-local paths, and starts `harbor-runtime`.
+- `harbor-runtime` remains unaware of COS and receives normal local dataset
+  paths.
+- runner records `inputs/manifest.json` as `kind = "input-manifest"`.
+
+Implementation checkpoints:
+
+1. M17: shared contract models and state enum.
+2. M18: harbor-api persistence, migration, and input-state endpoint.
+3. M19: runner input materializer interface and TOML config.
+4. M20: COS download, checksum verification, safe tar extraction, and task
+   validation.
+5. M21: runner JobConfig rewrite and input-state reporting.
+6. M22: input manifest artifact collection and local retention behavior.
+7. M23: synthetic-data-platform `input_datasets` pass-through.
+8. M24: docs, compose examples, tests, and local validation.
+
+Hardening backlog:
+
+- replace literal TOML COS credentials with env/K8s Secret references
+- add scheduled retention cleanup beyond immediate `retain_local = false`
+- add real-COS integration smoke gated by credentials
+- add synthetic business dataset catalog validation
+
+## Phase 9: Cloud Deployment
 
 Replace local services with Tencent Cloud services:
 

@@ -1,7 +1,12 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
-from harbor_service_contracts import JobDispatchMessage, JobState, RunnerState
+from harbor_service_contracts import (
+    ArtifactDownloadUrlResponse,
+    JobDispatchMessage,
+    JobState,
+    RunnerState,
+)
 
 from harbor_control_plane.app import create_app
 from harbor_control_plane.publisher import InMemoryJobPublisher
@@ -13,7 +18,26 @@ class FailingJobPublisher(InMemoryJobPublisher):
         raise RuntimeError("topic unavailable")
 
 
-def _client(*, artifact_allowed_root=None, publisher=None):
+class FakeArtifactResolver:
+    def __init__(self) -> None:
+        self.content = b'{"trajectory": true}'
+
+    def content_response(self, artifact):
+        from fastapi import Response
+
+        return Response(self.content, media_type=artifact.content_type)
+
+    def download_url(self, artifact):
+        assert artifact.storage_type == "cos"
+        return ArtifactDownloadUrlResponse(
+            url="https://cos.example/signed", expires_in=600
+        )
+
+    def read_bytes(self, artifact):
+        return self.content
+
+
+def _client(*, artifact_allowed_root=None, artifact_resolver=None, publisher=None):
     repo = InMemoryJobRepository()
     publisher = publisher or InMemoryJobPublisher()
     return (
@@ -22,6 +46,7 @@ def _client(*, artifact_allowed_root=None, publisher=None):
                 repository=repo,
                 publisher=publisher,
                 artifact_allowed_root=artifact_allowed_root,
+                artifact_resolver=artifact_resolver,
             )
         ),
         repo,
@@ -59,14 +84,29 @@ def test_create_job_stores_job_and_publishes_dispatch_message() -> None:
 
     response = client.post(
         "/jobs",
-        json={"job_config": {"job_name": "api-smoke", "environment": {"type": "ags"}}},
+        json={
+            "job_config": {"job_name": "api-smoke", "environment": {"type": "ags"}},
+            "input_datasets": [
+                {
+                    "name": "dataset-a",
+                    "version": "v1",
+                    "uri": "cos://harbor-datasets/datasets/a.tar.gz",
+                    "checksum_sha256": "abc",
+                }
+            ],
+        },
     )
 
     assert response.status_code == 202, response.text
     body = response.json()
     job_id = body["id"]
     assert body["state"] == "queued"
+    assert body["input_state"] == "pending"
+    assert body["artifact_state"] == "pending"
+    assert body["input_datasets"][0]["name"] == "dataset-a"
+    assert body["materialized_inputs"] == []
     assert body["provider"] == "ags"
+    assert repo.get_job(job_id).input_datasets[0].name == "dataset-a"
     assert repo.get_job(job_id).job_config["job_name"] == "api-smoke"
     assert len(publisher.messages) == 1
     assert publisher.messages[0].job_id == job_id
@@ -280,14 +320,141 @@ def test_record_and_list_artifacts() -> None:
             "storage_type": "runner-local",
             "storage_key": "jobs/job-1/result.json",
             "size_bytes": 123,
+            "relative_path": "result.json",
+            "checksum_sha256": "abc",
+            "etag": "etag-1",
+            "content_type": "application/json",
+            "metadata": {"source": "runner"},
         },
     )
 
     assert created.status_code == 201
     assert created.json()["id"] == 1
+    assert created.json()["relative_path"] == "result.json"
+    assert created.json()["metadata"] == {"source": "runner"}
     artifacts = client.get(f"/jobs/{job_id}/artifacts")
     assert artifacts.status_code == 200
     assert artifacts.json()[0]["storage_key"] == "jobs/job-1/result.json"
+
+
+def test_update_artifact_state_does_not_change_execution_state() -> None:
+    client, _repo, _publisher = _client()
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+
+    response = client.post(
+        f"/internal/jobs/{job_id}/artifact-state",
+        json={"artifact_state": "partial_failed", "error_message": "cos timeout"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["state"] == "queued"
+    assert response.json()["artifact_state"] == "partial_failed"
+    assert response.json()["error_message"] == "cos timeout"
+
+
+def test_update_input_state_does_not_change_execution_state_on_success() -> None:
+    client, _repo, _publisher = _client()
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+
+    response = client.post(
+        f"/internal/jobs/{job_id}/input-state",
+        json={
+            "input_state": "succeeded",
+            "materialized_inputs": [
+                {
+                    "name": "dataset-a",
+                    "source_type": "cos",
+                    "uri": "cos://harbor-datasets/datasets/a.tar.gz",
+                    "format": "tar.gz",
+                    "checksum_sha256": "abc",
+                    "target": "dataset-a",
+                    "local_path": "inputs/datasets/dataset-a",
+                    "size_bytes": 123,
+                    "state": "succeeded",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["state"] == "queued"
+    assert response.json()["input_state"] == "succeeded"
+    assert response.json()["materialized_inputs"][0]["local_path"] == (
+        "inputs/datasets/dataset-a"
+    )
+
+
+def test_failed_input_state_marks_execution_failed() -> None:
+    client, _repo, _publisher = _client()
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+
+    response = client.post(
+        f"/internal/jobs/{job_id}/input-state",
+        json={"input_state": "failed", "error_message": "checksum mismatch"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["state"] == "failed"
+    assert response.json()["input_state"] == "failed"
+    assert response.json()["error_type"] == "input_materialization_failed"
+    assert response.json()["error_message"] == "checksum mismatch"
+
+
+def test_cos_artifact_download_url_uses_resolver() -> None:
+    resolver = FakeArtifactResolver()
+    client, _repo, _publisher = _client(artifact_resolver=resolver)
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+    artifact = client.post(
+        f"/internal/jobs/{job_id}/artifacts",
+        json={
+            "kind": "trajectory",
+            "storage_type": "cos",
+            "storage_key": "cos://bucket/dev/jobs/job-1/trial-a/agent/trajectory.json",
+            "trial_id": "trial-a",
+            "relative_path": "trial-a/agent/trajectory.json",
+            "content_type": "application/json",
+        },
+    ).json()
+
+    response = client.get(f"/jobs/{job_id}/artifacts/{artifact['id']}/download-url")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "url": "https://cos.example/signed",
+        "expires_in": 600,
+    }
+
+
+def test_trial_trajectory_reads_trajectory_artifact() -> None:
+    resolver = FakeArtifactResolver()
+    client, _repo, _publisher = _client(artifact_resolver=resolver)
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+    client.post(
+        f"/internal/jobs/{job_id}/artifacts",
+        json={
+            "kind": "trajectory",
+            "storage_type": "cos",
+            "storage_key": "cos://bucket/dev/jobs/job-1/trial-a/agent/trajectory.json",
+            "trial_id": "trial-a",
+            "relative_path": "trial-a/agent/trajectory.json",
+            "content_type": "application/json",
+        },
+    )
+
+    response = client.get(f"/jobs/{job_id}/trials/trial-a/trajectory")
+
+    assert response.status_code == 200
+    assert response.json() == {"trajectory": True}
 
 
 def test_artifact_content_proxy_is_disabled_by_default(tmp_path) -> None:

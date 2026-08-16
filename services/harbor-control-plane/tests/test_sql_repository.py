@@ -2,8 +2,12 @@ from datetime import UTC, datetime, timedelta
 
 from harbor_service_contracts import (
     ArtifactCreateRequest,
+    ArtifactState,
+    InputDataset,
+    InputState,
     JobSnapshotRequest,
     JobState,
+    MaterializedInputDataset,
     RunnerHeartbeatRequest,
     RunnerState,
     TrialState,
@@ -51,11 +55,22 @@ def test_sql_repository_create_get_and_event() -> None:
     record = repo.create_job(
         job_id="job-1",
         job_config={"job_name": "job-1", "environment": {"type": "ags"}},
+        input_datasets=[
+            InputDataset(
+                name="dataset-a",
+                version="v1",
+                uri="cos://harbor-datasets/datasets/a.tar.gz",
+                checksum_sha256="abc",
+            )
+        ],
         provider="ags",
     )
 
     assert record.state == JobState.QUEUED
+    assert record.input_state == InputState.PENDING
     assert record.provider == "ags"
+    assert record.input_datasets[0].name == "dataset-a"
+    assert record.materialized_inputs == []
     assert repo.get_job("job-1").job_config["job_name"] == "job-1"
 
     with repo.engine.begin() as connection:
@@ -76,7 +91,9 @@ def test_sql_repository_cancel_queued_job_moves_to_terminal_state() -> None:
     assert record.finished_at is not None
 
 
-def test_sql_repository_mark_dispatch_failed_moves_to_terminal_state_and_event() -> None:
+def test_sql_repository_mark_dispatch_failed_moves_to_terminal_state_and_event() -> (
+    None
+):
     repo = _repo()
     repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
 
@@ -191,7 +208,9 @@ def test_sql_repository_mark_stale_runners_offline() -> None:
     )
     assert runner.state == RunnerState.ONLINE
 
-    marked = repo.mark_stale_runners_offline(stale_before=datetime.now(UTC) + timedelta(seconds=1))
+    marked = repo.mark_stale_runners_offline(
+        stale_before=datetime.now(UTC) + timedelta(seconds=1)
+    )
 
     assert marked == ["runner-1"]
     assert repo.list_runners()[0].state == RunnerState.OFFLINE
@@ -259,19 +278,117 @@ def test_sql_repository_heartbeat_and_snapshot() -> None:
 def test_sql_repository_records_and_lists_artifacts() -> None:
     repo = _repo()
     repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    uploaded_at = datetime(2026, 8, 16, 1, 2, 3, tzinfo=UTC)
 
     artifact = repo.record_artifact(
         "job-1",
         ArtifactCreateRequest(
             kind="result",
-            storage_type="runner-local",
-            storage_key="jobs/job-1/result.json",
+            storage_type="cos",
+            storage_key="cos://bucket/dev/jobs/job-1/result.json",
             size_bytes=123,
+            relative_path="result.json",
+            checksum_sha256="abc",
+            etag="etag-1",
+            content_type="application/json",
+            uploaded_at=uploaded_at,
+            metadata={"bucket": "bucket", "key": "dev/jobs/job-1/result.json"},
         ),
     )
 
     assert artifact.id == 1
-    assert repo.list_artifacts("job-1")[0].storage_key == "jobs/job-1/result.json"
+    stored = repo.list_artifacts("job-1")[0]
+    assert stored.storage_key == "cos://bucket/dev/jobs/job-1/result.json"
+    assert stored.relative_path == "result.json"
+    assert stored.checksum_sha256 == "abc"
+    assert stored.etag == "etag-1"
+    assert stored.content_type == "application/json"
+    assert stored.uploaded_at is not None
+    assert stored.uploaded_at.replace(tzinfo=UTC) == uploaded_at
+    assert stored.metadata == {
+        "bucket": "bucket",
+        "key": "dev/jobs/job-1/result.json",
+    }
+
+
+def test_sql_repository_updates_artifact_state_and_records_event() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    record = repo.update_artifact_state(
+        "job-1",
+        artifact_state=ArtifactState.PARTIAL_FAILED,
+        error_message="cos timeout",
+    )
+
+    assert record.state == JobState.QUEUED
+    assert record.artifact_state == ArtifactState.PARTIAL_FAILED
+    assert record.error_message == "cos timeout"
+    with repo.engine.begin() as connection:
+        events = connection.execute(
+            select(job_events_table.c.event_type, job_events_table.c.payload_json)
+            .where(job_events_table.c.job_id == "job-1")
+            .order_by(job_events_table.c.id)
+        ).all()
+    assert events[-1].event_type == "artifact_state"
+    assert events[-1].payload_json == {
+        "artifact_state": "partial_failed",
+        "error_message": "cos timeout",
+    }
+
+
+def test_sql_repository_updates_input_state_and_records_event() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    record = repo.update_input_state(
+        "job-1",
+        input_state=InputState.SUCCEEDED,
+        materialized_inputs=[
+            MaterializedInputDataset(
+                name="dataset-a",
+                source_type="cos",
+                uri="cos://harbor-datasets/datasets/a.tar.gz",
+                format="tar.gz",
+                checksum_sha256="abc",
+                target="dataset-a",
+                local_path="inputs/datasets/dataset-a",
+                size_bytes=123,
+                state=InputState.SUCCEEDED,
+            )
+        ],
+    )
+
+    assert record.state == JobState.QUEUED
+    assert record.input_state == InputState.SUCCEEDED
+    assert record.materialized_inputs[0].local_path == "inputs/datasets/dataset-a"
+    with repo.engine.begin() as connection:
+        events = connection.execute(
+            select(job_events_table.c.event_type, job_events_table.c.payload_json)
+            .where(job_events_table.c.job_id == "job-1")
+            .order_by(job_events_table.c.id)
+        ).all()
+    assert events[-1].event_type == "input_state"
+    assert events[-1].payload_json == {
+        "input_state": "succeeded",
+        "error_message": None,
+    }
+
+
+def test_sql_repository_marks_input_materialization_failed() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+
+    record = repo.mark_input_materialization_failed(
+        "job-1",
+        error_message="checksum mismatch",
+    )
+
+    assert record.state == JobState.FAILED
+    assert record.input_state == InputState.FAILED
+    assert record.error_type == "input_materialization_failed"
+    assert record.error_message == "checksum mismatch"
+    assert record.finished_at is not None
 
 
 def test_sql_repository_snapshot_syncs_trial_results() -> None:
@@ -307,7 +424,9 @@ def test_sql_repository_snapshot_syncs_trial_results() -> None:
     assert trials[1].exception_type == "RuntimeError"
 
 
-def test_sql_repository_snapshot_without_trial_results_preserves_existing_trials() -> None:
+def test_sql_repository_snapshot_without_trial_results_preserves_existing_trials() -> (
+    None
+):
     repo = _repo()
     repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
     repo.apply_snapshot(

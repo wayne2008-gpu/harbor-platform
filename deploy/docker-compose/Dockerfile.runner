@@ -17,6 +17,6 @@ WORKDIR /workspace
 COPY harbor /workspace/harbor
 
 WORKDIR /workspace/harbor
-RUN uv sync --no-dev --extra ags --extra tke --extra rocketmq
+RUN uv sync --no-dev --extra ags --extra tke --extra rocketmq --extra cos
 
 CMD ["uv", "run", "--no-sync", "harbor", "runner", "start", "--config", "/config/runner.toml", "--keep-alive"]

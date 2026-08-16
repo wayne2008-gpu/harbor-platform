@@ -31,6 +31,21 @@ class LeaseState(StrEnum):
     RELEASED = "released"
 
 
+class ArtifactState(StrEnum):
+    PENDING = "pending"
+    UPLOADING = "uploading"
+    SUCCEEDED = "succeeded"
+    PARTIAL_FAILED = "partial_failed"
+    FAILED = "failed"
+
+
+class InputState(StrEnum):
+    PENDING = "pending"
+    MATERIALIZING = "materializing"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
 TERMINAL_JOB_STATES = frozenset(
     {
         JobState.SUCCEEDED,

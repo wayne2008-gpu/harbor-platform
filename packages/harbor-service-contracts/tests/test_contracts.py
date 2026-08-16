@@ -1,9 +1,16 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harbor_service_contracts import (
+    ArtifactCreateRequest,
+    ArtifactState,
+    InputDataset,
+    InputState,
+    InputStateUpdateRequest,
+    JobCreateRequest,
     JobDispatchMessage,
     JobDispatchRouting,
     JobState,
+    MaterializedInputDataset,
     is_valid_job_transition,
 )
 
@@ -21,7 +28,7 @@ def test_job_dispatch_message_round_trips_json() -> None:
     message = JobDispatchMessage(
         message_id="msg-1",
         job_id="job-1",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         routing=JobDispatchRouting(provider="ags", tags=["gpu"]),
     )
 
@@ -29,3 +36,64 @@ def test_job_dispatch_message_round_trips_json() -> None:
 
     assert restored == message
     assert restored.schema_version == 1
+
+
+def test_artifact_contract_carries_storage_metadata() -> None:
+    request = ArtifactCreateRequest(
+        kind="trajectory",
+        storage_type="cos",
+        storage_key="cos://bucket/prefix/jobs/job-1/trial-a/agent/trajectory.json",
+        trial_id="trial-a",
+        size_bytes=123,
+        relative_path="trial-a/agent/trajectory.json",
+        checksum_sha256="abc",
+        etag="etag-1",
+        content_type="application/json",
+        metadata={"source": "runner"},
+    )
+
+    assert request.storage_type == "cos"
+    assert request.relative_path == "trial-a/agent/trajectory.json"
+    assert request.metadata == {"source": "runner"}
+    assert ArtifactState.PENDING == "pending"
+
+
+def test_job_create_contract_carries_input_datasets() -> None:
+    request = JobCreateRequest(
+        job_config={"job_name": "job-1"},
+        input_datasets=[
+            InputDataset(
+                name="dataset-a",
+                version="v1",
+                uri="cos://bucket/datasets/dataset-a/v1/dataset.tar.gz",
+                checksum_sha256="abc",
+            )
+        ],
+    )
+
+    assert request.input_datasets[0].source_type == "cos"
+    assert request.input_datasets[0].format == "tar.gz"
+
+
+def test_input_state_update_contract_round_trips() -> None:
+    update = InputStateUpdateRequest(
+        input_state=InputState.SUCCEEDED,
+        materialized_inputs=[
+            MaterializedInputDataset(
+                name="dataset-a",
+                source_type="cos",
+                uri="cos://bucket/datasets/dataset-a/v1/dataset.tar.gz",
+                format="tar.gz",
+                checksum_sha256="abc",
+                target="dataset-a",
+                local_path="inputs/datasets/dataset-a",
+                size_bytes=123,
+                state=InputState.SUCCEEDED,
+            )
+        ],
+    )
+
+    restored = InputStateUpdateRequest.model_validate_json(update.model_dump_json())
+
+    assert restored == update
+    assert restored.materialized_inputs[0].state == InputState.SUCCEEDED

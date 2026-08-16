@@ -10,5 +10,10 @@ rocketmq_topic = "harbor_jobs"
 rocketmq_consumer_group = "harbor-runners"
 rocketmq_ack_timeout_sec = 3600
 
+[artifact_storage]
+backend = "runner-local"
+retain_local = true
+upload_manifest = true
+
 [capabilities]
 providers = ["docker", "ags", "tke"]

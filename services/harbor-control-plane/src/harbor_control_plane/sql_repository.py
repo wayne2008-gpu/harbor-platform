@@ -4,8 +4,12 @@ from typing import Any
 from harbor_service_contracts import (
     ArtifactCreateRequest,
     ArtifactResponse,
+    ArtifactState,
+    InputDataset,
+    InputState,
     JobSnapshotRequest,
     JobState,
+    MaterializedInputDataset,
     RunnerHeartbeatRequest,
     RunnerState,
     TrialState,
@@ -37,15 +41,23 @@ class SqlJobRepository:
         *,
         job_id: str,
         job_config: dict[str, Any],
-        provider: str | None,
+        input_datasets: list[InputDataset] | None = None,
+        provider: str | None = None,
     ) -> JobRecord:
         now = _utcnow()
+        input_datasets = input_datasets or []
         with self.engine.begin() as connection:
             connection.execute(
                 insert(jobs_table).values(
                     id=job_id,
                     state=JobState.QUEUED.value,
+                    input_state=InputState.PENDING.value,
+                    artifact_state=ArtifactState.PENDING.value,
                     job_config_json=job_config,
+                    input_datasets_json=[
+                        dataset.model_dump(mode="json") for dataset in input_datasets
+                    ],
+                    materialized_inputs_json=[],
                     provider=provider,
                     updated_at=now,
                     created_at=now,
@@ -104,18 +116,22 @@ class SqlJobRepository:
     def requeue_expired_leases(self, *, now: datetime | None = None) -> list[str]:
         cutoff = now or _utcnow()
         with self.engine.begin() as connection:
-            expired_rows = connection.execute(
-                select(
-                    jobs_table.c.id,
-                    jobs_table.c.runner_id,
-                    jobs_table.c.lease_id,
-                ).where(
-                    jobs_table.c.state == JobState.LEASED.value,
-                    jobs_table.c.cancel_requested_at.is_(None),
-                    jobs_table.c.lease_expires_at.is_not(None),
-                    jobs_table.c.lease_expires_at <= cutoff,
+            expired_rows = (
+                connection.execute(
+                    select(
+                        jobs_table.c.id,
+                        jobs_table.c.runner_id,
+                        jobs_table.c.lease_id,
+                    ).where(
+                        jobs_table.c.state == JobState.LEASED.value,
+                        jobs_table.c.cancel_requested_at.is_(None),
+                        jobs_table.c.lease_expires_at.is_not(None),
+                        jobs_table.c.lease_expires_at <= cutoff,
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             if not expired_rows:
                 return []
             job_ids = [row["id"] for row in expired_rows]
@@ -143,9 +159,11 @@ class SqlJobRepository:
 
     def get_job(self, job_id: str) -> JobRecord:
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(jobs_table).where(jobs_table.c.id == job_id)
-            ).mappings().first()
+            row = (
+                connection.execute(select(jobs_table).where(jobs_table.c.id == job_id))
+                .mappings()
+                .first()
+            )
         if row is None:
             raise JobNotFoundError(job_id)
         return _job_record_from_row(row)
@@ -153,18 +171,20 @@ class SqlJobRepository:
     def list_trials(self, job_id: str) -> list[TrialStatusResponse]:
         self.get_job(job_id)
         with self.engine.begin() as connection:
-            rows = connection.execute(
-                select(trials_table).where(trials_table.c.job_id == job_id)
-            ).mappings().all()
+            rows = (
+                connection.execute(
+                    select(trials_table).where(trials_table.c.job_id == job_id)
+                )
+                .mappings()
+                .all()
+            )
         return [_trial_response_from_row(row) for row in rows]
 
     def request_cancel(self, job_id: str) -> JobRecord:
         record = self.get_job(job_id)
         now = _utcnow()
         next_state = (
-            JobState.CANCELLED
-            if record.state == JobState.QUEUED
-            else record.state
+            JobState.CANCELLED if record.state == JobState.QUEUED else record.state
         )
         finished_at = now if next_state == JobState.CANCELLED else record.finished_at
         with self.engine.begin() as connection:
@@ -271,7 +291,9 @@ class SqlJobRepository:
         now = _utcnow()
         with self.engine.begin() as connection:
             existing = connection.execute(
-                select(runners_table.c.id).where(runners_table.c.id == request.runner_id)
+                select(runners_table.c.id).where(
+                    runners_table.c.id == request.runner_id
+                )
             ).first()
             values = {
                 "state": request.state.value,
@@ -306,9 +328,7 @@ class SqlJobRepository:
             rows = connection.execute(select(runners_table)).mappings().all()
         return [_runner_record_from_row(row) for row in rows]
 
-    def mark_stale_runners_offline(
-        self, *, stale_before: datetime
-    ) -> list[str]:
+    def mark_stale_runners_offline(self, *, stale_before: datetime) -> list[str]:
         now = _utcnow()
         with self.engine.begin() as connection:
             rows = connection.execute(
@@ -329,9 +349,13 @@ class SqlJobRepository:
 
     def _get_runner(self, runner_id: str) -> RunnerRecord:
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(runners_table).where(runners_table.c.id == runner_id)
-            ).mappings().first()
+            row = (
+                connection.execute(
+                    select(runners_table).where(runners_table.c.id == runner_id)
+                )
+                .mappings()
+                .first()
+            )
         if row is None:
             raise ValueError(f"Runner not found: {runner_id}")
         return _runner_record_from_row(row)
@@ -349,7 +373,13 @@ class SqlJobRepository:
                     kind=request.kind,
                     storage_type=request.storage_type,
                     storage_key=request.storage_key,
+                    relative_path=request.relative_path,
+                    checksum_sha256=request.checksum_sha256,
+                    etag=request.etag,
+                    content_type=request.content_type,
                     size_bytes=request.size_bytes,
+                    metadata_json=request.metadata,
+                    uploaded_at=request.uploaded_at,
                     created_at=now,
                 )
             )
@@ -361,27 +391,142 @@ class SqlJobRepository:
             kind=request.kind,
             storage_type=request.storage_type,
             storage_key=request.storage_key,
+            relative_path=request.relative_path,
+            checksum_sha256=request.checksum_sha256,
+            etag=request.etag,
+            content_type=request.content_type,
             size_bytes=request.size_bytes,
+            uploaded_at=request.uploaded_at,
+            metadata=request.metadata,
             created_at=now,
         )
+
+    def update_artifact_state(
+        self,
+        job_id: str,
+        *,
+        artifact_state: ArtifactState,
+        error_message: str | None = None,
+    ) -> JobRecord:
+        self.get_job(job_id)
+        now = _utcnow()
+        values: dict[str, Any] = {
+            "artifact_state": artifact_state.value,
+            "updated_at": now,
+        }
+        if error_message is not None:
+            values["error_message"] = error_message
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(jobs_table).where(jobs_table.c.id == job_id).values(**values)
+            )
+            self._insert_event(
+                connection,
+                job_id=job_id,
+                event_type="artifact_state",
+                payload={
+                    "artifact_state": artifact_state.value,
+                    "error_message": error_message,
+                },
+                created_at=now,
+            )
+        return self.get_job(job_id)
+
+    def update_input_state(
+        self,
+        job_id: str,
+        *,
+        input_state: InputState,
+        materialized_inputs: list[MaterializedInputDataset] | None = None,
+        error_message: str | None = None,
+    ) -> JobRecord:
+        self.get_job(job_id)
+        now = _utcnow()
+        values: dict[str, Any] = {
+            "input_state": input_state.value,
+            "updated_at": now,
+        }
+        if materialized_inputs is not None:
+            values["materialized_inputs_json"] = [
+                item.model_dump(mode="json") for item in materialized_inputs
+            ]
+        if error_message is not None:
+            values["error_message"] = error_message
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(jobs_table).where(jobs_table.c.id == job_id).values(**values)
+            )
+            self._insert_event(
+                connection,
+                job_id=job_id,
+                event_type="input_state",
+                payload={
+                    "input_state": input_state.value,
+                    "error_message": error_message,
+                },
+                created_at=now,
+            )
+        return self.get_job(job_id)
+
+    def mark_input_materialization_failed(
+        self,
+        job_id: str,
+        *,
+        error_message: str,
+        materialized_inputs: list[MaterializedInputDataset] | None = None,
+    ) -> JobRecord:
+        self.get_job(job_id)
+        now = _utcnow()
+        values: dict[str, Any] = {
+            "state": JobState.FAILED.value,
+            "input_state": InputState.FAILED.value,
+            "error_type": "input_materialization_failed",
+            "error_message": error_message,
+            "updated_at": now,
+            "finished_at": now,
+        }
+        if materialized_inputs is not None:
+            values["materialized_inputs_json"] = [
+                item.model_dump(mode="json") for item in materialized_inputs
+            ]
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(jobs_table).where(jobs_table.c.id == job_id).values(**values)
+            )
+            self._insert_event(
+                connection,
+                job_id=job_id,
+                event_type="input_materialization_failed",
+                payload={"error_message": error_message},
+                created_at=now,
+            )
+        return self.get_job(job_id)
 
     def list_artifacts(self, job_id: str) -> list[ArtifactResponse]:
         self.get_job(job_id)
         with self.engine.begin() as connection:
-            rows = connection.execute(
-                select(artifacts_table).where(artifacts_table.c.job_id == job_id)
-            ).mappings().all()
+            rows = (
+                connection.execute(
+                    select(artifacts_table).where(artifacts_table.c.job_id == job_id)
+                )
+                .mappings()
+                .all()
+            )
         return [_artifact_response_from_row(row) for row in rows]
 
     def get_artifact(self, job_id: str, artifact_id: int) -> ArtifactResponse:
         self.get_job(job_id)
         with self.engine.begin() as connection:
-            row = connection.execute(
-                select(artifacts_table).where(
-                    artifacts_table.c.job_id == job_id,
-                    artifacts_table.c.id == artifact_id,
+            row = (
+                connection.execute(
+                    select(artifacts_table).where(
+                        artifacts_table.c.job_id == job_id,
+                        artifacts_table.c.id == artifact_id,
+                    )
                 )
-            ).mappings().first()
+                .mappings()
+                .first()
+            )
         if row is None:
             raise ValueError(str(artifact_id))
         return _artifact_response_from_row(row)
@@ -411,7 +556,17 @@ def _job_record_from_row(row) -> JobRecord:
     return JobRecord(
         id=row["id"],
         state=JobState(row["state"]),
+        input_state=InputState(row["input_state"]),
+        artifact_state=ArtifactState(row["artifact_state"]),
         job_config=row["job_config_json"],
+        input_datasets=[
+            InputDataset.model_validate(item)
+            for item in (row["input_datasets_json"] or [])
+        ],
+        materialized_inputs=[
+            MaterializedInputDataset.model_validate(item)
+            for item in (row["materialized_inputs_json"] or [])
+        ],
         provider=row["provider"],
         runner_id=row["runner_id"],
         lease_id=row["lease_id"],
@@ -444,7 +599,13 @@ def _artifact_response_from_row(row) -> ArtifactResponse:
         kind=row["kind"],
         storage_type=row["storage_type"],
         storage_key=row["storage_key"],
+        relative_path=row["relative_path"],
+        checksum_sha256=row["checksum_sha256"],
+        etag=row["etag"],
+        content_type=row["content_type"],
         size_bytes=row["size_bytes"],
+        uploaded_at=row["uploaded_at"],
+        metadata=row["metadata_json"],
         created_at=row["created_at"],
     )
 
@@ -467,7 +628,6 @@ def _trial_response_from_row(row) -> TrialStatusResponse:
     )
 
 
-
 def _trial_insert_values(trial: TrialStatusResponse) -> dict[str, Any]:
     return {
         "id": trial.id,
@@ -484,6 +644,7 @@ def _trial_insert_values(trial: TrialStatusResponse) -> dict[str, Any]:
         "updated_at": trial.updated_at,
         "finished_at": trial.finished_at,
     }
+
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)

@@ -4,11 +4,15 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query, status
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from harbor.models.job.config import JobConfig
 from harbor_service_contracts import (
     ArtifactCreateRequest,
+    ArtifactDownloadUrlResponse,
     ArtifactResponse,
+    ArtifactStateUpdateRequest,
+    InputState,
+    InputStateUpdateRequest,
     JobCreateRequest,
     JobDispatchMessage,
     JobDispatchRouting,
@@ -23,7 +27,11 @@ from harbor_service_contracts import (
 )
 from pydantic import ValidationError
 
-from harbor_control_plane.artifact_proxy import serve_runner_local_artifact
+from harbor_control_plane.artifact_resolver import (
+    ArtifactResolver,
+    RunnerLocalArtifactResolver,
+    read_artifact_json,
+)
 from harbor_control_plane.publisher import InMemoryJobPublisher
 from harbor_control_plane.repository import InMemoryJobRepository, JobNotFoundError
 
@@ -33,10 +41,14 @@ def create_app(
     repository: Any | None = None,
     publisher: InMemoryJobPublisher | None = None,
     artifact_allowed_root: Path | None = None,
+    artifact_resolver: ArtifactResolver | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Harbor Control Plane")
     repo = repository or InMemoryJobRepository()
     job_publisher = publisher or InMemoryJobPublisher()
+    resolver = artifact_resolver
+    if resolver is None and artifact_allowed_root is not None:
+        resolver = RunnerLocalArtifactResolver(allowed_root=artifact_allowed_root)
 
     app.state.repository = repo
     app.state.publisher = job_publisher
@@ -57,6 +69,7 @@ def create_app(
         record = repo.create_job(
             job_id=job_id,
             job_config=resolved_config,
+            input_datasets=request.input_datasets,
             provider=provider,
         )
         try:
@@ -122,12 +135,13 @@ def create_app(
         )
 
     @app.post("/internal/jobs/{job_id}/snapshot", response_model=JobStatusResponse)
-    def apply_job_snapshot(job_id: str, request: JobSnapshotRequest) -> JobStatusResponse:
+    def apply_job_snapshot(
+        job_id: str, request: JobSnapshotRequest
+    ) -> JobStatusResponse:
         try:
             return repo.apply_snapshot(job_id, request).to_response()
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
-
 
     @app.post(
         "/internal/jobs/{job_id}/artifacts",
@@ -142,6 +156,48 @@ def create_app(
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
 
+    @app.post(
+        "/internal/jobs/{job_id}/artifact-state",
+        response_model=JobStatusResponse,
+    )
+    def update_artifact_state(
+        job_id: str,
+        request: ArtifactStateUpdateRequest,
+    ) -> JobStatusResponse:
+        try:
+            return repo.update_artifact_state(
+                job_id,
+                artifact_state=request.artifact_state,
+                error_message=request.error_message,
+            ).to_response()
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
+
+    @app.post(
+        "/internal/jobs/{job_id}/input-state",
+        response_model=JobStatusResponse,
+    )
+    def update_input_state(
+        job_id: str,
+        request: InputStateUpdateRequest,
+    ) -> JobStatusResponse:
+        try:
+            if request.input_state == InputState.FAILED:
+                return repo.mark_input_materialization_failed(
+                    job_id,
+                    error_message=request.error_message
+                    or "Input materialization failed",
+                    materialized_inputs=request.materialized_inputs,
+                ).to_response()
+            return repo.update_input_state(
+                job_id,
+                input_state=request.input_state,
+                materialized_inputs=request.materialized_inputs,
+                error_message=request.error_message,
+            ).to_response()
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
+
     @app.get("/jobs/{job_id}/artifacts", response_model=list[ArtifactResponse])
     def list_artifacts(job_id: str) -> list[ArtifactResponse]:
         try:
@@ -149,23 +205,55 @@ def create_app(
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
 
-
-    @app.get("/jobs/{job_id}/artifacts/{artifact_id}/content")
-    def get_artifact_content(job_id: str, artifact_id: int) -> FileResponse:
-        if artifact_allowed_root is None:
-            raise HTTPException(status_code=404, detail="Artifact proxy is disabled")
+    @app.get(
+        "/jobs/{job_id}/trials/{trial_id}/artifacts",
+        response_model=list[ArtifactResponse],
+    )
+    def list_trial_artifacts(
+        job_id: str,
+        trial_id: str,
+    ) -> list[ArtifactResponse]:
         try:
-            artifact = repo.get_artifact(job_id, artifact_id)
+            return [
+                artifact
+                for artifact in repo.list_artifacts(job_id)
+                if artifact.trial_id == trial_id
+            ]
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail="Artifact not found") from exc
-        if artifact.storage_type != "runner-local":
-            raise HTTPException(status_code=400, detail="Artifact is not runner-local")
-        return serve_runner_local_artifact(
-            storage_key=artifact.storage_key,
-            allowed_root=artifact_allowed_root,
-        )
+
+    @app.get("/jobs/{job_id}/artifacts/{artifact_id}/content")
+    def get_artifact_content(job_id: str, artifact_id: int) -> Response:
+        if resolver is None:
+            raise HTTPException(status_code=404, detail="Artifact proxy is disabled")
+        artifact = _get_artifact_or_404(repo, job_id, artifact_id)
+        return resolver.content_response(artifact)
+
+    @app.get(
+        "/jobs/{job_id}/artifacts/{artifact_id}/download-url",
+        response_model=ArtifactDownloadUrlResponse,
+    )
+    def get_artifact_download_url(
+        job_id: str,
+        artifact_id: int,
+    ) -> ArtifactDownloadUrlResponse:
+        if resolver is None:
+            raise HTTPException(status_code=404, detail="Artifact proxy is disabled")
+        artifact = _get_artifact_or_404(repo, job_id, artifact_id)
+        return resolver.download_url(artifact)
+
+    @app.get("/jobs/{job_id}/trials/{trial_id}/trajectory")
+    def get_trial_trajectory(job_id: str, trial_id: str) -> Any:
+        if resolver is None:
+            raise HTTPException(status_code=404, detail="Artifact proxy is disabled")
+        try:
+            artifacts = repo.list_artifacts(job_id)
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
+        trajectory = _select_trajectory_artifact(artifacts, trial_id=trial_id)
+        if trajectory is None:
+            raise HTTPException(status_code=404, detail="Trajectory artifact not found")
+        return read_artifact_json(resolver=resolver, artifact=trajectory)
 
     @app.post("/runners/heartbeat", response_model=RunnerHeartbeatResponse)
     def heartbeat_runner(request: RunnerHeartbeatRequest) -> RunnerHeartbeatResponse:
@@ -211,3 +299,34 @@ def _get_job_or_404(repo: Any, job_id: str):
         return repo.get_job(job_id)
     except JobNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Job not found") from exc
+
+
+def _get_artifact_or_404(repo: Any, job_id: str, artifact_id: int) -> ArtifactResponse:
+    try:
+        return repo.get_artifact(job_id, artifact_id)
+    except JobNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Job not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Artifact not found") from exc
+
+
+def _select_trajectory_artifact(
+    artifacts: list[ArtifactResponse],
+    *,
+    trial_id: str,
+) -> ArtifactResponse | None:
+    candidates = [
+        artifact
+        for artifact in artifacts
+        if artifact.trial_id == trial_id and artifact.kind == "trajectory"
+    ]
+    if not candidates:
+        return None
+
+    def priority(artifact: ArtifactResponse) -> tuple[int, str]:
+        relative_path = artifact.relative_path or artifact.storage_key
+        if relative_path.endswith(("/agent/trajectory.json", "agent/trajectory.json")):
+            return (0, relative_path)
+        return (1, relative_path)
+
+    return min(candidates, key=priority)

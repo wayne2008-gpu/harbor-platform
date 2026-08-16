@@ -11,9 +11,28 @@ synthetic-data-platform
   -> harbor-api
   -> MySQL + RocketMQ
   -> harbor-runner instances
-  -> harbor run subprocesses
-  -> docker / ags / tke / e2b / other Harbor environments
+  -> harbor-runtime subprocesses
+  -> agent-runtime environments
 ```
+
+## Runtime Terminology
+
+Use these terms consistently:
+
+- `harbor-runner`: the distributed worker daemon. It receives dispatched jobs, obtains job leases, starts execution, reports snapshots, heartbeats, and records artifacts.
+- `harbor-runtime`: the Harbor CLI execution control code run by the runner, currently `harbor job start`. It parses `JobConfig`, schedules trials, calls agents/environments/verifiers, and writes Harbor job/trial results.
+- `agent-runtime`: the actual task execution environment used by an agent, such as a Docker container, AGS sandbox, TKE Pod, E2B sandbox, or another Harbor environment backend.
+
+Deployment relationship:
+
+```text
+harbor-runner Pod/container
+  ├─ harbor-runner daemon
+  └─ harbor-runtime
+       └─ creates or connects to agent-runtime through the selected provider
+```
+
+`harbor-runner` and `harbor-runtime` are packaged together in the runner image. `agent-runtime` is provider-dependent and is not necessarily in the same Pod/container.
 
 ## Repository Layout
 
@@ -45,7 +64,7 @@ harbor-platform/
 - Tencent Cloud TKE environment
 - future `harbor-runner`
 
-`harbor-runner` belongs in the Harbor submodule because it controls `harbor run`, reads Harbor `jobs/` layout, and depends on `JobConfig`, `JobResult`, and `TrialResult` semantics.
+`harbor-runner` belongs in the Harbor submodule because it launches the `harbor-runtime`, reads Harbor `jobs/` layout, and depends on `JobConfig`, `JobResult`, and `TrialResult` semantics.
 
 ### Harbor Control Plane
 
@@ -94,21 +113,36 @@ Use RocketMQ as the dispatch channel:
 
 RocketMQ does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
 
+`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RocketMQ message. `harbor-runner` instances consume messages or poll queued jobs, obtain a MySQL-backed lease, then invoke the local `harbor-runtime`.
+
 ## PoC Storage Model
 
-In PoC:
+Detailed COS artifact storage design lives in [`cos-artifact-storage-design.md`](cos-artifact-storage-design.md).
+Detailed COS input dataset materialization design lives in
+[`cos-input-dataset-materialization-design.md`](cos-input-dataset-materialization-design.md).
 
-- each runner keeps its own local `jobs/` directory
-- runner scans `jobs/<job_id>/result.json` and trial directories
-- runner writes progress into MySQL
-- `harbor-api` queries MySQL for status
-- for logs/artifacts, `harbor-api` can route through `job_id -> runner_id -> runner_internal_url`
+The platform currently supports two artifact storage modes:
 
-In production:
+- `runner-local`: default local development mode. Each runner keeps its own local `jobs/` directory and `harbor-api` may serve files only from an explicitly allowed local root.
+- `cos`: production-oriented mode. `harbor-runner` uploads collected artifacts to Tencent Cloud COS, records `cos://<bucket>/<key>` metadata in MySQL, and `harbor-api` serves either signed URLs or proxy streams.
 
-- runner uploads logs/artifacts to object storage
-- MySQL stores artifact keys
-- `harbor-api` reads through object storage instead of runner-local files
+In both modes:
+
+- runner scans `jobs/<job_id>/result.json` and trial directories after execution
+- runner records artifact rows through `harbor-api`
+- MySQL remains the artifact index
+- `synthetic-data-platform` reads results and trajectories through `harbor-api`, not runner-local paths or COS credentials
+
+COS configuration is TOML-based in the current iteration, including literal COS credentials. Replacing credential fields with env/K8s Secret references is a later hardening step.
+
+Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files.
+
+Input datasets are handled separately from output artifacts. `synthetic-data-platform`
+can submit `input_datasets` with COS URIs to `harbor-api`; `harbor-api` stores
+those declarations in MySQL; `harbor-runner` downloads and validates them under
+`jobs/<job_id>/inputs/`, rewrites Harbor `JobConfig.datasets` to local paths, and
+then starts `harbor-runtime`. The runner also records `inputs/manifest.json` as
+`kind = "input-manifest"` so callers can inspect what was materialized.
 
 ## Concurrency Model
 
