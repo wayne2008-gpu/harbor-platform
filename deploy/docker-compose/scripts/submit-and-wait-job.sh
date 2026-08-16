@@ -11,6 +11,9 @@ expect_runners=${HARBOR_SMOKE_EXPECT_RUNNERS:-1}
 require_trials=${HARBOR_SMOKE_REQUIRE_TRIALS:-1}
 require_result_artifact=${HARBOR_SMOKE_REQUIRE_RESULT_ARTIFACT:-1}
 require_artifact_manifest=${HARBOR_SMOKE_REQUIRE_ARTIFACT_MANIFEST:-1}
+require_input_manifest=${HARBOR_SMOKE_REQUIRE_INPUT_MANIFEST:-0}
+require_input_state=${HARBOR_SMOKE_REQUIRE_INPUT_STATE:-}
+require_materialized_inputs=${HARBOR_SMOKE_REQUIRE_MATERIALIZED_INPUTS:-0}
 metadata_timeout_sec=${HARBOR_SMOKE_METADATA_TIMEOUT_SEC:-60}
 
 require_command() {
@@ -61,6 +64,16 @@ metadata_ready() {
         <<<"$artifacts_json"
     )
     if [ "$artifact_manifest_count" -lt 1 ]; then
+      return 1
+    fi
+  fi
+
+  if [ "$require_input_manifest" -ne 0 ]; then
+    input_manifest_count=$(
+      jq -r '[.[] | select(.kind == "input-manifest")] | length' \
+        <<<"$artifacts_json"
+    )
+    if [ "$input_manifest_count" -lt 1 ]; then
       return 1
     fi
   fi
@@ -192,6 +205,31 @@ if [ "$require_artifact_manifest" -ne 0 ]; then
     "artifact-manifest count" \
     "$artifacts_json" \
     '[.[] | select(.kind == "artifact-manifest")] | length' \
+    1
+fi
+
+if [ "$require_input_manifest" -ne 0 ]; then
+  assert_json_count_at_least \
+    "input-manifest count" \
+    "$artifacts_json" \
+    '[.[] | select(.kind == "input-manifest")] | length' \
+    1
+fi
+
+if [ -n "$require_input_state" ]; then
+  input_state=$(jq -r '.input_state // empty' <<<"$job_json")
+  if [ "$input_state" != "$require_input_state" ]; then
+    echo \
+      "Expected input_state=$require_input_state, got ${input_state:-empty}" >&2
+    exit 1
+  fi
+fi
+
+if [ "$require_materialized_inputs" -ne 0 ]; then
+  assert_json_count_at_least \
+    "materialized input count" \
+    "$job_json" \
+    '.materialized_inputs | length' \
     1
 fi
 

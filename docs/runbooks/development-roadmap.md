@@ -221,6 +221,14 @@ Implementation checkpoints:
 7. M23: synthetic-data-platform `input_datasets` pass-through.
 8. M24: docs, compose examples, tests, and local validation.
 
+Current status:
+
+- M17-M23 are implemented across contracts, harbor-api, harbor-runner, and
+  synthetic-data-platform.
+- M24 adds the local COS input materialization smoke payload, optional smoke
+  assertions for `input_state` and `input-manifest`, and the local E2E runbook:
+  [`cos-input-materialization-local-e2e.md`](cos-input-materialization-local-e2e.md).
+
 Hardening backlog:
 
 - replace literal TOML COS credentials with env/K8s Secret references

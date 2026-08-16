@@ -90,3 +90,15 @@ export HARBOR_PLATFORM_ROOT=$(cd ../.. && pwd)
 
 成功验收和 Docker smoke 一致：API 提交、MySQL lease、runner 执行、
 terminal snapshot、trial 明细和 artifact metadata 都必须可查。
+
+## COS Input Materialization
+
+如果要验证输入 dataset 从 COS 下载、校验、解压并重写给 `harbor-runtime`，
+使用专门 runbook：
+[`cos-input-materialization-local-e2e.md`](cos-input-materialization-local-e2e.md)。
+
+该流程会额外断言：
+
+- job `input_state = "succeeded"`
+- `materialized_inputs` 非空
+- artifacts 中存在 `kind = "input-manifest"`
