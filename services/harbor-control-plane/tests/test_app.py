@@ -354,6 +354,186 @@ def test_update_artifact_state_does_not_change_execution_state() -> None:
     assert response.json()["error_message"] == "cos timeout"
 
 
+def test_query_endpoints_return_filtered_paginated_results() -> None:
+    client, _repo, _publisher = _client()
+    first = client.post(
+        "/jobs",
+        json={
+            "job_config": {"job_name": "job-1", "environment": {"type": "tke"}},
+        },
+    ).json()
+    second = client.post(
+        "/jobs",
+        json={"job_config": {"job_name": "job-2", "environment": {"type": "ags"}}},
+    ).json()
+    client.post(
+        f"/internal/jobs/{first['id']}/snapshot",
+        json={
+            "runner_id": "runner-1",
+            "state": "succeeded",
+            "result_json": {"trial_results": [_trial_result_json()]},
+        },
+    )
+    client.post(
+        f"/internal/jobs/{first['id']}/artifacts",
+        json={
+            "kind": "trajectory",
+            "storage_type": "cos",
+            "storage_key": "cos://bucket/jobs/job-1/trial-1/agent/trajectory.json",
+            "trial_id": "trial-1",
+        },
+    )
+
+    jobs = client.post(
+        "/jobs/query",
+        json={"states": ["queued"], "provider": "ags", "limit": 1},
+    )
+    trials = client.post(
+        "/trials/query",
+        json={"job_id": first["id"], "states": ["succeeded"]},
+    )
+    artifacts = client.post(
+        "/artifacts/query",
+        json={"job_id": first["id"], "kinds": ["trajectory"]},
+    )
+    batch = client.post(
+        "/jobs/batch-get",
+        json={"ids": [second["id"], first["id"]]},
+    )
+
+    assert jobs.status_code == 200
+    assert [item["id"] for item in jobs.json()["items"]] == [second["id"]]
+    assert jobs.json()["limit"] == 1
+    assert trials.json()["items"][0]["id"] == "trial-1"
+    assert artifacts.json()["items"][0]["kind"] == "trajectory"
+    assert [item["id"] for item in batch.json()] == [second["id"], first["id"]]
+
+
+def test_cancel_running_job_sets_cancelling_and_control_state() -> None:
+    client, _repo, _publisher = _client()
+    job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
+        "id"
+    ]
+    client.post(
+        f"/internal/jobs/{job_id}/lease",
+        json={
+            "runner_id": "runner-1",
+            "lease_id": "lease-1",
+            "lease_expires_at": "2099-01-01T00:05:00Z",
+        },
+    )
+    client.post(
+        f"/internal/jobs/{job_id}/snapshot",
+        json={"runner_id": "runner-1", "state": "running"},
+    )
+
+    cancelled = client.post(
+        f"/jobs/{job_id}/cancel",
+        json={
+            "reason": "user requested",
+            "mode": "graceful",
+            "grace_period_sec": 5,
+            "cancelled_by": "tester",
+        },
+    )
+    control = client.get(f"/internal/jobs/{job_id}/control")
+
+    assert cancelled.status_code == 200
+    assert cancelled.json()["state"] == "cancelling"
+    assert cancelled.json()["cancel_reason"] == "user requested"
+    assert control.json()["cancel_requested"] is True
+    assert control.json()["cancel_grace_period_sec"] == 5
+
+
+def test_claim_jobs_matches_runner_capabilities() -> None:
+    client, _repo, _publisher = _client()
+    job_id = client.post(
+        "/jobs",
+        json={
+            "job_config": {"job_name": "job-1", "environment": {"type": "tke"}},
+            "input_datasets": [
+                {
+                    "name": "dataset-a",
+                    "uri": "cos://harbor-datasets/datasets/a.tar.gz",
+                    "checksum_sha256": "abc",
+                }
+            ],
+        },
+    ).json()["id"]
+
+    no_match = client.post(
+        "/internal/jobs/claim",
+        json={
+            "runner_id": "runner-1",
+            "max_jobs": 1,
+            "capabilities": {"providers": ["tke"], "features": []},
+        },
+    )
+    matched = client.post(
+        "/internal/jobs/claim",
+        json={
+            "runner_id": "runner-1",
+            "max_jobs": 1,
+            "capabilities": {"providers": ["tke"], "features": ["cos-input"]},
+        },
+    )
+
+    assert no_match.json() == {"claimed": []}
+    assert matched.json()["claimed"][0]["job_id"] == job_id
+    assert matched.json()["claimed"][0]["job"]["state"] == "leased"
+
+
+def test_retry_job_and_artifacts() -> None:
+    client, _repo, publisher = _client()
+    original = client.post(
+        "/jobs",
+        json={"job_config": {"job_name": "job-1", "environment": {"type": "ags"}}},
+    ).json()
+    client.post(
+        f"/internal/jobs/{original['id']}/lease",
+        json={
+            "runner_id": "runner-1",
+            "lease_id": "lease-1",
+            "lease_expires_at": "2099-01-01T00:05:00Z",
+        },
+    )
+    client.post(
+        f"/internal/jobs/{original['id']}/snapshot",
+        json={"runner_id": "runner-1", "state": "succeeded"},
+    )
+    client.post(
+        f"/internal/jobs/{original['id']}/artifact-state",
+        json={"artifact_state": "partial_failed", "error_message": "cos timeout"},
+    )
+
+    artifact_retry = client.post(
+        f"/jobs/{original['id']}/artifacts/retry",
+        json={"reason": "retry upload"},
+    )
+    job_retry = client.post(
+        f"/jobs/{original['id']}/retry",
+        json={"reason": "rerun"},
+    )
+    artifact_claim = client.post(
+        "/internal/jobs/claim",
+        json={"runner_id": "runner-1", "max_jobs": 1},
+    )
+
+    assert artifact_retry.status_code == 200
+    assert artifact_retry.json()["artifact_state"] == "pending"
+    assert artifact_retry.json()["error_message"] == "retry upload"
+    assert artifact_claim.json()["claimed"][0]["job_id"] == original["id"]
+    assert artifact_claim.json()["claimed"][0]["action"] == "artifact-retry"
+    assert job_retry.status_code == 200
+    assert job_retry.json()["parent_job_id"] == original["id"]
+    assert job_retry.json()["root_job_id"] == original["id"]
+    assert job_retry.json()["attempt"] == 2
+    assert [message.job_id for message in publisher.messages] == [
+        original["id"],
+        job_retry.json()["id"],
+    ]
+
+
 def test_update_input_state_does_not_change_execution_state_on_success() -> None:
     client, _repo, _publisher = _client()
     job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[

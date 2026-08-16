@@ -9,20 +9,33 @@ from harbor.models.job.config import JobConfig
 from harbor_service_contracts import (
     ArtifactCreateRequest,
     ArtifactDownloadUrlResponse,
+    ArtifactPageResponse,
+    ArtifactQueryRequest,
     ArtifactResponse,
+    ArtifactRetryRequest,
     ArtifactStateUpdateRequest,
     InputState,
     InputStateUpdateRequest,
+    JobBatchGetRequest,
+    JobCancelRequest,
+    JobClaimRequest,
+    JobClaimResponse,
+    JobControlResponse,
     JobCreateRequest,
     JobDispatchMessage,
     JobDispatchRouting,
     JobLeaseRequest,
     JobLeaseResponse,
+    JobPageResponse,
+    JobQueryRequest,
+    JobRetryRequest,
     JobSnapshotRequest,
     JobStatusResponse,
     RunnerHeartbeatRequest,
     RunnerHeartbeatResponse,
     RunnerStatusResponse,
+    TrialPageResponse,
+    TrialQueryRequest,
     TrialStatusResponse,
 )
 from pydantic import ValidationError
@@ -65,11 +78,17 @@ def create_app(
     def create_job(request: JobCreateRequest) -> JobStatusResponse:
         resolved_config = _resolve_job_config(request.job_config)
         provider = _provider_from_job_config(resolved_config)
+        requirements = _job_requirements(
+            provider=provider,
+            input_datasets=request.input_datasets,
+            requested=request.requirements,
+        )
         job_id = uuid4().hex
         record = repo.create_job(
             job_id=job_id,
             job_config=resolved_config,
             input_datasets=request.input_datasets,
+            requirements=requirements,
             provider=provider,
         )
         try:
@@ -92,6 +111,22 @@ def create_app(
     def get_job(job_id: str) -> JobStatusResponse:
         return _get_job_or_404(repo, job_id).to_response()
 
+    @app.post("/jobs/batch-get", response_model=list[JobStatusResponse])
+    def batch_get_jobs(request: JobBatchGetRequest) -> list[JobStatusResponse]:
+        return repo.batch_get_jobs(request)
+
+    @app.post("/jobs/query", response_model=JobPageResponse)
+    def query_jobs(request: JobQueryRequest) -> JobPageResponse:
+        return repo.query_jobs(request)
+
+    @app.post("/trials/query", response_model=TrialPageResponse)
+    def query_trials(request: TrialQueryRequest) -> TrialPageResponse:
+        return repo.query_trials(request)
+
+    @app.post("/artifacts/query", response_model=ArtifactPageResponse)
+    def query_artifacts(request: ArtifactQueryRequest) -> ArtifactPageResponse:
+        return repo.query_artifacts(request)
+
     @app.get("/jobs/{job_id}/trials", response_model=list[TrialStatusResponse])
     def get_job_trials(job_id: str) -> list[TrialStatusResponse]:
         try:
@@ -100,9 +135,47 @@ def create_app(
             raise HTTPException(status_code=404, detail="Job not found") from exc
 
     @app.post("/jobs/{job_id}/cancel", response_model=JobStatusResponse)
-    def cancel_job(job_id: str) -> JobStatusResponse:
+    def cancel_job(
+        job_id: str,
+        request: JobCancelRequest | None = None,
+    ) -> JobStatusResponse:
         try:
-            return repo.request_cancel(job_id).to_response()
+            return repo.request_cancel(
+                job_id, request or JobCancelRequest()
+            ).to_response()
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
+
+    @app.post("/jobs/{job_id}/retry", response_model=JobStatusResponse)
+    def retry_job(job_id: str, request: JobRetryRequest) -> JobStatusResponse:
+        retry = None
+        try:
+            retry = repo.retry_job(job_id, new_job_id=uuid4().hex, request=request)
+            job_publisher.publish_job(
+                JobDispatchMessage(
+                    message_id=uuid4().hex,
+                    job_id=retry.id,
+                    routing=JobDispatchRouting(provider=retry.provider),
+                )
+            )
+            return retry.to_response()
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
+        except Exception as exc:
+            if retry is not None:
+                repo.mark_dispatch_failed(retry.id, error_message=str(exc))
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Failed to publish job retry dispatch message",
+            ) from exc
+
+    @app.post("/jobs/{job_id}/artifacts/retry", response_model=JobStatusResponse)
+    def retry_artifacts(
+        job_id: str,
+        request: ArtifactRetryRequest,
+    ) -> JobStatusResponse:
+        try:
+            return repo.request_artifact_retry(job_id, request).to_response()
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
 
@@ -115,6 +188,17 @@ def create_app(
     @app.post("/internal/jobs/requeue-expired-leases", response_model=list[str])
     def requeue_expired_leases() -> list[str]:
         return repo.requeue_expired_leases()
+
+    @app.post("/internal/jobs/claim", response_model=JobClaimResponse)
+    def claim_jobs(request: JobClaimRequest) -> JobClaimResponse:
+        return repo.claim_jobs(request)
+
+    @app.get("/internal/jobs/{job_id}/control", response_model=JobControlResponse)
+    def get_job_control(job_id: str) -> JobControlResponse:
+        try:
+            return repo.get_job_control(job_id)
+        except JobNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Job not found") from exc
 
     @app.post("/internal/jobs/{job_id}/lease", response_model=JobLeaseResponse)
     def acquire_job_lease(job_id: str, request: JobLeaseRequest) -> JobLeaseResponse:
@@ -292,6 +376,26 @@ def _provider_from_job_config(config: dict[str, Any]) -> str | None:
     if provider is None:
         return None
     return str(provider)
+
+
+def _job_requirements(
+    *,
+    provider: str | None,
+    input_datasets: list,
+    requested: dict[str, Any],
+) -> dict[str, Any]:
+    requirements = dict(requested)
+    if provider is not None:
+        requirements.setdefault("provider", provider)
+    required_features = set(requirements.get("required_features") or [])
+    if any(
+        getattr(dataset, "source_type", None) == "cos" for dataset in input_datasets
+    ):
+        required_features.add("cos-input")
+    if required_features:
+        requirements["required_features"] = sorted(required_features)
+    requirements.setdefault("labels", {})
+    return requirements
 
 
 def _get_job_or_404(repo: Any, job_id: str):

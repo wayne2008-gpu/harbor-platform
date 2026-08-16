@@ -2,14 +2,22 @@ from datetime import UTC, datetime, timedelta
 
 from harbor_service_contracts import (
     ArtifactCreateRequest,
+    ArtifactQueryRequest,
+    ArtifactRetryRequest,
     ArtifactState,
     InputDataset,
     InputState,
+    JobBatchGetRequest,
+    JobCancelRequest,
+    JobClaimRequest,
+    JobQueryRequest,
+    JobRetryRequest,
     JobSnapshotRequest,
     JobState,
     MaterializedInputDataset,
     RunnerHeartbeatRequest,
     RunnerState,
+    TrialQueryRequest,
     TrialState,
 )
 from sqlalchemy import func, select
@@ -309,6 +317,148 @@ def test_sql_repository_records_and_lists_artifacts() -> None:
         "bucket": "bucket",
         "key": "dev/jobs/job-1/result.json",
     }
+
+
+def test_sql_repository_query_and_batch_get_jobs() -> None:
+    repo = _repo()
+    first = repo.create_job(
+        job_id="job-1",
+        job_config={"job_name": "job-1", "environment": {"type": "tke"}},
+        provider="tke",
+        requirements={"provider": "tke"},
+    )
+    second = repo.create_job(
+        job_id="job-2",
+        job_config={"job_name": "job-2", "environment": {"type": "ags"}},
+        provider="ags",
+        requirements={"provider": "ags"},
+    )
+
+    page = repo.query_jobs(JobQueryRequest(states=[JobState.QUEUED], limit=1))
+    next_page = repo.query_jobs(
+        JobQueryRequest(states=[JobState.QUEUED], limit=1, cursor=page.next_cursor)
+    )
+    batch = repo.batch_get_jobs(JobBatchGetRequest(ids=["job-2", "job-1"]))
+
+    assert page.items[0].id == first.id
+    assert page.next_cursor is not None
+    assert next_page.items[0].id == second.id
+    assert [item.id for item in batch] == ["job-2", "job-1"]
+
+
+def test_sql_repository_query_trials_and_artifacts() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(
+            runner_id="runner-1",
+            state=JobState.SUCCEEDED,
+            result_json={"trial_results": [_trial_result_json(rewards={"reward": 1})]},
+        ),
+    )
+    repo.record_artifact(
+        "job-1",
+        ArtifactCreateRequest(
+            kind="trajectory",
+            storage_type="cos",
+            storage_key="cos://bucket/jobs/job-1/trial-1/agent/trajectory.json",
+            trial_id="trial-1",
+        ),
+    )
+
+    trials = repo.query_trials(
+        TrialQueryRequest(job_id="job-1", states=[TrialState.SUCCEEDED])
+    )
+    artifacts = repo.query_artifacts(
+        ArtifactQueryRequest(job_id="job-1", kinds=["trajectory"])
+    )
+
+    assert trials.items[0].id == "trial-1"
+    assert artifacts.items[0].kind == "trajectory"
+
+
+def test_sql_repository_cancel_control_claim_and_retry() -> None:
+    repo = _repo()
+    repo.create_job(
+        job_id="job-1",
+        job_config={"job_name": "job-1", "environment": {"type": "tke"}},
+        input_datasets=[
+            InputDataset(
+                name="dataset-a",
+                uri="cos://harbor-datasets/datasets/a.tar.gz",
+            )
+        ],
+        provider="tke",
+        requirements={"provider": "tke", "required_features": ["cos-input"]},
+    )
+
+    no_match = repo.claim_jobs(
+        JobClaimRequest(
+            runner_id="runner-1",
+            capabilities={"providers": ["tke"], "features": []},
+        )
+    )
+    matched = repo.claim_jobs(
+        JobClaimRequest(
+            runner_id="runner-1",
+            capabilities={"providers": ["tke"], "features": ["cos-input"]},
+        )
+    )
+    cancelled = repo.request_cancel(
+        "job-1",
+        JobCancelRequest(reason="stop", grace_period_sec=5),
+    )
+    control = repo.get_job_control("job-1")
+    retry = repo.retry_job(
+        "job-1",
+        new_job_id="job-2",
+        request=JobRetryRequest(reason="rerun"),
+    )
+    artifact_retry = repo.request_artifact_retry(
+        "job-1",
+        ArtifactRetryRequest(reason="retry upload"),
+    )
+
+    assert no_match.claimed == []
+    assert matched.claimed[0].job_id == "job-1"
+    assert cancelled.state == JobState.CANCELLING
+    assert control.cancel_requested is True
+    assert control.cancel_grace_period_sec == 5
+    assert retry.parent_job_id == "job-1"
+    assert retry.root_job_id == "job-1"
+    assert retry.attempt == 2
+    assert artifact_retry.artifact_state == ArtifactState.PENDING
+    assert artifact_retry.error_message == "retry upload"
+
+
+def test_sql_repository_claims_artifact_retry_for_original_runner() -> None:
+    repo = _repo()
+    repo.create_job(job_id="job-1", job_config={"job_name": "job-1"}, provider=None)
+    repo.acquire_lease(
+        job_id="job-1",
+        runner_id="runner-1",
+        lease_id="lease-1",
+        lease_expires_at=datetime.now(UTC) + timedelta(minutes=5),
+    )
+    repo.apply_snapshot(
+        "job-1",
+        JobSnapshotRequest(runner_id="runner-1", state=JobState.SUCCEEDED),
+    )
+    repo.update_artifact_state(
+        "job-1",
+        artifact_state=ArtifactState.PARTIAL_FAILED,
+        error_message="cos timeout",
+    )
+    repo.request_artifact_retry("job-1", ArtifactRetryRequest(reason="retry upload"))
+
+    wrong_runner = repo.claim_jobs(JobClaimRequest(runner_id="runner-2"))
+    claimed = repo.claim_jobs(JobClaimRequest(runner_id="runner-1"))
+
+    assert wrong_runner.claimed == []
+    assert claimed.claimed[0].job_id == "job-1"
+    assert claimed.claimed[0].action == "artifact-retry"
+    assert claimed.claimed[0].job.artifact_state == ArtifactState.UPLOADING
 
 
 def test_sql_repository_updates_artifact_state_and_records_event() -> None:

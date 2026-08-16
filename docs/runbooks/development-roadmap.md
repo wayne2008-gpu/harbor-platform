@@ -199,7 +199,46 @@ Hardening backlog:
 - add real-COS integration smoke gated by credentials
 - add synthetic business dataset catalog validation
 
-## Phase 9: Cloud Deployment
+## Phase 9: Control Plane Operations
+
+Current target:
+
+- external callers can query jobs, trials, and artifacts through cursor-based
+  query endpoints instead of broad list calls
+- cancellation has explicit request metadata and a `cancelling` execution state
+- runners can poll job control and terminate `harbor-runtime` on cancel request
+- runners can claim jobs through `POST /internal/jobs/claim`; claim owns
+  capability matching and lease creation in one control-plane operation
+- job retry creates a new job attempt with `parent_job_id`, `root_job_id`, and
+  `attempt`
+- artifact retry records a retry request by resetting `artifact_state`; the
+  original runner later claims an `artifact-retry` action and re-uploads/registers
+  existing local artifacts without re-running `harbor-runtime`
+- input materialization downloads have runner-local retry settings
+
+Implemented interface groups:
+
+```text
+POST /jobs/query
+POST /jobs/batch-get
+POST /trials/query
+POST /artifacts/query
+POST /jobs/{job_id}/cancel
+GET  /internal/jobs/{job_id}/control
+POST /internal/jobs/claim
+POST /jobs/{job_id}/retry
+POST /jobs/{job_id}/artifacts/retry
+```
+
+Hardening backlog:
+
+- publish a wake-up signal for artifact retry requests instead of relying only on
+  runner polling
+- add priority, quota, and fairness rules to claim matching
+- add idempotency-key persistence for cancel/retry requests
+- add auth and tenant scoping before exposing query endpoints broadly
+
+## Phase 10: Cloud Deployment
 
 Replace local services with Tencent Cloud services:
 

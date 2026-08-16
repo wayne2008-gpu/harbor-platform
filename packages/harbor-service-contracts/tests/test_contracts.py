@@ -2,13 +2,19 @@ from datetime import UTC, datetime
 
 from harbor_service_contracts import (
     ArtifactCreateRequest,
+    ArtifactQueryRequest,
+    ArtifactRetryRequest,
     ArtifactState,
     InputDataset,
     InputState,
     InputStateUpdateRequest,
+    JobCancelRequest,
+    JobClaimRequest,
     JobCreateRequest,
     JobDispatchMessage,
     JobDispatchRouting,
+    JobQueryRequest,
+    JobRetryRequest,
     JobState,
     MaterializedInputDataset,
     is_valid_job_transition,
@@ -18,6 +24,8 @@ from harbor_service_contracts import (
 def test_job_state_transitions_cover_mvp_lifecycle() -> None:
     assert is_valid_job_transition(JobState.QUEUED, JobState.LEASED)
     assert is_valid_job_transition(JobState.LEASED, JobState.RUNNING)
+    assert is_valid_job_transition(JobState.RUNNING, JobState.CANCELLING)
+    assert is_valid_job_transition(JobState.CANCELLING, JobState.CANCELLED)
     assert is_valid_job_transition(JobState.RUNNING, JobState.SUCCEEDED)
     assert is_valid_job_transition(JobState.RUNNING, JobState.FAILED)
     assert is_valid_job_transition(JobState.RUNNING, JobState.CANCELLED)
@@ -97,3 +105,27 @@ def test_input_state_update_contract_round_trips() -> None:
 
     assert restored == update
     assert restored.materialized_inputs[0].state == InputState.SUCCEEDED
+
+
+def test_query_cancel_claim_and_retry_contracts_round_trip() -> None:
+    job_query = JobQueryRequest(
+        states=[JobState.QUEUED],
+        provider="tke",
+        limit=25,
+    )
+    artifact_query = ArtifactQueryRequest(kinds=["trajectory"], storage_types=["cos"])
+    cancel = JobCancelRequest(reason="bad prompt", grace_period_sec=3)
+    claim = JobClaimRequest(
+        runner_id="runner-1",
+        max_jobs=2,
+        capabilities={"providers": ["tke"], "features": ["cos-input"]},
+    )
+    job_retry = JobRetryRequest(reason="rerun with same inputs")
+    artifact_retry = ArtifactRetryRequest(reason="upload failed")
+
+    assert JobQueryRequest.model_validate_json(job_query.model_dump_json()) == job_query
+    assert artifact_query.kinds == ["trajectory"]
+    assert cancel.mode == "graceful"
+    assert claim.capabilities["features"] == ["cos-input"]
+    assert job_retry.reason == "rerun with same inputs"
+    assert artifact_retry.reason == "upload failed"

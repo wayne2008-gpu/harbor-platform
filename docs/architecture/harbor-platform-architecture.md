@@ -113,7 +113,18 @@ Use RocketMQ as the dispatch channel:
 
 RocketMQ does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
 
-`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RocketMQ message. `harbor-runner` instances consume messages or poll queued jobs, obtain a MySQL-backed lease, then invoke the local `harbor-runtime`.
+`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RocketMQ message. `harbor-runner` instances consume messages or poll queued jobs, claim a MySQL-backed lease, then invoke the local `harbor-runtime`.
+
+The preferred runner acquisition path is `POST /internal/jobs/claim`. Claiming
+combines capability matching and lease creation in one control-plane operation.
+RocketMQ remains a wake-up channel; MySQL-backed claim state decides what actually
+runs.
+
+Cancellation is also control-plane owned. `POST /jobs/{job_id}/cancel` records
+cancel metadata and moves queued jobs directly to `cancelled` or running/leased
+jobs to `cancelling`. Runners poll `GET /internal/jobs/{job_id}/control` while
+`harbor-runtime` is running and terminate the subprocess when cancellation is
+requested.
 
 ## PoC Storage Model
 

@@ -5,6 +5,7 @@ class JobState(StrEnum):
     QUEUED = "queued"
     LEASED = "leased"
     RUNNING = "running"
+    CANCELLING = "cancelling"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -57,15 +58,19 @@ TERMINAL_JOB_STATES = frozenset(
 
 ALLOWED_JOB_TRANSITIONS = {
     JobState.QUEUED: frozenset({JobState.LEASED, JobState.CANCELLED}),
-    JobState.LEASED: frozenset({JobState.RUNNING, JobState.QUEUED, JobState.FAILED}),
+    JobState.LEASED: frozenset(
+        {JobState.RUNNING, JobState.QUEUED, JobState.CANCELLING, JobState.FAILED}
+    ),
     JobState.RUNNING: frozenset(
         {
+            JobState.CANCELLING,
             JobState.SUCCEEDED,
             JobState.FAILED,
             JobState.CANCELLED,
             JobState.TIMED_OUT,
         }
     ),
+    JobState.CANCELLING: frozenset({JobState.CANCELLED, JobState.FAILED}),
     JobState.SUCCEEDED: frozenset(),
     JobState.FAILED: frozenset(),
     JobState.CANCELLED: frozenset(),

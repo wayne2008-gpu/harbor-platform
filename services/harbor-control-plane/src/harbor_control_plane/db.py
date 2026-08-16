@@ -3,6 +3,8 @@ from sqlalchemy import (
     BigInteger,
     Column,
     DateTime,
+    Float,
+    Index,
     Integer,
     MetaData,
     String,
@@ -24,19 +26,33 @@ jobs_table = Table(
     Column("job_config_json", JSON, nullable=False),
     Column("input_datasets_json", JSON, nullable=False),
     Column("materialized_inputs_json", JSON, nullable=False),
+    Column("requirements_json", JSON, nullable=False),
     Column("provider", String(32), nullable=True, index=True),
     Column("runner_id", String(128), nullable=True, index=True),
     Column("lease_id", String(64), nullable=True),
     Column("lease_expires_at", DateTime(timezone=True), nullable=True, index=True),
     Column("cancel_requested_at", DateTime(timezone=True), nullable=True),
+    Column("cancel_reason", Text, nullable=True),
+    Column("cancel_mode", String(32), nullable=True),
+    Column("cancel_grace_period_sec", Float, nullable=True),
+    Column("cancel_deadline_at", DateTime(timezone=True), nullable=True),
+    Column("cancelled_by", String(128), nullable=True),
     Column("started_at", DateTime(timezone=True), nullable=True),
     Column("updated_at", DateTime(timezone=True), nullable=False, index=True),
     Column("finished_at", DateTime(timezone=True), nullable=True),
     Column("error_type", String(128), nullable=True),
     Column("error_message", Text, nullable=True),
     Column("result_json", JSON, nullable=True),
+    Column("parent_job_id", String(32), nullable=True, index=True),
+    Column("root_job_id", String(32), nullable=True, index=True),
+    Column("attempt", Integer, nullable=False, default=1),
+    Column("retry_reason", Text, nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
 )
+
+Index("ix_jobs_state_created_at", jobs_table.c.state, jobs_table.c.created_at)
+Index("ix_jobs_updated_at_id", jobs_table.c.updated_at, jobs_table.c.id)
+Index("ix_jobs_provider_created_at", jobs_table.c.provider, jobs_table.c.created_at)
 
 trials_table = Table(
     "trials",
@@ -55,6 +71,10 @@ trials_table = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Column("finished_at", DateTime(timezone=True), nullable=True),
 )
+
+Index("ix_trials_job_id_state", trials_table.c.job_id, trials_table.c.state)
+Index("ix_trials_job_id_task_name", trials_table.c.job_id, trials_table.c.task_name)
+Index("ix_trials_updated_at_id", trials_table.c.updated_at, trials_table.c.id)
 
 runners_table = Table(
     "runners",
@@ -112,6 +132,15 @@ artifacts_table = Table(
     Column("uploaded_at", DateTime(timezone=True), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
 )
+
+Index("ix_artifacts_job_id_kind", artifacts_table.c.job_id, artifacts_table.c.kind)
+Index(
+    "ix_artifacts_job_id_trial_id_kind",
+    artifacts_table.c.job_id,
+    artifacts_table.c.trial_id,
+    artifacts_table.c.kind,
+)
+Index("ix_artifacts_created_at_id", artifacts_table.c.created_at, artifacts_table.c.id)
 
 
 def make_engine(database_url: str) -> Engine:
