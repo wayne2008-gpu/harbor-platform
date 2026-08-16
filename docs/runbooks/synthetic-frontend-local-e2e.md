@@ -88,7 +88,28 @@ uv run harbor runner start --config config/runner.local.toml --keep-alive
 
 ## 脚本化验证
 
-在另一个终端执行：
+先做 preflight，只检查服务、前端、dataset 目录和 online runner，不上传、不创建任务：
+
+```bash
+cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
+
+HARBOR_E2E_PREFLIGHT_ONLY=1 \
+HARBOR_E2E_DATASET_DIR=/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags \
+HARBOR_E2E_RUNTIME=tke \
+HARBOR_E2E_TASK_NAME=go-http-tracing \
+./scripts/synthetic-cos-tke-e2e.sh
+```
+
+如果 runner 还没启动，可以临时缩短等待时间快速检查服务和诊断输出：
+
+```bash
+HARBOR_E2E_PREFLIGHT_ONLY=1 \
+HARBOR_E2E_RUNNER_TIMEOUT_SEC=5 \
+HARBOR_E2E_POLL_INTERVAL_SEC=1 \
+./scripts/synthetic-cos-tke-e2e.sh
+```
+
+preflight 通过后，在另一个终端执行完整链路：
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose

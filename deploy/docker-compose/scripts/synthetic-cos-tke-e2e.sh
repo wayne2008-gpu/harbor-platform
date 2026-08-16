@@ -16,11 +16,13 @@ timeout_sec=${HARBOR_E2E_TIMEOUT_SEC:-1800}
 metadata_timeout_sec=${HARBOR_E2E_METADATA_TIMEOUT_SEC:-180}
 interval_sec=${HARBOR_E2E_POLL_INTERVAL_SEC:-5}
 expect_runners=${HARBOR_E2E_EXPECT_RUNNERS:-1}
+runner_timeout_sec=${HARBOR_E2E_RUNNER_TIMEOUT_SEC:-120}
 stale_after_sec=${HARBOR_E2E_STALE_AFTER_SEC:-60}
 require_input_state=${HARBOR_E2E_REQUIRE_INPUT_STATE:-succeeded}
 require_cos_artifacts=${HARBOR_E2E_REQUIRE_COS_ARTIFACTS:-1}
 require_publish=${HARBOR_E2E_REQUIRE_PUBLISH:-0}
 check_web=${HARBOR_E2E_CHECK_WEB:-1}
+preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
 
 archive_path=""
 jsonl_path=""
@@ -80,7 +82,7 @@ wait_for_runners() {
     return
   fi
 
-  local deadline=$((SECONDS + 120))
+  local deadline=$((SECONDS + runner_timeout_sec))
   local runners_json online_count
   while [ "$SECONDS" -lt "$deadline" ]; do
     runners_json=$(fetch_json "$harbor_api/runners?stale_after_sec=$stale_after_sec")
@@ -94,6 +96,19 @@ wait_for_runners() {
     sleep "$interval_sec"
   done
 
+  case "$runtime" in
+    tke)
+      if [ -z "${HARBOR_TKE_CONFIG:-}" ]; then
+        echo "Hint: HARBOR_TKE_CONFIG is not set in this shell." >&2
+      fi
+      ;;
+    ags)
+      if [ -z "${HARBOR_AGS_CONFIG:-}" ]; then
+        echo "Hint: HARBOR_AGS_CONFIG is not set in this shell." >&2
+      fi
+      ;;
+  esac
+  echo "Start a host-side runner with provider '$runtime' before running E2E." >&2
   echo "Timed out waiting for $expect_runners online runner(s)" >&2
   exit 1
 }
@@ -181,7 +196,13 @@ if [ "$check_web" -ne 0 ]; then
   curl -fsS "$frontend_url" >/dev/null
 fi
 fetch_json "$synthetic_api/health" >/dev/null
+fetch_json "$harbor_api/health" >/dev/null
+echo "Preflight: services reachable, dataset_dir=$dataset_dir runtime=$runtime task=$task_name"
 wait_for_runners
+if [ "$preflight_only" -ne 0 ]; then
+  echo "Preflight passed. Set HARBOR_E2E_PREFLIGHT_ONLY=0 or unset it to run the full E2E."
+  exit 0
+fi
 
 archive_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-dataset.XXXXXX.tar.gz")
 tar -C "$(dirname "$dataset_dir")" -czf "$archive_path" "$(basename "$dataset_dir")"
