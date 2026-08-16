@@ -353,12 +353,14 @@ Settings
 - Result dataset 列表、详情、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
 - Samples preview coverage：样本数、预览行数、字段数、可见字段覆盖行数。
+- Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
+- Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 
 需要继续优化：
 
 - Trial 页面后续可继续增加 trajectory diff 和更细的异常定位。
-- Result dataset 页面后续可继续增强 trial/artifact 筛选和大样本字段统计。
+- Result dataset 页面后续可继续增强大样本分页、字段分布和异常样本定位。
 - Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
 - Task detail 后续可继续增加 artifact failure 分类、trial 异常聚合和耗时/cost breakdown。
 
@@ -372,7 +374,7 @@ Settings
 
 ### F1：前端设计基线与表格可读性
 
-状态：基础版已完成。
+状态：基础版已完成，已增加 source review 筛选和字段 profile。
 
 目标：
 
