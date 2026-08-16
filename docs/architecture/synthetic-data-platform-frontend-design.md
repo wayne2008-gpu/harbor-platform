@@ -344,6 +344,8 @@ Settings
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
+- Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
+- Workbench runtime/provider load：按 `environment.type` 聚合 total、active、failed、completed 任务数。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
 - Tasks/Results 列表搜索使用 deferred query value，减少快速输入时的列表请求抖动。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
@@ -362,7 +364,7 @@ Settings
 
 - Trial 页面后续可继续增加 trajectory diff 和更细的异常定位。
 - Result dataset 页面后续可继续增强大样本分页、字段分布和异常样本定位。
-- Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
+- Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
 
 ## 开发排期
@@ -436,7 +438,7 @@ Settings
 
 ### F5：Workbench 收敛
 
-状态：基础版已完成。
+状态：基础版已完成，已增加失败原因聚合和 runtime/provider 运行摘要。
 
 目标：
 
