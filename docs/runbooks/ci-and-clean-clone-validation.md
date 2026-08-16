@@ -25,6 +25,11 @@ The Harbor fork submodule is public at the moment, but the same token can also
 include it. If the token is a fine-grained PAT, select all private component
 repositories above and grant at least read-only `Contents` access.
 
+During the transition, CI also accepts an existing repository secret named
+`WAYNE` as a fallback before `github.token`. Prefer renaming/recreating that
+secret as `HARBOR_SUBMODULE_TOKEN` after this branch is merged so the purpose is
+clear.
+
 ## Clean Clone Smoke
 
 Run from a temporary directory, not from the development working tree:

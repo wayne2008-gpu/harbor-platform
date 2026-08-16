@@ -18,7 +18,7 @@ jobs:
     name: Contracts
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +45,7 @@ jobs:
     name: Control Plane
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +73,7 @@ jobs:
     name: Synthetic Data Platform
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,7 +101,7 @@ jobs:
     name: Harbor Runner
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,7 +129,7 @@ jobs:
     name: Harbor AGS/TKE Targeted Tests
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,7 +165,7 @@ jobs:
     name: Compose Config
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
