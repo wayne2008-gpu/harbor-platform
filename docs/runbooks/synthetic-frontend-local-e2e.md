@@ -122,6 +122,33 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
+如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish
+和 JSONL / JSON 下载，使用 super repo 内置 smoke dataset：
+
+```bash
+cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
+
+HARBOR_E2E_DATASET_DIR=/home/ubuntu/project/harbor-platform/deploy/docker-compose/smoke/synthetic-trajectory-sample-dataset \
+HARBOR_E2E_RUNTIME=tke \
+HARBOR_E2E_TASK_NAME=trajectory-sample-smoke \
+HARBOR_E2E_TIMEOUT_SEC=1800 \
+HARBOR_E2E_REQUIRE_TRAJECTORY=1 \
+HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY=1 \
+HARBOR_E2E_REQUIRE_PUBLISH=1 \
+./scripts/synthetic-cos-tke-e2e.sh
+```
+
+这个 smoke dataset 只有一个 Harbor task。`oracle` agent 会执行任务自带
+`solution/solve.sh`，写出：
+
+- `agent/trajectory.json`
+- `artifacts/.../samples.json`
+
+runner 收集阶段会把 ATIF trajectory 转换并登记为
+`agent/trajectory.openai-messages.json`，用于验证 OpenAI messages schema 查询链路。
+
+它用于验证平台链路，不替代真实 benchmark 质量验收。
+
 脚本会：
 
 1. 检查 `http://localhost:5173`、`http://localhost:8081/health`、online runner。
