@@ -18,7 +18,7 @@ jobs:
     name: Contracts
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +45,7 @@ jobs:
     name: Control Plane
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +54,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive harbor-control-plane
+          git submodule update --init --recursive harbor harbor-control-plane harbor-service-contracts
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -73,7 +73,7 @@ jobs:
     name: Synthetic Data Platform
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,7 +101,7 @@ jobs:
     name: Harbor Runner
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,7 +129,7 @@ jobs:
     name: Harbor AGS/TKE Targeted Tests
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,7 +165,7 @@ jobs:
     name: Compose Config
     runs-on: ubuntu-latest
     env:
-      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || secrets.WAYNE || github.token }}
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -174,7 +174,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive harbor harbor-control-plane
+          git submodule update --init --recursive harbor harbor-control-plane harbor-service-contracts synthetic-data-platform
       - name: Validate Compose files and smoke assets
         working-directory: deploy/docker-compose
         env:
@@ -182,16 +182,6 @@ jobs:
         run: |
           bash -n scripts/submit-and-wait-job.sh
           docker compose -f compose.dev.yml config >/tmp/harbor-compose-dev.yml
+          docker compose -f compose.dev.yml -f compose.synthetic-upload.yml config >/tmp/harbor-compose-upload.yml
           jq empty smoke/docker-touch-file-smoke-job.local.json
           jq empty smoke/ags-otel-bench-smoke-job.json
-          python3 - <<'PY'
-          import tomllib
-          from pathlib import Path
-
-          root = Path("../..").resolve()
-          for path in [
-              root / "harbor/config/runner.local.toml",
-              root / "harbor-control-plane/config/control-plane.local.toml",
-          ]:
-              tomllib.loads(path.read_text())
-          PY

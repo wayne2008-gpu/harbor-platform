@@ -17,18 +17,15 @@ It checks out only the submodules required by each CI job. Private submodules
 require a repository secret named `HARBOR_SUBMODULE_TOKEN` with read access to
 all private component repositories referenced by `.gitmodules`, currently:
 
+- `wayne2008-gpu/harbor-based-data-synthesis-platform`
 - `wayne2008-gpu/harbor-control-plane`
 - `wayne2008-gpu/harbor-service-contracts`
 - `wayne2008-gpu/synthetic-data-platform`
 
-The Harbor fork submodule is public at the moment, but the same token can also
-include it. If the token is a fine-grained PAT, select all private component
-repositories above and grant at least read-only `Contents` access.
-
-During the transition, CI also accepts an existing repository secret named
-`WAYNE` as a fallback before `github.token`. Prefer renaming/recreating that
-secret as `HARBOR_SUBMODULE_TOKEN` after this branch is merged so the purpose is
-clear.
+If the token is a fine-grained PAT, select all private component repositories
+above and grant at least read-only `Contents` access. CI falls back to
+`github.token` only for public submodule access; private cross-repository
+submodules need `HARBOR_SUBMODULE_TOKEN`.
 
 ## Clean Clone Smoke
 
@@ -41,7 +38,9 @@ cd /tmp/harbor-platform-clean
 git submodule status
 ```
 
-Edit the COS placeholders before running the smoke:
+Create the local config files before running the smoke. These files are
+deployment-local and intentionally ignored by Git because they may contain COS
+credentials:
 
 ```text
 harbor/config/runner.local.toml
