@@ -341,6 +341,7 @@ Settings
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作。
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
+- Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory 和 runtime duration。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
@@ -362,7 +363,7 @@ Settings
 - Trial 页面后续可继续增加 trajectory diff 和更细的异常定位。
 - Result dataset 页面后续可继续增强大样本分页、字段分布和异常样本定位。
 - Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
-- Task detail 后续可继续增加 artifact failure 分类、trial 异常聚合和耗时/cost breakdown。
+- Task detail 后续可继续增加 cost breakdown、artifact retry 唤醒状态和更细的失败根因分类。
 
 ## 开发排期
 
@@ -390,7 +391,7 @@ Settings
 
 ### F2：Task Detail 审核运营体验
 
-状态：基础版已完成。
+状态：基础版已完成，已增加 failure recovery、运行诊断汇总和操作 disabled reason。
 
 目标：
 
