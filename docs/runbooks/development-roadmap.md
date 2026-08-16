@@ -169,6 +169,7 @@ GET /result-datasets
 GET /result-datasets/{id}
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
+GET /settings
 ```
 
 Flow:
@@ -191,6 +192,8 @@ Flow:
 15. download result datasets as JSONL samples or full JSON metadata
 16. jump from a result dataset back to source trajectories and source artifact
     downloads
+17. inspect safe runtime settings without exposing database credentials or COS
+    secrets
 
 ## Phase 8: Input Dataset Materialization
 
