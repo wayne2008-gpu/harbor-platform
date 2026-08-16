@@ -180,7 +180,7 @@ Settings
 - 必填：dataset、task_name、runtime、agent。
 - 可选：model、concurrency。
 - runtime 用 radio card：docker、ags、tke。每个选项显示实际 `environment.type`。
-- 提交前展示 JobConfig 摘要，减少“发错 runtime / 发错 dataset”的风险。
+- 提交前展示 JobConfig 摘要和 dataset readiness checks：dataset source、runner download、checksum、task catalog、selected task coverage，减少“发错 runtime / 发错 dataset / 发错 task_name”的风险。
 
 详情页：
 
@@ -341,7 +341,7 @@ Settings
 - 顶层 app shell、sidebar、skip link、route focus management。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
 - Dataset 上传/登记、列表筛选、详情、task_name 过滤、基于 dataset 创建任务。
-- Task 创建、列表、详情、sync/cancel/retry/artifact retry。
+- Task 创建、提交前 dataset readiness 检查、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作。
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
