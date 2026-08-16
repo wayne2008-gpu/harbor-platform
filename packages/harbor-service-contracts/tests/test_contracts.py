@@ -113,7 +113,13 @@ def test_query_cancel_claim_and_retry_contracts_round_trip() -> None:
         provider="tke",
         limit=25,
     )
-    artifact_query = ArtifactQueryRequest(kinds=["trajectory"], storage_types=["cos"])
+    artifact_query = ArtifactQueryRequest(
+        kinds=["trajectory"],
+        schemas=["openai_messages"],
+        storage_types=["cos"],
+        content_types=["application/json"],
+        relative_path_prefix="trial-a/agent/",
+    )
     cancel = JobCancelRequest(reason="bad prompt", grace_period_sec=3)
     claim = JobClaimRequest(
         runner_id="runner-1",
@@ -125,6 +131,9 @@ def test_query_cancel_claim_and_retry_contracts_round_trip() -> None:
 
     assert JobQueryRequest.model_validate_json(job_query.model_dump_json()) == job_query
     assert artifact_query.kinds == ["trajectory"]
+    assert artifact_query.schemas == ["openai_messages"]
+    assert artifact_query.content_types == ["application/json"]
+    assert artifact_query.relative_path_prefix == "trial-a/agent/"
     assert cancel.mode == "graceful"
     assert claim.capabilities["features"] == ["cos-input"]
     assert job_retry.reason == "rerun with same inputs"

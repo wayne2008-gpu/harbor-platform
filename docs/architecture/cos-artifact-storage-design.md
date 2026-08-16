@@ -4,7 +4,7 @@
 
 Production artifact storage should use Tencent Cloud COS as the durable source of truth.
 
-`harbor-runtime` still writes job output to the runner-local `jobs_dir` first. After a job finishes, `harbor-runner` uploads selected files to COS and records durable COS locations in MySQL through `harbor-api`.
+`harbor-runtime` still writes job output to the runner-local `jobs_dir` first. After a job finishes, `harbor-runner` uploads every ordinary file under the job directory to COS and records durable COS locations in MySQL through `harbor-api`.
 
 ```text
 harbor-runtime
@@ -57,24 +57,57 @@ Adapters:
 
 The runner daemon should only depend on `ArtifactStore`, not COS SDK details.
 
-## COS Key Layout
+## Execution Identity
 
-Use deterministic object keys so uploads are idempotent:
+Artifact storage uses three IDs with different ownership:
+
+- `platform_job_id`: the Harbor platform job ID created by `harbor-api`. This is
+  the durable scheduling and query key.
+- `runtime_job_result_id`: the Harbor runtime `JobResult.id` read from
+  `jobs/<job_id>/result.json`. This is retained for Harbor-native traceability
+  but is not the platform scheduling key.
+- `execution_id`: the runner execution namespace for one lease/attempt. It
+  prevents two runner Pods from writing the same relative artifact path to the
+  same COS object.
+
+Before starting `harbor-runtime`, `harbor-runner` writes:
 
 ```text
-{prefix}/jobs/{job_id}/{relative_path}
+jobs/<job_id>/artifacts/runner-execution.json
+```
+
+That file records `job_id`, `runner_id`, `lease_id`, `execution_id`, `attempt`,
+and `created_at`. If a later artifact retry sees an existing
+`runner-execution.json`, it reuses the existing `execution_id` instead of
+generating a new one.
+
+## COS Key Layout
+
+The default layout scopes objects by platform job, attempt, and runner
+execution:
+
+```text
+{prefix}/jobs/{platform_job_id}/attempts/{attempt}/executions/{execution_id}/{relative_path}
 ```
 
 Example:
 
 ```text
-cos://harbor-artifacts-1250000000/prod/jobs/5d4.../result.json
-cos://harbor-artifacts-1250000000/prod/jobs/5d4.../trial-a/result.json
-cos://harbor-artifacts-1250000000/prod/jobs/5d4.../trial-a/agent/trajectory.json
-cos://harbor-artifacts-1250000000/prod/jobs/5d4.../trial-a/verifier/output.log
+cos://harbor-artifacts-1250000000/prod/jobs/job-123/attempts/1/executions/runner-a-lease-789/result.json
+cos://harbor-artifacts-1250000000/prod/jobs/job-123/attempts/1/executions/runner-a-lease-789/trial-a/result.json
+cos://harbor-artifacts-1250000000/prod/jobs/job-123/attempts/1/executions/runner-a-lease-789/trial-a/agent/trajectory.json
+cos://harbor-artifacts-1250000000/prod/jobs/job-123/attempts/1/executions/runner-a-lease-789/artifacts/runner-execution.json
 ```
 
 Store relative paths, not runner absolute paths, in object metadata and MySQL. Absolute runner paths are not portable.
+
+The old deterministic layout remains available for migration only:
+
+```text
+{prefix}/jobs/{platform_job_id}/{relative_path}
+```
+
+Set `cos_key_layout = "legacy"` explicitly to use it.
 
 ## TOML Configuration
 
@@ -88,6 +121,8 @@ backend = "cos"
 retain_local = true
 local_retention_hours = 72
 upload_manifest = true
+upload_policy = "job_dir_all"
+cos_key_layout = "attempt_execution"
 fail_job_on_upload_error = false
 upload_retry_attempts = 2
 upload_retry_wait_sec = 1.0
@@ -126,12 +161,23 @@ Recommended production permission split:
 
 Do not store temporary signed URLs in MySQL. They expire and are access tokens, not durable object addresses.
 
-Compose examples live at:
+Repository TOML configs live at:
 
-- `deploy/docker-compose/runner-cos.example.toml`
-- `deploy/docker-compose/control-plane-cos.example.toml`
+- `deploy/docker-compose/config/runner.toml`
+- `deploy/docker-compose/config/control-plane.toml`
 
-Default compose runner configs still use `backend = "runner-local"`. To enable COS locally, mount a COS runner config as `/config/runner.toml` for runner containers and set `HARBOR_CONTROL_PLANE_CONFIG` to the mounted control-plane config path for `harbor-api`.
+Local Docker Compose mounts those files directly:
+
+```text
+deploy/docker-compose/config/runner.toml         -> harbor-runner-1:/config/runner.toml
+deploy/docker-compose/config/runner.toml         -> harbor-runner-2:/config/runner.toml
+deploy/docker-compose/config/control-plane.toml  -> harbor-api:/config/control-plane.toml
+```
+
+`harbor-api` loads `/config/control-plane.toml` by default when the file exists.
+`HARBOR_CONTROL_PLANE_CONFIG` remains only an override hook.
+`harbor-runner` loads `/config/runner.toml`; Compose sets `HARBOR_RUNNER_ID`
+per runner container so the shared TOML does not duplicate per-runner files.
 
 Security hardening backlog:
 
@@ -159,6 +205,18 @@ metadata_json
 uploaded_at
 ```
 
+Every runner-recorded artifact includes these metadata keys:
+
+```text
+platform_job_id
+runtime_job_result_id
+attempt
+runner_id
+lease_id
+execution_id
+cos_key_layout
+```
+
 Minimal first migration:
 
 - keep `storage_type`
@@ -170,17 +228,36 @@ Minimal first migration:
 
 The `artifacts` table remains the durable index. COS contains file bytes.
 
+Artifact manifests are metadata overlays. A manifest entry can provide `kind`,
+`trial_id`, `schema`, `content_type`, and custom metadata for a relative path, but
+it does not determine whether the file is uploaded. Files without a manifest
+entry are still uploaded and are classified by runner fallback rules; if no
+specific rule matches, they are recorded as `kind = "artifact"`.
+
+Use `metadata_json.schema` for concrete file schemas under the same artifact
+kind. For example, both of these are `kind = "trajectory"`:
+
+```text
+trial-a/agent/trajectory.json                    metadata.schema = atif
+trial-a/agent/trajectory.openai-messages.json    metadata.schema = openai_messages
+```
+
 ## Runtime Flow
 
-1. `harbor-runtime` executes the job and writes files under runner `jobs_dir`.
-2. `harbor-runner` builds a collected artifact list from `jobs/<job_id>/`.
-3. `CosArtifactStore` uploads each file to deterministic COS keys.
-4. Upload result returns `storage_type = "cos"` and `storage_key = cos://...`.
-5. `harbor-runner` records each artifact through `POST /internal/jobs/{job_id}/artifacts`.
-6. `harbor-api` persists artifact rows in MySQL.
-7. Clients list artifacts through `GET /jobs/{job_id}/artifacts`.
-8. Clients fetch content through `GET /jobs/{job_id}/artifacts/{artifact_id}/content`.
-9. `harbor-api` either redirects to a signed COS URL or proxies the object stream.
+1. `harbor-runner` writes `artifacts/runner-execution.json` for the claimed
+   lease/attempt.
+2. `harbor-runtime` executes the job and writes files under runner `jobs_dir`.
+3. `harbor-runner` builds a collected artifact list from all ordinary files under
+   `jobs/<job_id>/`; symlink files are skipped.
+4. `harbor-runner` enriches each artifact with execution metadata and the
+   runtime `JobResult.id` when available.
+5. `CosArtifactStore` uploads each file to attempt/execution-scoped COS keys.
+6. Upload result returns `storage_type = "cos"` and `storage_key = cos://...`.
+7. `harbor-runner` records each artifact through `POST /internal/jobs/{job_id}/artifacts`.
+8. `harbor-api` persists artifact rows in MySQL.
+9. Clients list artifacts through `GET /jobs/{job_id}/artifacts`.
+10. Clients fetch content through `GET /jobs/{job_id}/artifacts/{artifact_id}/content`.
+11. `harbor-api` either redirects to a signed COS URL or proxies the object stream.
 
 ## Failure Semantics
 

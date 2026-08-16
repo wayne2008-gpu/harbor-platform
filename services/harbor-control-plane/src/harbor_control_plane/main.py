@@ -11,6 +11,8 @@ from harbor_control_plane.publisher import (
 )
 from harbor_control_plane.sql_repository import SqlJobRepository
 
+DEFAULT_CONFIG_PATH = Path("/config/control-plane.toml")
+
 
 def _create_configured_app():
     config = _load_config()
@@ -38,9 +40,11 @@ def _create_configured_app():
 
 def _load_config() -> ControlPlaneConfig:
     config_path = os.getenv("HARBOR_CONTROL_PLANE_CONFIG")
-    if not config_path:
-        return ControlPlaneConfig()
-    return load_control_plane_config(Path(config_path))
+    if config_path:
+        return load_control_plane_config(Path(config_path))
+    if DEFAULT_CONFIG_PATH.exists():
+        return load_control_plane_config(DEFAULT_CONFIG_PATH)
+    return ControlPlaneConfig()
 
 
 def _create_artifact_resolver(config: ControlPlaneConfig):

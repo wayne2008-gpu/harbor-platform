@@ -25,13 +25,13 @@ services:
       HARBOR_PLATFORM_HOST_ROOT: ${HARBOR_PLATFORM_HOST_ROOT:?set HARBOR_PLATFORM_HOST_ROOT to the repository root absolute path}
       HARBOR_RUNNER_HOST_JOBS_DIR: ${HARBOR_RUNNER_HOST_JOBS_DIR:?set HARBOR_RUNNER_HOST_JOBS_DIR to an absolute host path}
     volumes:
-      - ./runner-1.host-paths.toml:/config/runner.toml:ro
+      - ./config/runner.host-paths.toml:/config/runner.toml:ro
       - ${HARBOR_RUNNER_HOST_JOBS_DIR:?set HARBOR_RUNNER_HOST_JOBS_DIR to an absolute host path}:${HARBOR_RUNNER_HOST_JOBS_DIR:?set HARBOR_RUNNER_HOST_JOBS_DIR to an absolute host path}
       - ${HARBOR_PLATFORM_HOST_ROOT:?set HARBOR_PLATFORM_HOST_ROOT to the repository root absolute path}/harbor/generated:${HARBOR_PLATFORM_HOST_ROOT:?set HARBOR_PLATFORM_HOST_ROOT to the repository root absolute path}/harbor/generated:ro
 
   harbor-runner-2:
     environment: *host-path-runner-env
     volumes:
-      - ./runner-2.host-paths.toml:/config/runner.toml:ro
+      - ./config/runner.host-paths.toml:/config/runner.toml:ro
       - ${HARBOR_RUNNER_HOST_JOBS_DIR:?set HARBOR_RUNNER_HOST_JOBS_DIR to an absolute host path}:${HARBOR_RUNNER_HOST_JOBS_DIR:?set HARBOR_RUNNER_HOST_JOBS_DIR to an absolute host path}
       - ${HARBOR_PLATFORM_HOST_ROOT:?set HARBOR_PLATFORM_HOST_ROOT to the repository root absolute path}/harbor/generated:${HARBOR_PLATFORM_HOST_ROOT:?set HARBOR_PLATFORM_HOST_ROOT to the repository root absolute path}/harbor/generated:ro

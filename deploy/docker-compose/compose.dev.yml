@@ -61,6 +61,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
+      - ./config/control-plane.toml:/config/control-plane.toml:ro
       - runner-jobs:/workspace/jobs:ro
 
   harbor-runner-1:
@@ -70,7 +71,7 @@ services:
     environment:
       HARBOR_RUNNER_ID: runner-1
     volumes:
-      - ./runner-1.toml:/config/runner.toml:ro
+      - ./config/runner.toml:/config/runner.toml:ro
       - runner-jobs:/workspace/jobs
     depends_on:
       - harbor-api
@@ -82,7 +83,7 @@ services:
     environment:
       HARBOR_RUNNER_ID: runner-2
     volumes:
-      - ./runner-2.toml:/config/runner.toml:ro
+      - ./config/runner.toml:/config/runner.toml:ro
       - runner-jobs:/workspace/jobs
     depends_on:
       - harbor-api

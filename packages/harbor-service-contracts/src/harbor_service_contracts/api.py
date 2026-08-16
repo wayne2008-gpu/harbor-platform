@@ -126,7 +126,10 @@ class ArtifactQueryRequest(BaseModel):
     job_id: str | None = None
     trial_id: str | None = None
     kinds: list[str] | None = None
+    schemas: list[str] | None = None
     storage_types: list[str] | None = None
+    content_types: list[str] | None = None
+    relative_path_prefix: str | None = None
     created_after: datetime | None = None
     created_before: datetime | None = None
     limit: int = Field(default=50, ge=1, le=500)

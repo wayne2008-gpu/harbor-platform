@@ -362,8 +362,13 @@ def test_sql_repository_query_trials_and_artifacts() -> None:
         ArtifactCreateRequest(
             kind="trajectory",
             storage_type="cos",
-            storage_key="cos://bucket/jobs/job-1/trial-1/agent/trajectory.json",
+            storage_key=(
+                "cos://bucket/jobs/job-1/trial-1/agent/trajectory.openai-messages.json"
+            ),
             trial_id="trial-1",
+            relative_path="trial-1/agent/trajectory.openai-messages.json",
+            content_type="application/json",
+            metadata={"schema": "openai_messages"},
         ),
     )
 
@@ -371,11 +376,18 @@ def test_sql_repository_query_trials_and_artifacts() -> None:
         TrialQueryRequest(job_id="job-1", states=[TrialState.SUCCEEDED])
     )
     artifacts = repo.query_artifacts(
-        ArtifactQueryRequest(job_id="job-1", kinds=["trajectory"])
+        ArtifactQueryRequest(
+            job_id="job-1",
+            kinds=["trajectory"],
+            schemas=["openai_messages"],
+            content_types=["application/json"],
+            relative_path_prefix="trial-1/agent/",
+        )
     )
 
     assert trials.items[0].id == "trial-1"
     assert artifacts.items[0].kind == "trajectory"
+    assert artifacts.items[0].metadata["schema"] == "openai_messages"
 
 
 def test_sql_repository_cancel_control_claim_and_retry() -> None:

@@ -345,8 +345,20 @@ class SqlJobRepository:
             conditions.append(artifacts_table.c.trial_id == request.trial_id)
         if request.kinds is not None:
             conditions.append(artifacts_table.c.kind.in_(request.kinds))
+        if request.schemas is not None:
+            conditions.append(
+                artifacts_table.c.metadata_json["schema"]
+                .as_string()
+                .in_(request.schemas)
+            )
         if request.storage_types is not None:
             conditions.append(artifacts_table.c.storage_type.in_(request.storage_types))
+        if request.content_types is not None:
+            conditions.append(artifacts_table.c.content_type.in_(request.content_types))
+        if request.relative_path_prefix is not None:
+            conditions.append(
+                artifacts_table.c.relative_path.like(f"{request.relative_path_prefix}%")
+            )
         if request.created_after is not None:
             conditions.append(artifacts_table.c.created_at >= request.created_after)
         if request.created_before is not None:

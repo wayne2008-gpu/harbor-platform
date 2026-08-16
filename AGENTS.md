@@ -2,25 +2,29 @@
 
 ## Project Goal
 
-This monorepo coordinates a Harbor-based distributed execution platform and a future synthetic data platform.
+This repository is the Harbor Platform super repo. It pins the component
+repositories as git submodules and owns cross-repo deployment, documentation,
+and end-to-end validation.
 
 The repository intentionally keeps these modules separate:
 
-- `harbor/`: Harbor fork as a git submodule. This contains Harbor core, AGS/TKE environment adapters, and future `harbor-runner` work.
-- `services/harbor-control-plane/`: future control-plane service project. It will contain `harbor-api`, DB migrations, RocketMQ adapters, scheduler/lease logic, and deployment code.
-- `services/synthetic-data-platform/`: future business platform for synthetic data task management. It should call `harbor-api` instead of importing Harbor internals.
-- `packages/harbor-service-contracts/`: future shared service contracts, such as job state enums, RocketMQ message schema, and request/response models.
-- `deploy/`: local Docker Compose and future Kubernetes/TKE manifests.
-- `docs/`: architecture notes and runbooks.
+- `harbor/`: Harbor fork submodule. This contains Harbor core, AGS/TKE environment adapters, `harbor-runtime`, and `harbor-runner`.
+- `services/harbor-control-plane/`: control-plane submodule. This contains `harbor-api`, DB migrations, RocketMQ adapters, scheduler/lease logic, and artifact access code.
+- `services/synthetic-data-platform/`: synthetic data business platform submodule. It should call `harbor-api` instead of importing Harbor internals.
+- `packages/harbor-service-contracts/`: shared contracts submodule, such as job state enums, RocketMQ message schema, and request/response models.
+- `deploy/`: super-repo owned local Docker Compose and future Kubernetes/TKE manifests.
+- `docs/`: super-repo owned architecture notes and runbooks.
 
 ## Boundary Rules
 
 - `harbor/` must not import `harbor-control-plane` or `synthetic-data-platform`.
 - `harbor-control-plane` may depend on stable Harbor package APIs and shared contracts, but it must not know synthetic data business concepts.
 - `synthetic-data-platform` should talk to `harbor-api` over HTTP and store its own business state.
+- Component code changes belong in the owning submodule, not in super-repo-only directories.
+- Deployment config belongs under `deploy/`, not at the repository root or inside component source trees.
 - MySQL is the durable state source for control-plane jobs and runners.
 - RocketMQ is a dispatch channel only. Do not use RocketMQ as the source of truth for job state.
-- In PoC, runner-local `jobs/` can hold logs and artifacts. Production should move logs/artifacts to object storage.
+- Runner-local `jobs/` is staging/cache. Durable production artifacts should be stored in object storage.
 
 ## Development Commands
 
@@ -33,6 +37,13 @@ uv run pytest tests/unit/environments/test_ags_clients.py tests/unit/environment
 ```
 
 Follow the Harbor submodule workflow in `docs/runbooks/harbor-fork-submodule-workflow.md` before syncing official Harbor upstream.
+
+For super repo end-to-end work:
+
+```bash
+git submodule update --init --recursive
+docker compose -f deploy/docker-compose/compose.dev.yml config
+```
 
 ## New Codex Session Handoff
 

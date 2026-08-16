@@ -327,14 +327,22 @@ def create_app(
         return resolver.download_url(artifact)
 
     @app.get("/jobs/{job_id}/trials/{trial_id}/trajectory")
-    def get_trial_trajectory(job_id: str, trial_id: str) -> Any:
+    def get_trial_trajectory(
+        job_id: str,
+        trial_id: str,
+        schema: str | None = Query(default=None),
+    ) -> Any:
         if resolver is None:
             raise HTTPException(status_code=404, detail="Artifact proxy is disabled")
         try:
             artifacts = repo.list_artifacts(job_id)
         except JobNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Job not found") from exc
-        trajectory = _select_trajectory_artifact(artifacts, trial_id=trial_id)
+        trajectory = _select_trajectory_artifact(
+            artifacts,
+            trial_id=trial_id,
+            schema=schema,
+        )
         if trajectory is None:
             raise HTTPException(status_code=404, detail="Trajectory artifact not found")
         return read_artifact_json(resolver=resolver, artifact=trajectory)
@@ -418,17 +426,27 @@ def _select_trajectory_artifact(
     artifacts: list[ArtifactResponse],
     *,
     trial_id: str,
+    schema: str | None = None,
 ) -> ArtifactResponse | None:
     candidates = [
         artifact
         for artifact in artifacts
         if artifact.trial_id == trial_id and artifact.kind == "trajectory"
     ]
+    if schema is not None:
+        candidates = [
+            artifact
+            for artifact in candidates
+            if artifact.metadata.get("schema") == schema
+        ]
     if not candidates:
         return None
 
     def priority(artifact: ArtifactResponse) -> tuple[int, str]:
         relative_path = artifact.relative_path or artifact.storage_key
+        artifact_schema = artifact.metadata.get("schema")
+        if artifact_schema == "atif":
+            return (0, relative_path)
         if relative_path.endswith(("/agent/trajectory.json", "agent/trajectory.json")):
             return (0, relative_path)
         return (1, relative_path)

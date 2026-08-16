@@ -379,8 +379,13 @@ def test_query_endpoints_return_filtered_paginated_results() -> None:
         json={
             "kind": "trajectory",
             "storage_type": "cos",
-            "storage_key": "cos://bucket/jobs/job-1/trial-1/agent/trajectory.json",
+            "storage_key": (
+                "cos://bucket/jobs/job-1/trial-1/agent/trajectory.openai-messages.json"
+            ),
             "trial_id": "trial-1",
+            "relative_path": "trial-1/agent/trajectory.openai-messages.json",
+            "content_type": "application/json",
+            "metadata": {"schema": "openai_messages"},
         },
     )
 
@@ -394,7 +399,13 @@ def test_query_endpoints_return_filtered_paginated_results() -> None:
     )
     artifacts = client.post(
         "/artifacts/query",
-        json={"job_id": first["id"], "kinds": ["trajectory"]},
+        json={
+            "job_id": first["id"],
+            "kinds": ["trajectory"],
+            "schemas": ["openai_messages"],
+            "content_types": ["application/json"],
+            "relative_path_prefix": "trial-1/agent/",
+        },
     )
     batch = client.post(
         "/jobs/batch-get",
@@ -406,6 +417,7 @@ def test_query_endpoints_return_filtered_paginated_results() -> None:
     assert jobs.json()["limit"] == 1
     assert trials.json()["items"][0]["id"] == "trial-1"
     assert artifacts.json()["items"][0]["kind"] == "trajectory"
+    assert artifacts.json()["items"][0]["metadata"]["schema"] == "openai_messages"
     assert [item["id"] for item in batch.json()] == [second["id"], first["id"]]
 
 
@@ -614,7 +626,12 @@ def test_cos_artifact_download_url_uses_resolver() -> None:
 
 
 def test_trial_trajectory_reads_trajectory_artifact() -> None:
-    resolver = FakeArtifactResolver()
+    class SchemaArtifactResolver(FakeArtifactResolver):
+        def read_bytes(self, artifact):
+            schema = artifact.metadata.get("schema") or "missing"
+            return f'{{"schema": "{schema}"}}'.encode()
+
+    resolver = SchemaArtifactResolver()
     client, _repo, _publisher = _client(artifact_resolver=resolver)
     job_id = client.post("/jobs", json={"job_config": {"job_name": "job-1"}}).json()[
         "id"
@@ -628,13 +645,34 @@ def test_trial_trajectory_reads_trajectory_artifact() -> None:
             "trial_id": "trial-a",
             "relative_path": "trial-a/agent/trajectory.json",
             "content_type": "application/json",
+            "metadata": {"schema": "atif"},
+        },
+    )
+    client.post(
+        f"/internal/jobs/{job_id}/artifacts",
+        json={
+            "kind": "trajectory",
+            "storage_type": "cos",
+            "storage_key": (
+                "cos://bucket/dev/jobs/job-1/trial-a/agent/"
+                "trajectory.openai-messages.json"
+            ),
+            "trial_id": "trial-a",
+            "relative_path": "trial-a/agent/trajectory.openai-messages.json",
+            "content_type": "application/json",
+            "metadata": {"schema": "openai_messages"},
         },
     )
 
     response = client.get(f"/jobs/{job_id}/trials/trial-a/trajectory")
+    openai_response = client.get(
+        f"/jobs/{job_id}/trials/trial-a/trajectory?schema=openai_messages"
+    )
 
     assert response.status_code == 200
-    assert response.json() == {"trajectory": True}
+    assert response.json() == {"schema": "atif"}
+    assert openai_response.status_code == 200
+    assert openai_response.json() == {"schema": "openai_messages"}
 
 
 def test_artifact_content_proxy_is_disabled_by_default(tmp_path) -> None:

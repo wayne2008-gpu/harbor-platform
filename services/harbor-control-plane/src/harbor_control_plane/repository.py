@@ -628,11 +628,24 @@ def _artifact_matches_query(
         return False
     if request.kinds is not None and artifact.kind not in request.kinds:
         return False
+    if request.schemas is not None:
+        schema = artifact.metadata.get("schema")
+        if schema not in request.schemas:
+            return False
     if (
         request.storage_types is not None
         and artifact.storage_type not in request.storage_types
     ):
         return False
+    if (
+        request.content_types is not None
+        and artifact.content_type not in request.content_types
+    ):
+        return False
+    if request.relative_path_prefix is not None:
+        relative_path = artifact.relative_path or ""
+        if not relative_path.startswith(request.relative_path_prefix):
+            return False
     if (
         request.created_after is not None
         and artifact.created_at < request.created_after

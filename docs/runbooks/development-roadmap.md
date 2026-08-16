@@ -125,8 +125,13 @@ Implemented storage modes:
 Current COS behavior:
 
 - TOML config uses literal `secret_id` and `secret_key` in this iteration.
-- Runner stores deterministic keys: `{prefix}/jobs/{job_id}/{relative_path}`.
+- Runner stores attempt/execution-scoped keys:
+  `{prefix}/jobs/{platform_job_id}/attempts/{attempt}/executions/{execution_id}/{relative_path}`.
+- Runner writes `artifacts/runner-execution.json` before starting
+  `harbor-runtime`; artifact retry reuses this file when it already exists.
 - Runner records `relative_path`, `checksum_sha256`, `etag`, `content_type`, `metadata`, and `uploaded_at`.
+- Artifact metadata includes `platform_job_id`, `runtime_job_result_id`,
+  `attempt`, `runner_id`, `lease_id`, `execution_id`, and `cos_key_layout`.
 - Job execution state and artifact persistence state are separated through `artifact_state`.
 - API can return COS signed URLs or proxy object bytes.
 
@@ -215,6 +220,17 @@ Current target:
   original runner later claims an `artifact-retry` action and re-uploads/registers
   existing local artifacts without re-running `harbor-runtime`
 - input materialization downloads have runner-local retry settings
+- `harbor-runtime` derives OpenAI messages trajectory files from valid ATIF
+  `agent/trajectory*.json` files
+- `harbor-runner` collects every ordinary file under `job_dir` for artifact
+  storage; unclassified files are recorded as `kind = "artifact"`
+- artifact manifests act as metadata overlays for `kind`, `trial_id`, `schema`,
+  `content_type`, and custom metadata; they do not limit upload scope
+- artifact query supports schema, content type, and relative path prefix filters
+- runner execution metadata separates platform job ID, Harbor runtime
+  `JobResult.id`, and runner `execution_id`
+- COS artifact keys default to the attempt/execution namespace layout, with
+  explicit `legacy` layout retained only for migration
 
 Implemented interface groups:
 
@@ -229,6 +245,25 @@ POST /internal/jobs/claim
 POST /jobs/{job_id}/retry
 POST /jobs/{job_id}/artifacts/retry
 ```
+
+Trajectory schema lookup:
+
+```text
+GET /jobs/{job_id}/trials/{trial_id}/trajectory?schema=atif
+GET /jobs/{job_id}/trials/{trial_id}/trajectory?schema=openai_messages
+```
+
+Runner artifact storage policy:
+
+```toml
+[artifact_storage]
+upload_policy = "job_dir_all"
+upload_manifest = true
+```
+
+`job_dir_all` means all ordinary files inside the runner-local job directory are
+collected and uploaded/registered. Symlink files are skipped so collection cannot
+escape the job directory through a link target.
 
 Hardening backlog:
 

@@ -40,12 +40,13 @@ harbor-runner Pod/container
 harbor-platform/
   harbor/                         # Harbor fork submodule
   services/
-    harbor-control-plane/          # future harbor-api and scheduler project
-    synthetic-data-platform/       # future synthetic data business platform
+    harbor-control-plane/          # harbor-api/control-plane submodule
+    synthetic-data-platform/       # synthetic data platform submodule
   packages/
-    harbor-service-contracts/      # future shared schemas/contracts
+    harbor-service-contracts/      # shared schemas/contracts submodule
   deploy/
     docker-compose/                # local distributed dev environment
+      config/                      # local compose TOML config
     k8s/                           # future TKE manifests
   docs/
     architecture/
@@ -68,7 +69,8 @@ harbor-platform/
 
 ### Harbor Control Plane
 
-`services/harbor-control-plane/` will be a separate service project inside this monorepo.
+`services/harbor-control-plane/` is a separate service submodule pinned by the
+super repo.
 
 It owns:
 
@@ -77,13 +79,14 @@ It owns:
 - RocketMQ producer/consumer adapters
 - runner registry, heartbeat, lease, and retry logic
 - job cancellation and status APIs
-- deployment configuration
+- service-local configuration and migrations
 
 `harbor-api` should not run jobs directly. It writes DB state, publishes RocketMQ messages, and returns DB-backed job status.
 
 ### Synthetic Data Platform
 
-`services/synthetic-data-platform/` is a business platform above Harbor. It owns:
+`services/synthetic-data-platform/` is a separate business platform submodule
+above Harbor. It owns:
 
 - synthetic task management
 - data source management
@@ -93,6 +96,17 @@ It owns:
 - cost/business reporting
 
 It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
+
+### Harbor Platform Super Repo
+
+The super repo owns integration assets only:
+
+- git submodule pins for each component repository
+- Docker Compose and future Kubernetes/TKE deployment manifests
+- local end-to-end smoke jobs and deployment TOML under `deploy/`
+- cross-repo architecture docs and runbooks
+
+It should not become the owner of component implementation code.
 
 ## State and Dispatch
 
@@ -139,14 +153,46 @@ The platform currently supports two artifact storage modes:
 
 In both modes:
 
-- runner scans `jobs/<job_id>/result.json` and trial directories after execution
+- runner writes `artifacts/runner-execution.json` for each execution namespace
+  before starting `harbor-runtime`
+- runner scans every ordinary file under `jobs/<job_id>/` after execution; it does
+  not follow symlinks
+- artifact manifests such as `artifacts/manifest.json` are metadata overlays only:
+  they can declare `kind`, `trial_id`, `schema`, `content_type`, and extra
+  metadata, but they do not decide whether a file is uploaded
 - runner records artifact rows through `harbor-api`
 - MySQL remains the artifact index
 - `synthetic-data-platform` reads results and trajectories through `harbor-api`, not runner-local paths or COS credentials
 
 COS configuration is TOML-based in the current iteration, including literal COS credentials. Replacing credential fields with env/K8s Secret references is a later hardening step.
 
-Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files.
+Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
+
+Artifact identity is intentionally split:
+
+- `platform_job_id`: the control-plane job ID used for scheduling and querying.
+- `runtime_job_result_id`: Harbor runtime `JobResult.id` from root `result.json`.
+- `execution_id`: the runner lease/attempt namespace used in COS keys.
+
+The default COS object key layout is:
+
+```text
+{prefix}/jobs/{platform_job_id}/attempts/{attempt}/executions/{execution_id}/{relative_path}
+```
+
+This keeps two runner Pods from overwriting each other when the same platform job
+ID is retried, re-leased, or re-uploaded.
+
+`harbor-runtime` writes the canonical ATIF trajectory and also derives an OpenAI
+messages trajectory when a valid ATIF `agent/trajectory*.json` file exists:
+
+```text
+agent/trajectory.json
+agent/trajectory.openai-messages.json
+```
+
+Both files are recorded as `kind = "trajectory"` and are distinguished through
+`metadata.schema`.
 
 Input datasets are handled separately from output artifacts. `synthetic-data-platform`
 can submit `input_datasets` with COS URIs to `harbor-api`; `harbor-api` stores

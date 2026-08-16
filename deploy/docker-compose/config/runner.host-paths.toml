@@ -1,5 +1,4 @@
-runner_id = "runner-cos-1"
-jobs_dir = "/workspace/jobs"
+jobs_dir = "$HARBOR_RUNNER_HOST_JOBS_DIR"
 max_running_jobs = 1
 poll_interval_sec = 2
 control_plane_url = "http://harbor-api:8080"
@@ -15,6 +14,8 @@ backend = "cos"
 retain_local = true
 local_retention_hours = 72
 upload_manifest = true
+upload_policy = "job_dir_all"
+cos_key_layout = "attempt_execution"
 fail_job_on_upload_error = false
 upload_retry_attempts = 2
 upload_retry_wait_sec = 1
@@ -23,8 +24,8 @@ upload_retry_wait_sec = 1
 bucket = "harbor-artifacts-1250000000"
 region = "ap-guangzhou"
 prefix = "dev"
-secret_id = "example-artifact-secret-id"
-secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+secret_id = "replace-with-cos-secret-id"
+secret_key = "replace-with-cos-secret-key"
 
 [input_materialization]
 backend = "cos"
@@ -39,8 +40,9 @@ max_file_count = 200000
 bucket = "harbor-datasets-1250000000"
 region = "ap-guangzhou"
 prefix = "dev/datasets"
-secret_id = "example-dataset-secret-id"
-secret_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+secret_id = "replace-with-cos-secret-id"
+secret_key = "replace-with-cos-secret-key"
 
 [capabilities]
 providers = ["docker", "ags", "tke"]
+features = ["cos-input"]

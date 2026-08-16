@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from harbor_control_plane import main as control_plane_main
 from harbor_control_plane.config import load_control_plane_config
 
 
@@ -40,3 +41,30 @@ def test_load_control_plane_config_requires_cos_section_for_cos_backend(
 
     with pytest.raises(ValidationError):
         load_control_plane_config(config_path)
+
+
+def test_load_config_reads_default_code_config_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    config_path = tmp_path / "control-plane.toml"
+    config_path.write_text(
+        """
+[artifact_storage]
+backend = "cos"
+download_mode = "proxy"
+
+[artifact_storage.cos]
+bucket = "harbor-artifacts-1250000000"
+region = "ap-guangzhou"
+prefix = "dev"
+secret_id = "sid"
+secret_key = "skey"
+""".lstrip()
+    )
+    monkeypatch.delenv("HARBOR_CONTROL_PLANE_CONFIG", raising=False)
+    monkeypatch.setattr(control_plane_main, "DEFAULT_CONFIG_PATH", config_path)
+
+    config = control_plane_main._load_config()
+
+    assert config.artifact_storage.backend == "cos"
+    assert config.artifact_storage.download_mode == "proxy"
