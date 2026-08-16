@@ -102,3 +102,8 @@ terminal snapshot、trial 明细和 artifact metadata 都必须可查。
 - job `input_state = "succeeded"`
 - `materialized_inputs` 非空
 - artifacts 中存在 `kind = "input-manifest"`
+
+如果要从 synthetic-data-platform 前端入口验证上传 dataset、创建 TKE task、
+查看 trajectory / artifacts、ingest samples、publish result dataset 和下载结果，
+使用：
+[`synthetic-frontend-local-e2e.md`](synthetic-frontend-local-e2e.md)。

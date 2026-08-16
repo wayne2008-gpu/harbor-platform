@@ -2,6 +2,8 @@
 
 This runbook validates the Phase 8 flow where a job references an input dataset
 by COS URI and `harbor-runner` downloads it before starting `harbor-runtime`.
+For the synthetic-data-platform browser flow on top of the same COS/TKE stack,
+use [`synthetic-frontend-local-e2e.md`](synthetic-frontend-local-e2e.md).
 
 The intended local topology is:
 
