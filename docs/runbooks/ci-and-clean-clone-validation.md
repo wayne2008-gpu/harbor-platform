@@ -13,8 +13,17 @@ The workflow lives at:
 .github/workflows/ci.yml
 ```
 
-It checks out submodules explicitly. Private submodules require a repository
-secret named `HARBOR_SUBMODULE_TOKEN` with read access to those repositories.
+It checks out only the submodules required by each CI job. Private submodules
+require a repository secret named `HARBOR_SUBMODULE_TOKEN` with read access to
+all private component repositories referenced by `.gitmodules`, currently:
+
+- `wayne2008-gpu/harbor-control-plane`
+- `wayne2008-gpu/harbor-service-contracts`
+- `wayne2008-gpu/synthetic-data-platform`
+
+The Harbor fork submodule is public at the moment, but the same token can also
+include it. If the token is a fine-grained PAT, select all private component
+repositories above and grant at least read-only `Contents` access.
 
 ## Clean Clone Smoke
 
