@@ -223,9 +223,10 @@ Settings
 - Timeline 默认按 step 顺序展示，并保留 message、tool call、observation 的视觉区分。
 - OpenAI Messages tab 用后训练消费视角展示 role/content/tool_calls/tool_call_id。
 - Summary tab 展示 ATIF/default 与 OpenAI messages 的 schema alignment：覆盖、行数、tool call、observation/tool response 和异常数。
+- Summary tab 提供 tool call id 级别的跨 schema 明细映射，方便定位 ATIF call/observation 与 OpenAI call/response 是否对应。
 - Timeline / OpenAI Messages 提供异常摘要、anomaly-only 过滤和行级异常标签。
 - Raw JSON 只作为兜底，不作为默认阅读方式。
-- 后续增强支持 trajectory diff、跨 schema 明细映射和更深的 verifier 质量规则。
+- 后续增强支持 trajectory diff 和更深的 verifier 质量规则。
 
 ### Results
 
@@ -357,6 +358,7 @@ Settings
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
 - Trajectory 审核过滤：Timeline 支持 source/search 过滤，OpenAI Messages 支持 role/search 过滤。
 - Trajectory schema alignment：Summary tab 对齐 ATIF/default 与 OpenAI messages 的覆盖、行数、tool call、observation/tool response 和异常数。
+- Trajectory schema mapping：Summary tab 按 tool call id 映射 ATIF call/observation 与 OpenAI call/response，并标记 aligned / partial / unlinked。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、详情、JSONL/JSON 下载。
@@ -369,7 +371,7 @@ Settings
 
 需要继续优化：
 
-- Trial 页面后续可继续增加 trajectory diff、跨 schema 明细映射和更细的 verifier 质量规则。
+- Trial 页面后续可继续增加 trajectory diff 和更细的 verifier 质量规则。
 - Result dataset 页面后续可继续增强服务端分页、抽样策略、多维质量规则和 trajectory diff 回跳。
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
@@ -415,7 +417,7 @@ Settings
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加过滤、折叠、基础异常定位和 schema alignment 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加过滤、折叠、基础异常定位、schema alignment 和 tool call id 映射能力，后续继续增强审核效率。
 
 目标：
 
@@ -423,6 +425,7 @@ Settings
 - OpenAI Messages tab 显示 role、content、tool_calls、tool_call_id。
 - provenance 表支持 schema 快速识别和下载。
 - Summary tab 对齐 ATIF/default 与 OpenAI messages 的覆盖、行数、tool call、observation/tool response 和异常数。
+- Summary tab 按 tool call id 展示 ATIF call/observation 与 OpenAI call/response 的映射状态。
 - 对缺 source、缺内容、错误信号、tool response 关联问题做基础异常定位。
 
 验收：
@@ -430,6 +433,7 @@ Settings
 - ATIF 和 OpenAI messages 两种 schema 都能从 trial 页稳定查看。
 - trajectory 缺失时恢复路径明确。
 - Summary tab 能判断两种 schema 是否齐全，以及 tool call / response 信号是否一致。
+- Summary tab 能看到每个 tool call id 的 aligned / partial / unlinked 映射状态。
 - 能切换 anomaly-only 模式快速定位异常 timeline event / OpenAI message。
 
 ### F4：Result Dataset Review
