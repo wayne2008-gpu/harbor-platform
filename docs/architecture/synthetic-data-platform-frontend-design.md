@@ -259,20 +259,23 @@ Settings
 - Task 创建、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
+- Timeline 基础结构化审核视图：source、message、tool_calls、observation。
+- OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
 - Result dataset 列表、详情、JSONL/JSON 下载。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 
 需要继续优化：
 
-- Artifact/provenance 表在两列详情布局里保持可读宽度和滚动。
 - Workbench 减少“卡片堆叠感”，把 readiness、metrics、recent runs 的层级进一步拉开。
 - Tasks/Results 列表需要更稳定的筛选状态保留和 URL query 同步。
-- Trial 页面需要把 tool call / observation 展示得更像审核流，而不是普通 timeline 文本。
+- Trial 页面后续可继续增加 trajectory 过滤、折叠、diff 和异常定位。
 - Result dataset lineage 需要补更强的可视化关系，而不是纯文本摘要。
 
 ## 开发排期
 
 ### F1：前端设计基线与表格可读性
+
+状态：基础版已完成。
 
 目标：
 
@@ -300,6 +303,8 @@ Settings
 - cancel/retry/artifact retry 的 disabled reason 清晰。
 
 ### F3：Trajectory Review
+
+状态：基础版已完成，后续继续增强审核效率。
 
 目标：
 
