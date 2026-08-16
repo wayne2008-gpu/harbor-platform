@@ -13,6 +13,32 @@
 
 设计原则来自 `ui-ux-pro-max` 的 Data-Dense Dashboard 方向：高密度、可扫描、低装饰、状态清晰、键盘可达。丢弃官网型 Enterprise Gateway / landing page pattern。
 
+## 设计系统决策
+
+本轮使用 `ui-ux-pro-max` 做前端设计基线查询，输入为：
+
+```text
+internal data platform dashboard operations
+variance: 4/10
+motion: 3/10
+density: 9/10
+```
+
+采用结论：
+
+- 产品形态采用 Data-Dense Dashboard，而不是官网型 Enterprise Gateway。
+- 页面首屏直接进入业务工作台，不做 hero、营销 CTA、行业/角色方案区。
+- 密度偏高，优先展示任务状态、dataset、runtime、artifact、sample、result dataset 等可操作信息。
+- 动效保持低强度，只用于 hover、loading、filter、tab 切换和状态反馈；支持 `prefers-reduced-motion`。
+- 数据表移动端使用卡片化或局部横向滚动，不能让页面整体横向溢出。
+- React 实现上，表单使用 controlled components；搜索/筛选输入后续使用 deferred value 或 debounce，避免大列表每次按键全量重算。
+
+不采用结论：
+
+- 不采用 Enterprise Gateway 的 Hero、Solutions by Industry、Client Logos、Contact Sales。
+- 不使用自动播放视频、旋转 logo、装饰性大图或渐变背景。
+- 不为了“看起来像平台”堆叠大量无操作价值的卡片。
+
 ## 用户与场景
 
 目标用户是平台研发、算法/数据工程、数据标注与质检人员。
@@ -37,6 +63,29 @@ Tasks
 Results
 Settings
 ```
+
+全局布局：
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│ Skip link                                                  │
+├──────────────┬─────────────────────────────────────────────┤
+│ Sidebar      │ Top context bar / page title / primary CTA  │
+│              ├─────────────────────────────────────────────┤
+│ Workbench    │ Page content                                │
+│ Datasets     │ - status strip / filters                    │
+│ Tasks        │ - primary table or detail console           │
+│ Results      │ - secondary panels                          │
+│ Settings     │ - raw/debug section last                    │
+└──────────────┴─────────────────────────────────────────────┘
+```
+
+响应式规则：
+
+- 桌面端使用 sidebar + 内容区，详情页可使用双列，但主审核区域必须占主要宽度。
+- 平板端保留导航和表格扫描能力，详情页的辅助面板下沉或缩窄。
+- 手机端导航改为可收起或顶部入口，表格转为记录卡片；只允许表格容器内部横向滚动。
+- ID、COS URI、artifact path、checksum 等长文本使用 `overflow-wrap:anywhere`，避免单字断裂。
 
 页面层级：
 
@@ -89,6 +138,7 @@ Settings
 - 不使用大 hero，不做营销文案。
 - readiness 和 metrics 用紧凑信息块，避免过多装饰卡片。
 - 最近任务优先显示 task name、state、dataset、runtime、updated、action。
+- 失败任务和阻塞状态优先于普通统计露出，确保用户能判断下一步操作。
 
 ### Datasets
 
@@ -112,6 +162,7 @@ Settings
 - 展示 dataset source、COS/local URI、checksum、size、task_names。
 - 明确 readiness：是否具备 task_name、是否有 checksum、是否可创建任务。
 - 主动作是 “Create task from dataset”。
+- 后续 dataset 管理能力增强后，补充版本差异、使用过该 dataset 的任务列表、可复用的 task_name 映射。
 
 ### Tasks
 
@@ -140,6 +191,13 @@ Settings
 - Samples 区域承接 `ingest-samples` 和 `publish`。
 - Raw Harbor job 放在页面底部，作为调试补充，不参与主要阅读路径。
 
+关键状态：
+
+- queued/running：展示当前阶段和下一次 refresh 结果。
+- succeeded：主动作转为 ingest samples / publish result dataset。
+- failed：顶部露出异常摘要，恢复动作优先展示 retry run / retry artifacts。
+- cancelling/cancelled：展示取消来源和取消时间，避免用户误以为任务失败。
+
 ### Trial / Trajectory
 
 定位：平台最核心的轨迹审核页。
@@ -160,6 +218,13 @@ Settings
 - 如果 trajectory artifact 缺失，要显示清晰恢复路径：检查 artifacts 或 retry artifact collection。
 - provenance 表要保留可读最小宽度，路径和 COS key 可以横向滚动，不应在窄列中被拆成单字。
 
+审核体验：
+
+- Timeline 默认按 step 顺序展示，并保留 message、tool call、observation 的视觉区分。
+- OpenAI Messages tab 用后训练消费视角展示 role/content/tool_calls/tool_call_id。
+- Raw JSON 只作为兜底，不作为默认阅读方式。
+- 后续增强支持按 role、tool、exception、reward、schema 过滤。
+
 ### Results
 
 定位：发布后的业务结果数据集目录。
@@ -177,6 +242,12 @@ Settings
 - Download panel 明确两种格式：
   - JSONL：后训练样本消费优先格式。
   - JSON：包含元数据和 samples 的完整导出。
+
+结果审核重点：
+
+- 用户必须能从 result dataset 回溯到 input dataset、synthetic task、Harbor job、trial、trajectory artifact。
+- samples preview 需要显示字段覆盖情况，例如当前预览行里每个字段有多少行具备值。
+- 下载入口要解释格式差异，但不能用大段说明挤占样本预览区域。
 
 ### Settings
 
@@ -226,6 +297,15 @@ Settings
 - 面板和控件 radius 最大 8px。
 - 页面区块使用全宽布局或无框布局；卡片只用于重复项、面板、modal、状态块。
 
+组件规范：
+
+- 表格：桌面优先，列头固定语义；路径/URI 列用 mono 字体和局部横向滚动。
+- 状态徽标：颜色只作为辅助，文字必须表达状态。
+- 操作按钮：危险动作使用确认弹窗；异步动作显示 loading/disabled reason。
+- Tabs：用于 trajectory schema / raw view 切换，不用于隐藏关键操作。
+- Empty state：必须提供下一步动作，例如上传 dataset、创建 task、同步状态。
+- Error state：展示用户可执行恢复动作，不只展示异常字符串。
+
 图标：
 
 - 使用 `lucide-react`。
@@ -262,6 +342,8 @@ Settings
 - Timeline 基础结构化审核视图：source、message、tool_calls、observation。
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
 - Result dataset 列表、详情、JSONL/JSON 下载。
+- Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
+- Samples preview coverage：样本数、预览行数、字段数、可见字段覆盖行数。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 
 需要继续优化：
@@ -269,9 +351,15 @@ Settings
 - Workbench 减少“卡片堆叠感”，把 readiness、metrics、recent runs 的层级进一步拉开。
 - Tasks/Results 列表需要更稳定的筛选状态保留和 URL query 同步。
 - Trial 页面后续可继续增加 trajectory 过滤、折叠、diff 和异常定位。
-- Result dataset lineage 需要补更强的可视化关系，而不是纯文本摘要。
+- Result dataset 页面后续可继续增强 trial/artifact 筛选和大样本字段统计。
 
 ## 开发排期
+
+前端开发按“可用闭环优先”推进，不先做完整设计系统抽象：
+
+1. 先把核心任务闭环跑通：dataset -> task -> trial/trajectory -> samples -> result dataset。
+2. 再增强审核效率：trajectory timeline、OpenAI messages、result lineage、sample coverage。
+3. 最后收敛运营首页和配置页，避免 Workbench 先变成静态指标墙。
 
 ### F1：前端设计基线与表格可读性
 
@@ -318,6 +406,8 @@ Settings
 - trajectory 缺失时恢复路径明确。
 
 ### F4：Result Dataset Review
+
+状态：基础版已完成。
 
 目标：
 
