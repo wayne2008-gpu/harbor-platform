@@ -9,9 +9,9 @@ and end-to-end validation.
 The repository intentionally keeps these modules separate:
 
 - `harbor/`: Harbor fork submodule. This contains Harbor core, AGS/TKE environment adapters, `harbor-runtime`, and `harbor-runner`.
-- `services/harbor-control-plane/`: control-plane submodule. This contains `harbor-api`, DB migrations, RocketMQ adapters, scheduler/lease logic, and artifact access code.
-- `services/synthetic-data-platform/`: synthetic data business platform submodule. It should call `harbor-api` instead of importing Harbor internals.
-- `packages/harbor-service-contracts/`: shared contracts submodule, such as job state enums, RocketMQ message schema, and request/response models.
+- `harbor-control-plane/`: control-plane submodule. This contains `harbor-api`, DB migrations, dispatch adapters, scheduler/lease logic, and artifact access code.
+- `synthetic-data-platform/`: synthetic data business platform submodule. It should call `harbor-api` instead of importing Harbor internals.
+- `harbor-service-contracts/`: shared contracts submodule, such as job state enums, dispatch message schema, and request/response models.
 - `deploy/`: super-repo owned local Docker Compose and future Kubernetes/TKE manifests.
 - `docs/`: super-repo owned architecture notes and runbooks.
 
@@ -21,9 +21,9 @@ The repository intentionally keeps these modules separate:
 - `harbor-control-plane` may depend on stable Harbor package APIs and shared contracts, but it must not know synthetic data business concepts.
 - `synthetic-data-platform` should talk to `harbor-api` over HTTP and store its own business state.
 - Component code changes belong in the owning submodule, not in super-repo-only directories.
-- Deployment config belongs under `deploy/`, not at the repository root or inside component source trees.
+- Concrete runtime config belongs to the owning component submodule. The super repo's `deploy/` files should only mount or reference those configs.
 - MySQL is the durable state source for control-plane jobs and runners.
-- RocketMQ is a dispatch channel only. Do not use RocketMQ as the source of truth for job state.
+- RabbitMQ is the default dispatch channel. Do not use any message queue as the source of truth for job state.
 - Runner-local `jobs/` is staging/cache. Durable production artifacts should be stored in object storage.
 
 ## Development Commands

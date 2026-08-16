@@ -1,6 +1,6 @@
 {
   "job_config": {
-    "job_name": "m5-ags-compose-smoke",
+    "job_name": "m5-ags-local-runner-smoke",
     "n_concurrent_trials": 1,
     "environment": {
       "type": "ags"
@@ -12,7 +12,7 @@
     ],
     "datasets": [
       {
-        "path": "/workspace/harbor/generated/otel-bench-ags-smoke",
+        "path": "${HARBOR_PLATFORM_ROOT}/harbor/generated/otel-bench-ags-smoke",
         "task_names": [
           "go-http-tracing"
         ]

@@ -9,7 +9,7 @@ The target runtime flow is:
 ```text
 synthetic-data-platform
   -> harbor-api
-  -> MySQL + RocketMQ
+  -> MySQL + RabbitMQ
   -> harbor-runner instances
   -> harbor-runtime subprocesses
   -> agent-runtime environments
@@ -39,14 +39,11 @@ harbor-runner Pod/container
 ```text
 harbor-platform/
   harbor/                         # Harbor fork submodule
-  services/
-    harbor-control-plane/          # harbor-api/control-plane submodule
-    synthetic-data-platform/       # synthetic data platform submodule
-  packages/
-    harbor-service-contracts/      # shared schemas/contracts submodule
+  harbor-control-plane/            # harbor-api/control-plane submodule
+  synthetic-data-platform/         # synthetic data platform submodule
+  harbor-service-contracts/        # shared schemas/contracts submodule
   deploy/
-    docker-compose/                # local distributed dev environment
-      config/                      # local compose TOML config
+    docker-compose/                # local control-plane stack and smoke jobs
     k8s/                           # future TKE manifests
   docs/
     architecture/
@@ -69,23 +66,23 @@ harbor-platform/
 
 ### Harbor Control Plane
 
-`services/harbor-control-plane/` is a separate service submodule pinned by the
+`harbor-control-plane/` is a separate service submodule pinned by the
 super repo.
 
 It owns:
 
 - `harbor-api` HTTP service
 - MySQL schema and migrations
-- RocketMQ producer/consumer adapters
+- RabbitMQ dispatch producer and optional legacy RocketMQ adapters
 - runner registry, heartbeat, lease, and retry logic
 - job cancellation and status APIs
 - service-local configuration and migrations
 
-`harbor-api` should not run jobs directly. It writes DB state, publishes RocketMQ messages, and returns DB-backed job status.
+`harbor-api` should not run jobs directly. It writes DB state, publishes dispatch messages, and returns DB-backed job status.
 
 ### Synthetic Data Platform
 
-`services/synthetic-data-platform/` is a separate business platform submodule
+`synthetic-data-platform/` is a separate business platform submodule
 above Harbor. It owns:
 
 - synthetic task management
@@ -103,10 +100,12 @@ The super repo owns integration assets only:
 
 - git submodule pins for each component repository
 - Docker Compose and future Kubernetes/TKE deployment manifests
-- local end-to-end smoke jobs and deployment TOML under `deploy/`
+- local end-to-end smoke jobs and cross-component wiring
 - cross-repo architecture docs and runbooks
 
-It should not become the owner of component implementation code.
+It should not become the owner of component implementation code or concrete
+component runtime configuration. `harbor-runner` config lives in `harbor/config/`;
+`harbor-api` config lives in `harbor-control-plane/config/`.
 
 ## State and Dispatch
 
@@ -119,19 +118,19 @@ Use MySQL as the state source:
 - job events
 - artifact metadata
 
-Use RocketMQ as the dispatch channel:
+Use RabbitMQ as the default dispatch channel:
 
-- topic: Harbor jobs
+- queue: `harbor_jobs`
 - message body: `job_id` plus minimal routing metadata
-- consumer group: Harbor runners
+- consumers: Harbor runners
 
-RocketMQ does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
+The message queue does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
 
-`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RocketMQ message. `harbor-runner` instances consume messages or poll queued jobs, claim a MySQL-backed lease, then invoke the local `harbor-runtime`.
+`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RabbitMQ message. `harbor-runner` instances consume messages or poll queued jobs, claim a MySQL-backed lease, then invoke the local `harbor-runtime`.
 
 The preferred runner acquisition path is `POST /internal/jobs/claim`. Claiming
 combines capability matching and lease creation in one control-plane operation.
-RocketMQ remains a wake-up channel; MySQL-backed claim state decides what actually
+RabbitMQ remains a wake-up channel; MySQL-backed claim state decides what actually
 runs.
 
 Cancellation is also control-plane owned. `POST /jobs/{job_id}/cancel` records
@@ -164,7 +163,12 @@ In both modes:
 - MySQL remains the artifact index
 - `synthetic-data-platform` reads results and trajectories through `harbor-api`, not runner-local paths or COS credentials
 
-COS configuration is TOML-based in the current iteration, including literal COS credentials. Replacing credential fields with env/K8s Secret references is a later hardening step.
+COS configuration is TOML-based in the current iteration, including literal COS
+credentials. The local runner reads `harbor/config/runner.local.toml`; the local
+control-plane stack mounts
+`harbor-control-plane/config/control-plane.local.toml` into
+`harbor-api`. Replacing credential fields with env/K8s Secret references is a
+later hardening step.
 
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 
@@ -226,16 +230,18 @@ Provider quotas, model API limits, TCR image pull speed, and AGS/TKE sandbox cap
 Development uses Docker Compose with:
 
 - MySQL
-- RocketMQ nameserver
-- RocketMQ broker
-- optional RocketMQ dashboard
+- RabbitMQ
+- optional RabbitMQ management UI
 - harbor-api
-- multiple harbor-runner containers
+- synthetic-data-platform
+
+Local `harbor-runner` processes run from the `harbor/` submodule on the host.
+Production packages runner/runtime into runner Pods.
 
 Production replaces these with:
 
 - TencentDB MySQL
-- TDMQ RocketMQ
+- TDMQ for RabbitMQ
 - TKE harbor-api active/standby
 - TKE harbor-runner deployment
 - COS/object storage for artifacts

@@ -161,23 +161,23 @@ Recommended production permission split:
 
 Do not store temporary signed URLs in MySQL. They expire and are access tokens, not durable object addresses.
 
-Repository TOML configs live at:
+Repository TOML configs live with the component that reads them:
 
-- `deploy/docker-compose/config/runner.toml`
-- `deploy/docker-compose/config/control-plane.toml`
+- `harbor/config/runner.local.toml`
+- `harbor-control-plane/config/control-plane.local.toml`
 
-Local Docker Compose mounts those files directly:
+Local Docker Compose mounts only the control-plane config because the runner runs
+on the host during local end-to-end tests:
 
 ```text
-deploy/docker-compose/config/runner.toml         -> harbor-runner-1:/config/runner.toml
-deploy/docker-compose/config/runner.toml         -> harbor-runner-2:/config/runner.toml
-deploy/docker-compose/config/control-plane.toml  -> harbor-api:/config/control-plane.toml
+harbor-control-plane/config/control-plane.local.toml -> harbor-api:/config/control-plane.toml
 ```
 
 `harbor-api` loads `/config/control-plane.toml` by default when the file exists.
 `HARBOR_CONTROL_PLANE_CONFIG` remains only an override hook.
-`harbor-runner` loads `/config/runner.toml`; Compose sets `HARBOR_RUNNER_ID`
-per runner container so the shared TOML does not duplicate per-runner files.
+For local validation, run `harbor-runner` from the Harbor submodule with
+`uv run harbor runner start --config config/runner.local.toml --keep-alive`.
+Set `HARBOR_RUNNER_ID` only when starting additional local runner processes.
 
 Security hardening backlog:
 

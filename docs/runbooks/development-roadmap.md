@@ -10,11 +10,11 @@ Spec should define:
 - `harbor-runner` interface
 - `harbor-api` interface
 - MySQL tables
-- RocketMQ topic/message schema
+- dispatch message schema
 - job/trial/runner state machines
 - cancellation and retry semantics
 - local Docker Compose topology
-- cloud replacement path for TencentDB, TDMQ RocketMQ, TKE, and COS
+- cloud replacement path for TencentDB, TDMQ for RabbitMQ, TKE, and COS
 
 ## Phase 1: Harbor Runner Run-Once
 
@@ -35,7 +35,7 @@ Minimum behavior:
 - report completed/running/pending/error counts
 - support local cancellation
 
-No MySQL or RocketMQ in this phase.
+No MySQL or message queue in this phase.
 
 ## Phase 2: Harbor Runner Daemon
 
@@ -57,14 +57,14 @@ Minimum behavior:
 
 ## Phase 3: Harbor Control Plane / Harbor API
 
-Create `services/harbor-control-plane/`.
+Create `harbor-control-plane/`.
 
 Minimum modules:
 
 - FastAPI app
 - config loader
 - MySQL repository
-- RocketMQ producer
+- RabbitMQ producer
 - job schema validation
 
 Initial endpoints:
@@ -77,9 +77,9 @@ POST /jobs/{job_id}/cancel
 GET /runners
 ```
 
-`POST /jobs` writes MySQL and publishes a RocketMQ message. It does not run Harbor directly.
+`POST /jobs` writes MySQL and publishes a RabbitMQ message. It does not run Harbor directly.
 
-## Phase 4: Runner MySQL + RocketMQ Integration
+## Phase 4: Runner MySQL + RabbitMQ Integration
 
 Connect `harbor-runner` to the control plane contracts.
 
@@ -87,26 +87,29 @@ Flow:
 
 1. runner registers in MySQL
 2. runner heartbeats
-3. runner consumes RocketMQ messages in `harbor-runners` consumer group
+3. runner consumes RabbitMQ messages from `harbor_jobs`
 4. runner obtains job lease from MySQL
 5. runner starts `harbor run`
 6. runner scans `result.json`
 7. runner writes progress to MySQL
 8. runner completes/fails/cancels job and acks message
 
-Validate with two runner instances.
+Validate with two runner processes. In local development those processes run from
+the `harbor/` submodule; Compose only starts the control-plane dependencies.
 
 ## Phase 5: Docker Compose Distributed Dev
 
 Create `deploy/docker-compose/compose.dev.yml` with:
 
 - MySQL
-- RocketMQ nameserver
-- RocketMQ broker
-- optional RocketMQ dashboard
+- RabbitMQ
+- optional RabbitMQ management UI
 - harbor-api
-- harbor-runner-1
-- harbor-runner-2
+- synthetic-data-platform
+
+Run `harbor-runner` from the `harbor/` submodule with
+`harbor/config/runner.local.toml`. Start additional local runner processes with
+different `HARBOR_RUNNER_ID` values when validating distributed lease behavior.
 
 Run real jobs:
 
@@ -143,7 +146,7 @@ Hardening backlog:
 
 ## Phase 7: Synthetic Data Platform
 
-Create `services/synthetic-data-platform/` after Harbor API is stable.
+Create `synthetic-data-platform/` after Harbor API is stable.
 
 Current first version:
 
@@ -278,7 +281,7 @@ Hardening backlog:
 Replace local services with Tencent Cloud services:
 
 - Docker MySQL -> TencentDB MySQL
-- Docker RocketMQ -> TDMQ RocketMQ
-- local runner containers -> TKE runner Pods
+- Docker RabbitMQ -> TDMQ for RabbitMQ
+- local host runner processes -> TKE runner Pods
 - local artifact files -> COS/object storage
 - provider runtimes remain selectable: Docker, AGS, TKE, E2B, etc.

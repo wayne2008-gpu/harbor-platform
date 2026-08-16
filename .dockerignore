@@ -7,6 +7,10 @@
 **/.ruff_cache
 **/.mypy_cache
 **/.ty
+**/node_modules
+**/dist
+**/.vite
+**/platform.local.toml
 .codebase-memory
 harbor/generated
 harbor/jobs

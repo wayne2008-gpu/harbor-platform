@@ -8,7 +8,7 @@ development plan for the distributed Harbor platform.
 The first target is a distributed execution platform:
 
 ```text
-harbor-api -> MySQL -> RocketMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
+harbor-api -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
 ```
 
 The synthetic data platform comes later and must treat `harbor-api` as the only
@@ -26,8 +26,8 @@ Harbor integration boundary.
   `JobConfig` without running.
 - `Job.run()` writes `jobs/<job_name>/config.json`,
   `jobs/<job_name>/result.json`, and trial result directories.
-- `services/harbor-control-plane/`, `services/synthetic-data-platform/`, and
-  `packages/harbor-service-contracts/` are currently empty project shells.
+- `harbor-control-plane/`, `synthetic-data-platform/`, and
+  `harbor-service-contracts/` are separate top-level submodule shells.
 
 The runner and API should reuse these Harbor contracts instead of redefining job
 and trial result formats.
@@ -45,7 +45,7 @@ Harbor's existing trial scheduler remains responsible for `n_concurrent_trials`.
 
 ### AD-2: Control Plane Owns Durable State
 
-`harbor-api` owns MySQL state and RocketMQ publication. It does not run jobs
+`harbor-api` owns MySQL state and RabbitMQ publication. It does not run jobs
 directly.
 
 MySQL is the source of truth for:
@@ -57,7 +57,7 @@ MySQL is the source of truth for:
 - events
 - artifact metadata
 
-RocketMQ only dispatches job IDs. Redelivery is expected and must be resolved
+RabbitMQ only dispatches job IDs. Redelivery is expected and must be resolved
 through MySQL leases and job state.
 
 ### AD-3: Use Full JobConfig As The Execution Contract
@@ -88,8 +88,8 @@ or:
 
 ### AD-4: Service Contracts Are Shared But Business-Free
 
-`packages/harbor-service-contracts/` may contain job states, runner states,
-RocketMQ message schemas, and HTTP request/response models.
+`harbor-service-contracts/` may contain job states, runner states,
+dispatch message schemas, and HTTP request/response models.
 
 It must not contain synthetic data business concepts.
 
@@ -108,7 +108,7 @@ CLI shape:
 
 ```bash
 uv run harbor runner run-once --job-config /path/job.json
-uv run harbor runner start --config runner.toml
+uv run harbor runner start --config config/runner.local.toml
 ```
 
 Phase 1 `run-once` behavior:
@@ -169,7 +169,7 @@ Runner snapshot contract:
 Location:
 
 ```text
-services/harbor-control-plane/
+harbor-control-plane/
 ```
 
 Recommended stack:
@@ -179,7 +179,7 @@ Recommended stack:
 - SQLAlchemy 2.x async or SQLModel
 - Alembic migrations
 - MySQL 8
-- RocketMQ adapter behind a small port interface
+- RabbitMQ adapter behind a small port interface
 
 Initial modules:
 
@@ -188,7 +188,7 @@ src/harbor_control_plane/api/
 src/harbor_control_plane/config.py
 src/harbor_control_plane/db/
 src/harbor_control_plane/repositories/
-src/harbor_control_plane/rocketmq/
+src/harbor_control_plane/dispatch/
 src/harbor_control_plane/scheduler/
 src/harbor_control_plane/contracts/
 ```
@@ -211,7 +211,7 @@ GET /runners
 3. Generate `job_id`.
 4. Store the resolved config in MySQL.
 5. Insert a `queued` job event.
-6. Publish `{job_id}` to RocketMQ.
+6. Publish `{job_id}` to RabbitMQ.
 7. Return `202 Accepted`.
 
 `POST /jobs/{job_id}/cancel` flow:
@@ -227,7 +227,7 @@ GET /runners
 Location:
 
 ```text
-packages/harbor-service-contracts/
+harbor-service-contracts/
 ```
 
 Initial contracts:
@@ -253,7 +253,7 @@ consumer exists. Publish OpenAPI from `harbor-api` for external clients.
 Location:
 
 ```text
-services/synthetic-data-platform/
+synthetic-data-platform/
 ```
 
 This is deferred until the Harbor API is stable.
@@ -416,7 +416,7 @@ Rules:
 - A runner restart may reuse the same `runner_id` only if it can reconcile its
   local `jobs_dir`.
 
-## RocketMQ Contract
+## RabbitMQ Contract
 
 Topic:
 
@@ -552,7 +552,7 @@ Deliverables:
 Validation:
 
 - Contract unit tests for state transitions.
-- JSON round-trip tests for RocketMQ messages and API payloads.
+- JSON round-trip tests for dispatch messages and API payloads.
 
 ### Phase 1: Harbor Runner Run-Once
 
@@ -578,7 +578,7 @@ uv run harbor runner run-once --job-config <fixture>
 
 Deliverables:
 
-- `uv run harbor runner start --config runner.toml`.
+- `uv run harbor runner start --config config/runner.local.toml`.
 - In-memory queue for local jobs.
 - `max_running_jobs`.
 - Periodic snapshots.
@@ -598,7 +598,7 @@ Deliverables:
 - Config loader.
 - MySQL repository.
 - Alembic migrations.
-- In-memory RocketMQ fake for tests.
+- In-memory dispatch fake for tests.
 - Initial endpoints:
   - `POST /jobs`
   - `GET /jobs/{job_id}`
@@ -612,12 +612,12 @@ Validation:
 - `POST /jobs` inserts DB rows and publishes one dispatch message.
 - Duplicate/invalid job configs fail before publication.
 
-### Phase 4: Runner MySQL And RocketMQ Integration
+### Phase 4: Runner MySQL And RabbitMQ Integration
 
 Deliverables:
 
 - Runner registration and heartbeat.
-- RocketMQ consumer.
+- RabbitMQ consumer.
 - MySQL lease acquisition and renewal.
 - Snapshot writer.
 - Cancellation polling.
@@ -641,12 +641,14 @@ deploy/docker-compose/compose.dev.yml
 Services:
 
 - MySQL
-- RocketMQ nameserver
-- RocketMQ broker
-- optional RocketMQ dashboard
+- RabbitMQ
+- optional RabbitMQ management UI
 - harbor-api
-- harbor-runner-1
-- harbor-runner-2
+- synthetic-data-platform
+
+Local runner processes run from the `harbor/` submodule on the host. Start
+additional processes with different `HARBOR_RUNNER_ID` values when validating
+distributed lease behavior.
 
 Validation jobs:
 
@@ -688,7 +690,7 @@ Validation:
 Deliverables:
 
 - TencentDB MySQL config.
-- TDMQ RocketMQ config.
+- TDMQ for RabbitMQ config.
 - TKE deployment manifests for API and runners.
 - COS artifact storage.
 
@@ -707,4 +709,4 @@ Validation:
 
 This order keeps the highest-risk part, the boundary between Harbor's existing
 job execution and a distributed runner, small and testable before adding MySQL
-and RocketMQ.
+and RabbitMQ.
