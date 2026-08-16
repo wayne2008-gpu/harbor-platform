@@ -348,6 +348,8 @@ Settings
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
 - Timeline 基础结构化审核视图：source、message、tool_calls、observation。
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
+- Trajectory 审核过滤：Timeline 支持 source/search 过滤，OpenAI Messages 支持 role/search 过滤。
+- Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、详情、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
 - Samples preview coverage：样本数、预览行数、字段数、可见字段覆盖行数。
@@ -355,7 +357,7 @@ Settings
 
 需要继续优化：
 
-- Trial 页面后续可继续增加 trajectory 过滤、折叠、diff 和异常定位。
+- Trial 页面后续可继续增加 trajectory diff 和更细的异常定位。
 - Result dataset 页面后续可继续增强 trial/artifact 筛选和大样本字段统计。
 - Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
 - Task detail 后续可继续增加 artifact failure 分类、trial 异常聚合和耗时/cost breakdown。
@@ -401,7 +403,7 @@ Settings
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，后续继续增强审核效率。
+状态：基础版已完成，已增加过滤和折叠基础能力，后续继续增强审核效率。
 
 目标：
 
