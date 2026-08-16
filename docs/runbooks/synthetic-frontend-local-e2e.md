@@ -18,7 +18,8 @@ Browser :5173
 - 上传本地 Harbor benchmark 归档到 COS。
 - 从前端或脚本创建 TKE synthetic task。
 - 等待 Harbor job 完成并上传 artifacts。
-- 查看 Task、Trial、Trajectory、OpenAI messages、Artifact download URL。
+- 查看 Task、Trial、Artifact download URL，并实际下载一个结果 artifact。
+- 当 agent 产出 trajectory 时，查看 Trajectory 和 OpenAI messages。
 - 执行 samples ingest。
 - 当样本源存在时 publish result dataset，并下载 JSONL / JSON。
 
@@ -124,20 +125,39 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
 脚本会：
 
 1. 检查 `http://localhost:5173`、`http://localhost:8081/health`、online runner。
-2. 打包并上传 `otel-bench-ags` 到 synthetic dataset storage COS。
+2. 打包并上传 `otel-bench-ags` 到 synthetic dataset storage COS。传入
+   benchmark 集合目录时，脚本会打包目录内容，确保归档根目录直接包含
+   Harbor task 子目录；传入单个 task 目录时，脚本会把该 task 目录作为
+   归档根目录下的一个子目录。
 3. 创建 synthetic task，并通过 `dataset_id` 让 backend 透传 `input_datasets`。
 4. 等待 Harbor job 进入 `succeeded`。
 5. 断言：
    - `input_state = "succeeded"`
    - 至少 1 条 trial
    - 至少 1 条 artifact
-   - 至少 1 条 `kind = "trajectory"` artifact
-   - 至少 1 条 `metadata.schema = "openai_messages"` trajectory artifact
    - 至少 1 条带 `storage_type = "cos"` 和 `storage_key` 的 artifact
-6. 通过 synthetic API 获取 OpenAI messages trajectory。
-7. 通过 synthetic API 获取 artifact download URL。
+6. 如果存在 OpenAI messages trajectory，通过 synthetic API 获取并校验。
+7. 通过 synthetic API 获取 artifact download URL，并下载一个非空 artifact 文件。
 8. 调用 `POST /synthetic-tasks/{task_id}/ingest-samples`。
 9. 如果 ingest 到样本，则 publish result dataset，并下载 JSONL / JSON。
+
+### Trajectory 验证说明
+
+默认 `HARBOR_E2E_AGENT_NAME=oracle` 用于验证 COS 输入上传、TKE 执行、结果
+artifact 上传和 artifact 下载 URL。`oracle` agent 在部分 benchmark 下不会写出
+`agent/trajectory*.json`，因此脚本默认不强制 trajectory。
+
+如果要强制验证 trajectory 和 OpenAI messages sidecar，请使用会产出 trajectory
+的 agent，并显式打开断言：
+
+```bash
+HARBOR_E2E_AGENT_NAME=<trajectory-agent> \
+HARBOR_E2E_REQUIRE_TRAJECTORY=1 \
+HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY=1 \
+./scripts/synthetic-cos-tke-e2e.sh
+```
+
+没有对应 artifact 时脚本会失败。
 
 ### 样本 publish 说明
 
@@ -147,7 +167,7 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
 - `kind = "samples"`
 - 或 `kind = "trial-result"` 且 JSON 内有可抽取的 `samples`
 
-因此，某些 Harbor benchmark 只会验证到 artifact / trajectory / download URL，
+因此，某些 Harbor benchmark 只会验证到 artifact / download URL，
 不会自动生成 result dataset。脚本默认允许这种情况，并输出 Task / Trial 前端 URL。
 
 如果你要强制验证 result dataset publish 和下载，使用带样本源的任务，并设置：

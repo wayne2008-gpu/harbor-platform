@@ -20,6 +20,8 @@ runner_timeout_sec=${HARBOR_E2E_RUNNER_TIMEOUT_SEC:-120}
 stale_after_sec=${HARBOR_E2E_STALE_AFTER_SEC:-60}
 require_input_state=${HARBOR_E2E_REQUIRE_INPUT_STATE:-succeeded}
 require_cos_artifacts=${HARBOR_E2E_REQUIRE_COS_ARTIFACTS:-1}
+require_trajectory=${HARBOR_E2E_REQUIRE_TRAJECTORY:-0}
+require_openai_trajectory=${HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY:-$require_trajectory}
 require_publish=${HARBOR_E2E_REQUIRE_PUBLISH:-0}
 check_web=${HARBOR_E2E_CHECK_WEB:-1}
 preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
@@ -27,6 +29,7 @@ preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
 archive_path=""
 jsonl_path=""
 json_path=""
+artifact_download_path=""
 
 cleanup() {
   if [ -n "$archive_path" ]; then
@@ -37,6 +40,9 @@ cleanup() {
   fi
   if [ -n "$json_path" ]; then
     rm -f "$json_path"
+  fi
+  if [ -n "$artifact_download_path" ]; then
+    rm -f "$artifact_download_path"
   fi
 }
 trap cleanup EXIT
@@ -142,7 +148,7 @@ wait_for_terminal_results() {
 wait_for_metadata() {
   local task_id=$1
   local deadline=$((SECONDS + metadata_timeout_sec))
-  local trial_count artifact_count trajectory_count openai_count cos_count
+  local trial_count artifact_count trajectory_count openai_count cos_count metadata_ready
 
   while [ "$SECONDS" -lt "$deadline" ]; do
     results_json=$(fetch_json "$synthetic_api/synthetic-tasks/$task_id/results")
@@ -164,16 +170,27 @@ wait_for_metadata() {
     )
     echo \
       "$(date -Is) metadata trials=$trial_count artifacts=$artifact_count trajectories=$trajectory_count openai=$openai_count cos=$cos_count"
-    if [ "$trial_count" -ge 1 ] &&
-      [ "$artifact_count" -ge 1 ] &&
-      [ "$trajectory_count" -ge 1 ] &&
-      [ "$openai_count" -ge 1 ]; then
-      if [ "$require_cos_artifacts" -eq 0 ] || [ "$cos_count" -ge 1 ]; then
-        return
-      fi
+    metadata_ready=1
+    if [ "$trial_count" -lt 1 ] || [ "$artifact_count" -lt 1 ]; then
+      metadata_ready=0
+    fi
+    if [ "$require_trajectory" -ne 0 ] && [ "$trajectory_count" -lt 1 ]; then
+      metadata_ready=0
+    fi
+    if [ "$require_openai_trajectory" -ne 0 ] && [ "$openai_count" -lt 1 ]; then
+      metadata_ready=0
+    fi
+    if [ "$require_cos_artifacts" -ne 0 ] && [ "$cos_count" -lt 1 ]; then
+      metadata_ready=0
+    fi
+    if [ "$metadata_ready" -eq 1 ]; then
+      return
     fi
     sleep "$interval_sec"
   done
+
+  echo "Timed out waiting for required metadata for synthetic task $task_id" >&2
+  exit 1
 }
 
 require_command curl
@@ -205,7 +222,11 @@ if [ "$preflight_only" -ne 0 ]; then
 fi
 
 archive_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-dataset.XXXXXX.tar.gz")
-tar -C "$(dirname "$dataset_dir")" -czf "$archive_path" "$(basename "$dataset_dir")"
+if [ -f "$dataset_dir/task.toml" ]; then
+  tar -C "$(dirname "$dataset_dir")" -czf "$archive_path" "$(basename "$dataset_dir")"
+else
+  tar -C "$dataset_dir" -czf "$archive_path" .
+fi
 archive_sha=$(sha256sum "$archive_path" | awk '{print $1}')
 echo "Prepared dataset archive: $archive_path sha256=$archive_sha"
 
@@ -289,27 +310,35 @@ cos_count=$(
 )
 assert_count_at_least "trial count" "$trial_count" 1
 assert_count_at_least "artifact count" "$artifact_count" 1
-assert_count_at_least "trajectory artifact count" "$trajectory_count" 1
-assert_count_at_least "OpenAI trajectory artifact count" "$openai_count" 1
+if [ "$require_trajectory" -ne 0 ]; then
+  assert_count_at_least "trajectory artifact count" "$trajectory_count" 1
+fi
+if [ "$require_openai_trajectory" -ne 0 ]; then
+  assert_count_at_least "OpenAI trajectory artifact count" "$openai_count" 1
+fi
 if [ "$require_cos_artifacts" -ne 0 ]; then
   assert_count_at_least "COS artifact count" "$cos_count" 1
 fi
 
 trial_id=$(jq -r '.trials[0].id // empty' <<<"$results_json")
 assert_non_empty "trial id" "$trial_id"
-trajectory_json=$(
-  fetch_json "$synthetic_api/synthetic-tasks/$task_id/trials/$trial_id/trajectory?schema=openai_messages"
-)
-message_count=$(
-  jq -r \
-    'if type == "array" then length elif type == "object" then ((.openai_messages // .messages // []) | if type == "array" then length else 0 end) else 0 end' \
-    <<<"$trajectory_json"
-)
-assert_count_at_least "OpenAI message count" "$message_count" 1
+if [ "$openai_count" -ge 1 ]; then
+  trajectory_json=$(
+    fetch_json "$synthetic_api/synthetic-tasks/$task_id/trials/$trial_id/trajectory?schema=openai_messages"
+  )
+  message_count=$(
+    jq -r \
+      'if type == "array" then length elif type == "object" then ((.openai_messages // .messages // []) | if type == "array" then length else 0 end) else 0 end' \
+      <<<"$trajectory_json"
+  )
+  assert_count_at_least "OpenAI message count" "$message_count" 1
+else
+  echo "No OpenAI messages trajectory artifact found; trajectory API check skipped."
+fi
 
 artifact_id=$(
   jq -r \
-    '([.artifacts[] | select(.kind == "trajectory")][0].id // .artifacts[0].id // empty)' \
+    '([.artifacts[] | select(.kind == "trajectory")][0].id // [.artifacts[] | select(.kind == "result")][0].id // .artifacts[0].id // empty)' \
     <<<"$results_json"
 )
 assert_non_empty "artifact id" "$artifact_id"
@@ -317,7 +346,12 @@ download_url_json=$(
   fetch_json "$synthetic_api/synthetic-tasks/$task_id/artifacts/$artifact_id/download-url"
 )
 jq -e '.url and (.url | length > 0)' <<<"$download_url_json" >/dev/null
-echo "Verified trajectory and artifact download-url through synthetic API."
+artifact_download_url=$(jq -r '.url' <<<"$download_url_json")
+artifact_download_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-artifact.XXXXXX")
+curl -fsSL "$artifact_download_url" -o "$artifact_download_path"
+artifact_download_size=$(wc -c <"$artifact_download_path" | tr -d ' ')
+assert_count_at_least "artifact download byte count" "$artifact_download_size" 1
+echo "Verified artifact download through synthetic API."
 
 ingest_json=$(curl -fsS -X POST "$synthetic_api/synthetic-tasks/$task_id/ingest-samples")
 ingested=$(jq -r '.ingested // 0' <<<"$ingest_json")
