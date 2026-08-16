@@ -345,7 +345,7 @@ Settings
 - Dataset 上传/登记、列表筛选、详情、task_name 过滤、使用记录、result datasets 回溯、基于 dataset 创建任务。
 - Task 创建、提交前 dataset readiness 检查、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
-- Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作。
+- Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作；published 状态可直接打开 result dataset。
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
