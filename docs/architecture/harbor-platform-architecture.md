@@ -94,6 +94,9 @@ above Harbor. It owns:
 
 It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
 
+Frontend information architecture and UI/UX rules are documented in
+[`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
+
 ### Harbor Platform Super Repo
 
 The super repo owns integration assets only:
