@@ -338,6 +338,8 @@ Settings
 - Dataset 上传/登记、详情、基于 dataset 创建任务。
 - Task 创建、列表、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
+- Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
+- Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
 - Timeline 基础结构化审核视图：source、message、tool_calls、observation。
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
@@ -348,10 +350,10 @@ Settings
 
 需要继续优化：
 
-- Workbench 减少“卡片堆叠感”，把 readiness、metrics、recent runs 的层级进一步拉开。
 - Tasks/Results 列表需要更稳定的筛选状态保留和 URL query 同步。
 - Trial 页面后续可继续增加 trajectory 过滤、折叠、diff 和异常定位。
 - Result dataset 页面后续可继续增强 trial/artifact 筛选和大样本字段统计。
+- Workbench 后续可继续增加按 runtime/provider 的容量、失败原因聚合和成本摘要。
 
 ## 开发排期
 
@@ -421,6 +423,8 @@ Settings
 - JSONL/JSON 下载入口可用，错误有恢复提示。
 
 ### F5：Workbench 收敛
+
+状态：基础版已完成。
 
 目标：
 
