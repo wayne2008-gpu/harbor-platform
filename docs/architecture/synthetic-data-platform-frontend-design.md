@@ -242,11 +242,13 @@ Settings
 - Download panel 明确两种格式：
   - JSONL：后训练样本消费优先格式。
   - JSON：包含元数据和 samples 的完整导出。
+- Samples review 提供质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 
 结果审核重点：
 
 - 用户必须能从 result dataset 回溯到 input dataset、synthetic task、Harbor job、trial、trajectory artifact。
-- samples preview 需要显示字段覆盖情况，例如当前预览行里每个字段有多少行具备值。
+- samples review 需要显示字段覆盖情况，例如当前可见行里每个字段有多少行具备值。
+- samples review 需要能定位缺内容、缺 reward、低 reward、空字符串字段、稀疏行等基础异常。
 - 下载入口要解释格式差异，但不能用大段说明挤占样本预览区域。
 
 ### Settings
@@ -355,7 +357,8 @@ Settings
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、详情、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
-- Samples preview coverage：样本数、预览行数、字段数、可见字段覆盖行数。
+- Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
+- Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
@@ -363,7 +366,7 @@ Settings
 需要继续优化：
 
 - Trial 页面后续可继续增加 trajectory diff 和更细的异常定位。
-- Result dataset 页面后续可继续增强大样本分页、字段分布和异常样本定位。
+- Result dataset 页面后续可继续增强服务端分页、抽样策略、多维质量规则和 trajectory diff 回跳。
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
 
@@ -423,11 +426,11 @@ Settings
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成。
+状态：基础版已完成，已增加样本审核分页、异常定位和字段 profile。
 
 目标：
 
-- 强化 samples preview。
+- 强化 samples review：分页、搜索、异常定位、字段覆盖和字段 profile。
 - 结果数据集 lineage 明确展示 input dataset、task、trial、artifact。
 - 下载区解释 JSONL/JSON 两种 contract。
 
@@ -435,6 +438,7 @@ Settings
 
 - 从 result dataset 能跳回 source task/trial/artifact。
 - JSONL/JSON 下载入口可用，错误有恢复提示。
+- 能在 result dataset 中直接定位缺 content、缺 reward、低 reward、空字符串、稀疏样本。
 
 ### F5：Workbench 收敛
 
