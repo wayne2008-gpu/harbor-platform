@@ -39,6 +39,106 @@ density: 9/10
 - 不使用自动播放视频、旋转 logo、装饰性大图或渐变背景。
 - 不为了“看起来像平台”堆叠大量无操作价值的卡片。
 
+## 前端目标态设计基线
+
+本平台前端按“后训练 agent 轨迹数据合成控制台”设计，不按 Harbor
+运维后台、数据标注工具或普通 BI 报表工具设计。核心判断标准是：
+
+- 用户能否在 1 个入口判断平台当前是否可跑数。
+- 用户能否从 dataset 一路走到 task、trial、trajectory、sample、result dataset。
+- 用户能否在失败时快速知道问题更像 dataset、runtime、artifact storage 还是 sample publish。
+- 用户能否从发布后的 result dataset 回溯到 input dataset、Harbor job、trial 和 trajectory artifact。
+
+前端页面不直接暴露 Harbor 内部概念作为主导航。`harbor_job_id`、lease、
+runner、artifact key、COS key 等只在详情页或诊断区出现；主流程语言使用
+synthetic task、dataset、trial、trajectory、sample、result dataset。
+
+### 角色和主要任务
+
+平台第一阶段面向四类使用者：
+
+- 数据/算法研发：上传或登记输入 dataset，创建合成任务，选择 `tke` 等 runtime。
+- 轨迹质检人员：查看 trial、trajectory、OpenAI messages schema 和异常标记。
+- 平台研发：检查 Harbor job、runner、artifact、COS 上传和失败恢复动作。
+- 数据消费方：查看发布后的 result dataset，下载 JSONL/JSON，并确认 lineage。
+
+### 前端工作流
+
+标准闭环：
+
+```text
+Datasets
+  -> New task
+  -> Task detail
+  -> Trial / trajectory review
+  -> Ingest samples
+  -> Publish result dataset
+  -> Result dataset review/download
+```
+
+恢复闭环：
+
+```text
+Workbench
+  -> Failed task queue
+  -> Task diagnostics
+  -> Retry run / retry artifacts / cancel
+  -> Re-ingest samples
+  -> Publish result dataset
+```
+
+回溯闭环：
+
+```text
+Result dataset
+  -> Source task
+  -> Source trial
+  -> Trajectory artifact
+  -> Input dataset
+```
+
+### MVP 页面能力边界
+
+MVP 必须覆盖：
+
+- dataset 上传/登记、列表、详情、task_name 可用性、source URI 和 checksum。
+- task 创建、runtime/provider 选择、任务列表、任务详情、运行控制和恢复动作。
+- trial 详情、ATIF trajectory、OpenAI messages trajectory、schema alignment 和 anomaly-only 过滤。
+- sample ingest、publish、result dataset 列表、详情、lineage、download。
+- Workbench 的 readiness、失败任务、active run、latest result 和 provider load。
+- Settings 的只读安全配置摘要，隐藏数据库密码和 COS 密钥明文。
+
+MVP 暂不覆盖：
+
+- 多租户、登录鉴权、角色权限。
+- prompt/template 管理。
+- 成本账单、token 报表和 provider 成本拆分。
+- 数据集版本 diff、在线标注、人工审核队列流转。
+- 大规模 result dataset 服务端分页和抽样策略。
+
+这些能力需要后端 contract 和权限模型稳定后再设计，不放入当前前端首版。
+
+### 组件设计约束
+
+全局组件按“可扫描、可恢复、可深链”来设计：
+
+- `PageHeader`：只放页面目的、当前上下文和主动作，不放营销描述。
+- `PanelHeader`：每个 panel 只表达一个任务，例如 readiness、failure causes、samples review。
+- `DataTable`：桌面端表格优先；移动端转记录卡片或表格容器局部横向滚动。
+- `StatusBadge`：颜色只是辅助，状态文字必须可独立理解。
+- `RunStageStepper`：用于 task detail 的执行链路，不用于普通数据展示。
+- `EmptyState`：必须给出下一步动作，不能只有“暂无数据”。
+- `ErrorState`：展示错误和恢复入口；任务失败类错误需要跳转到诊断或 retry。
+- `MutationStatus`：异步动作使用 live region 告知结果，不打断当前焦点。
+
+React 实现规则：
+
+- 列表项使用稳定业务 ID 作为 key，不使用数组 index。
+- 只在有真实渲染成本的纯组件上使用 `React.memo`，不全局盲目 memo。
+- 搜索、筛选、分页状态进入 URL query，保证 deep link 可复现。
+- TanStack Query 的 query key 必须包含筛选条件和分页条件。
+- 危险动作使用确认流程；提交期间按钮 disabled，并显示 waiting/blocked reason。
+
 ## 用户与场景
 
 目标用户是平台研发、算法/数据工程、数据标注与质检人员。
@@ -378,7 +478,148 @@ Settings
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
 
-## 开发排期
+## 下一轮前端开发排期
+
+这轮前端开发按“先把平台操作闭环做顺，再做视觉精修”的顺序推进。每个切片
+控制在 0.5-1.5 天；第一轮以 5 个工作日为一个可验收窗口。如果后端接口或
+测试数据不稳定，优先保留页面骨架和 mock-driven smoke，避免阻塞整体交互设计。
+
+### FE0：设计冻结和现状校准
+
+周期：0.5 天。
+
+目标：
+
+- 固化本设计文档作为前端开发基线。
+- 对照当前页面确认已实现、需增强、依赖后端的能力。
+- 确认本地开发命令、API base path、Playwright smoke 和 mock fixture。
+
+验收：
+
+- 设计文档说明页面、组件、工作流、MVP 边界和排期。
+- 当前实现差距能映射到后续 FE1-FE6，不出现“边开发边改产品方向”。
+
+### FE1：App Shell 和设计系统收敛
+
+周期：0.5-1 天。
+
+目标：
+
+- 收敛 sidebar、topbar、skip link、route focus、按钮、状态徽标、表格、empty/error/loading。
+- 统一颜色 token、spacing、radius、focus ring、移动端断点和长文本换行规则。
+- 检查所有 icon 使用 `lucide-react`，图标按钮具备可访问名称。
+
+验收：
+
+- `/workbench`、`/datasets`、`/tasks`、`/results`、`/settings` 在 375/768/1024/1440px 可读。
+- 键盘能进入主内容、导航、表单和主要动作。
+- 页面级不出现横向滚动；只有表格容器可局部滚动。
+
+### FE2：Dataset 管理闭环
+
+周期：1 天。
+
+目标：
+
+- 完成 dataset 列表筛选、上传/登记、详情、readiness 和 task_name 展示。
+- 从 dataset 详情直达创建任务，并把 dataset/task_name 预填到 task builder。
+- 展示该 dataset 关联的 synthetic tasks 和 result datasets。
+
+验收：
+
+- 用户能上传或登记一个 COS/local dataset，并从详情页发起任务。
+- dataset 缺 task_name、checksum、size 时有清晰提示，不阻塞可选能力。
+- dataset -> task -> result dataset 的回跳路径可用。
+
+### FE3：Task 创建、运行和恢复
+
+周期：1.5 天。
+
+目标：
+
+- Task builder 支持 dataset、task_name、runtime、agent、model、concurrency。
+- Task detail 展示 execution chain、Harbor state、input/materialization、artifact/sample/publish 状态。
+- cancel、retry run、retry artifacts、ingest samples、publish result dataset 的 available/waiting/blocked reason 可见。
+
+验收：
+
+- 用户能从前端创建 `tke` runtime 任务。
+- running/succeeded/failed/cancelled/published 状态都有明确下一步动作。
+- 失败任务可以从 Workbench 和 task list 进入恢复流程。
+
+### FE4：Trial 和 Trajectory 审核
+
+周期：1.5 天。
+
+目标：
+
+- Trial 页以 trajectory 审核为中心，不让 raw JSON 成为默认视图。
+- 支持 Summary、Timeline、OpenAI Messages、Raw JSON tabs。
+- Summary 展示 ATIF/default 与 OpenAI messages 的覆盖、tool call/response 映射和基础 diff。
+- Timeline 和 OpenAI Messages 支持 source/role/search/anomaly-only 过滤。
+
+验收：
+
+- 用户能判断一个 trial 是否产出了 ATIF trajectory 和 OpenAI messages trajectory。
+- tool call 与 observation/tool response 的映射状态可见。
+- trajectory 缺失、schema 异常、内容缺失时有明确异常标签和恢复入口。
+
+### FE5：Result Dataset 审核和下载
+
+周期：1 天。
+
+目标：
+
+- Result 列表支持 name/version/source task/source dataset 查询。
+- Result 详情展示 sample_count、samples preview、field coverage、field profile、lineage 和下载入口。
+- JSONL/JSON 下载路径、格式差异和错误提示清晰。
+
+验收：
+
+- 用户能从 result dataset 回溯到 source dataset、source task、source trials 和 source artifacts。
+- 用户能在前端定位缺 content、缺 reward、低 reward、空字符串和稀疏样本。
+- JSONL/JSON 下载入口可用。
+
+### FE6：Workbench 和 Settings 收敛
+
+周期：0.5-1 天。
+
+目标：
+
+- Workbench 首屏回答三个问题：现在能不能跑、哪里失败了、下一步做什么。
+- 展示 readiness、failed runs、failure causes、active runs、runtime/provider load、latest results。
+- Settings 只读展示安全配置摘要和本地 E2E 命令，不暴露 secret 明文。
+
+验收：
+
+- 首屏能定位平台阻塞点和恢复入口。
+- 失败任务、运行中任务、最新结果都有直达链接。
+- 本地 E2E 上传 COS、TKE runtime、结果下载的验证命令可复制。
+
+### FE7：前端验收和回归
+
+周期：0.5 天。
+
+目标：
+
+- 补齐核心路径 Playwright smoke。
+- 检查无障碍、响应式、长文本、空状态、错误状态、loading 状态。
+- 截图检查 Workbench、Task Detail、Trial、Result Detail 的桌面和移动端布局。
+
+验收命令：
+
+```bash
+cd synthetic-data-platform/web
+npm run build
+npm run test:ui
+npm run verify
+```
+
+前端进入开发时，优先顺序是 FE1 -> FE3 -> FE4 -> FE5 -> FE6。FE2
+当前已经具备基础能力，后续主要补齐 dataset 版本和管理体验；FE7 每个阶段
+都要滚动执行，不只在最后做。
+
+## 历史开发排期和当前状态
 
 前端开发按“可用闭环优先”推进，不先做完整设计系统抽象：
 
