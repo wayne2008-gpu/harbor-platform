@@ -177,6 +177,11 @@ GET /settings
 GET /runtime-capabilities
 ```
 
+`GET /synthetic-tasks/{id}/samples` keeps the legacy full-list response when no
+pagination parameters are provided. For UI-scale review it also accepts
+`search`/`q`, `limit`, and `offset`, and returns `X-Total-Count`, `X-Offset`,
+and `X-Limit` headers.
+
 Flow:
 
 1. create synthetic task

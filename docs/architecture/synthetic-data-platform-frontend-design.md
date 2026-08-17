@@ -734,6 +734,8 @@ Settings
 - Task detail action queue：根据 runtime、artifact、sample、publish 状态给出优先级恢复/发布动作，并复用安全确认流程。
 - Task detail operation feedback：集中展示 sync/cancel/retry/artifact retry/ingest/publish 的 pending、success、error 和下一步恢复建议。
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
+- Task detail sample preview：ingested samples 通过服务端 search/pagination
+  查询，分页/搜索状态进入 URL query；publish readiness 使用未过滤 total，样本表使用当前搜索后的 total。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
 - Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，展示 Needs review / OpenAI messages / Ready 摘要，并提供首个问题和单 trial 轨迹审核入口。
@@ -951,7 +953,7 @@ npm run verify
 
 ### F2：Task Detail 审核运营体验
 
-状态：基础版已完成，已增加 action queue、failure recovery、运行诊断汇总、artifact retry wake-up 状态和操作 disabled reason。
+状态：基础版已完成，已增加 action queue、failure recovery、运行诊断汇总、artifact retry wake-up 状态、操作 disabled reason，以及 Task samples 服务端分页/搜索预览。
 
 目标：
 
