@@ -163,6 +163,8 @@ GET /synthetic-tasks/{id}/trials/{trial_id}/result
 GET /synthetic-tasks/{id}/trials/{trial_id}/artifacts
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory?schema=openai_messages
+GET /synthetic-tasks/{id}/trials/{trial_id}/review-decision
+PUT /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 POST /synthetic-tasks/{id}/cancel
 POST /synthetic-tasks/{id}/retry
 POST /synthetic-tasks/{id}/artifacts/retry
@@ -198,6 +200,7 @@ Flow:
     downloads
 17. inspect safe runtime settings without exposing database credentials or COS
     secrets
+18. save and reload manual trial review decisions for trajectory audit
 
 Current sample ingestion behavior:
 

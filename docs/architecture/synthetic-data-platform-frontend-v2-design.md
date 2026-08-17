@@ -1,5 +1,9 @@
 # Synthetic Data Platform Frontend V2 Design
 
+> 下一轮平台化前端设计已经冻结到
+> [`synthetic-data-platform-frontend-v3-design.md`](synthetic-data-platform-frontend-v3-design.md)。
+> 本文保留 V2 设计、已完成切片和验收记录。
+
 ## 背景
 
 当前 `synthetic-data-platform/web` 已经具备 MVP 级工作台能力：dataset 上传/登记、
