@@ -215,6 +215,8 @@ Flow:
     duplicating synthetic retry records
 21. review trials from a first-class Reviews queue with state/task/runtime/schema/
     quality flag/reviewer filters and URL-restorable pagination
+22. read Workbench operational rollups from a repository summary snapshot instead
+    of app-layer wide-list aggregation
 
 Current sample ingestion behavior:
 
@@ -475,7 +477,10 @@ Planned milestones:
    items expose `runtime` and `quality_flags`, and the frontend has a primary
    Reviews nav entry plus URL-backed filters.
 6. V4-5: make Workbench summary use dedicated backend aggregation with frontend
-   fallback.
+   fallback. Current status: implemented in `synthetic-data-platform`;
+   `/workbench/summary` now reads a repository summary snapshot, and the SQL
+   repository uses count/group_by/limit queries for rollups and top lists while
+   preserving the existing response contract.
 7. V4-6: add synthetic API audit baseline and surface request IDs in recoverable
    frontend errors.
 8. V4-7: run backend tests, frontend verify, and COS + TKE E2E smoke as the
