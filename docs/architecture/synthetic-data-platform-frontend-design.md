@@ -39,6 +39,271 @@ density: 9/10
 - 不使用自动播放视频、旋转 logo、装饰性大图或渐变背景。
 - 不为了“看起来像平台”堆叠大量无操作价值的卡片。
 
+## 开发前设计冻结
+
+本轮前端设计先冻结“后训练 agent 轨迹数据合成工作台”的操作体验，再进入开发。设计
+查询继续使用 `ui-ux-pro-max`：
+
+```text
+internal data platform dashboard operations
+variance: 4/10
+motion: 3/10
+density: 9/10
+stack: React 19 + Vite + React Router + TanStack Query
+```
+
+采用 Data-Dense Dashboard 作为视觉和交互基线；查询返回的 Enterprise Gateway
+营销结构不适合本产品，继续排除。关键 UX 规则落实为：
+
+- URL 必须表达关键状态：列表 search/filter/page、task builder 预填参数、trial
+  trajectory tab 都要支持 deep link。
+- 错误必须可恢复：失败任务、上传失败、artifact retry、sample ingest、publish
+  都要给出原因、下一步动作和重试入口。
+- 表格优先服务扫描效率：桌面端表格，移动端记录卡片或表格容器内横向滚动，不能造成
+  页面级横向滚动。
+- 表单必须有 visible label、字段内错误和顶部 error summary；提交期间按钮 disabled
+  并展示提交状态。
+- 复杂数据只在需要时展开：Raw JSON、COS key、Harbor job 原始字段放在详情/诊断区，
+  不抢占主流程。
+
+### 设计对象
+
+前端不是 Harbor 运维后台，而是合成数据生产工作台。页面语言以业务流程为中心：
+
+```text
+Dataset -> Synthetic task -> Trial trajectory -> Samples -> Result dataset
+```
+
+Harbor 内部字段只作为可追溯证据出现：
+
+- `harbor_job_id`：任务详情和 lineage。
+- `trial_id`：trial 详情、result dataset 回跳。
+- `artifact kind/schema/path/cos_uri`：artifact 表和 provenance。
+- `runner_id`、`lease_id`、`execution_id`：诊断区，不进入主导航。
+
+### 首屏结构
+
+顶层导航保持 5 个入口，不增加 Harbor 运维入口：
+
+```text
+Workbench | Datasets | Tasks | Results | Settings
+```
+
+布局保持固定结构：
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ skip link                                                     │
+├──────────────┬───────────────────────────────────────────────┤
+│ sidebar      │ page header: title / context / primary action │
+│              ├───────────────────────────────────────────────┤
+│ primary nav  │ operational strip / filters / status summary  │
+│              ├───────────────────────────────────────────────┤
+│              │ main workflow panel                           │
+│              │ secondary diagnostics / raw details last      │
+└──────────────┴───────────────────────────────────────────────┘
+```
+
+移动端保留同样的信息顺序：状态和主动作先出现，表格转记录卡片；长 ID、URI、checksum
+使用可换行容器或局部滚动。
+
+### 页面设计冻结
+
+#### Workbench
+
+目标：回答“现在能不能跑、哪里失败了、下一步做什么”。
+
+首屏顺序：
+
+1. Readiness strip：Synthetic API、Harbor API、Dataset COS、COS credential flag。
+2. Next actions：按 blocker、failed、active、publish candidate、latest result 排序。
+3. Failure causes：input materialization、runtime/trial、artifact persistence、sample/publish。
+4. Active runs 和 recent runs。
+5. Latest result datasets。
+
+Workbench 不承载复杂配置；所有动作必须跳到对应详情页，避免首页变成不可维护的控制台。
+
+#### Datasets
+
+目标：让用户确认输入数据是否能被 Harbor runtime 使用。
+
+列表页：
+
+- Search/filter 进入 URL query。
+- 字段聚焦 name、version、source、format、task_names、checksum/size readiness、action。
+- 空状态主动作是 Upload/Register dataset。
+
+新建页：
+
+- Segmented control：Upload archive / Register COS URI。
+- 右侧或底部 payload preview 展示即将传给后端的 dataset contract。
+- checksum、task_names、format 的缺失要提示影响，而不是用技术异常拦住用户。
+
+详情页：
+
+- Dataset source、task_names、checksum、size、created。
+- 同名 version family。
+- 使用该 dataset 的 recent tasks 和 result datasets。
+- 主动作：Create task from dataset，预填 dataset/task_name。
+
+#### Task Builder
+
+目标：降低“选错 dataset、task_name、runtime”的概率。
+
+布局：
+
+```text
+left: task form
+right: readiness + JobConfig preview
+```
+
+必填字段：dataset、task_name、runtime provider、agent。可选字段：model、concurrency。
+runtime 用 radio cards 表达 `docker`、`ags`、`tke`，并展示实际 `environment.type`。
+
+提交前 readiness：
+
+- dataset source 是否可用。
+- task_name 是否在 dataset catalog 中。
+- checksum 是否存在。
+- provider/runtime 是否已选择。
+- concurrency 是否为正整数。
+
+#### Task Detail
+
+目标：任务运行和恢复，不做 Harbor 原始对象浏览器。
+
+主结构：
+
+```text
+status header
+execution chain: Queued -> Input ready -> Runtime -> Artifacts -> Samples -> Published
+action queue: Sync / Cancel / Retry run / Retry artifacts / Ingest / Publish
+trial review queue
+artifacts
+samples publish readiness
+raw Harbor job / diagnostics
+```
+
+关键规则：
+
+- 所有动作展示 available/waiting/blocked reason。
+- failed 状态优先展示恢复入口。
+- succeeded 状态优先展示 ingest samples / publish。
+- published 状态优先展示 result dataset 链接。
+- diagnostics 只解释问题，不抢主流程。
+
+#### Trial / Trajectory Review
+
+目标：核心审核页，判断 trial 是否可进入后训练数据集。
+
+页面结构：
+
+```text
+trial metrics: state / reward / verifier / exception
+trajectory provenance: trial-result / ATIF / OpenAI messages / raw artifacts
+tabs: Summary | Timeline | OpenAI Messages | Raw JSON
+```
+
+设计冻结：
+
+- 默认进入 Summary。
+- `?view=summary|timeline|messages|raw` 表达当前 tab，result dataset 回跳要能打开目标视图。
+- Summary 展示 quality gates、schema alignment、tool call mapping、content diff、message diff。
+- Timeline 和 OpenAI Messages 支持 search/filter/anomaly-only。
+- Raw JSON 放最后，只做兜底。
+- trajectory 缺失时提供 artifact retry 或返回 task artifact 的恢复路径。
+
+#### Results
+
+目标：发布结果数据集审核、下载和 lineage 回溯。
+
+列表页：
+
+- Search/filter 进入 URL query。
+- 字段聚焦 name、version、sample_count、source task、source dataset、created、download。
+
+详情页：
+
+```text
+result metrics
+samples review: quality summary / search / anomaly-only / pagination
+field coverage and field profile
+lineage: input dataset -> synthetic task -> Harbor run -> result dataset
+trajectory audit links grouped by source trial
+download: JSONL / JSON
+```
+
+关键规则：
+
+- JSONL 是后训练消费优先格式，JSON 是带元数据完整导出。
+- download panel 显示 contract gate：sample rows、metadata、source trials、source artifacts。
+- 每个 source trial 都要能回跳到 trial trajectory review。
+
+#### Settings
+
+目标：本地 E2E 和运行配置只读检查。
+
+必须隐藏 database password、COS secret_id、secret_key、session_token 明文。可以展示：
+
+- Harbor API base URL。
+- dataset storage backend。
+- COS bucket、region、prefix、endpoint。
+- secret configured flags。
+- E2E readiness gates 和可复制命令。
+
+### 组件模型
+
+优先复用这些组件，不先抽象复杂设计系统包：
+
+- `PageHeader`：页面目标、上下文、主动作。
+- `PanelHeader`：单个 panel 的标题、摘要、局部动作。
+- `DataTable`：桌面表格，移动端容器内滚动或记录卡片。
+- `StatusBadge`：状态文字必须独立表达含义，颜色只是辅助。
+- `ReadinessGate`：ready/warning/blocked 三态，带原因和下一步动作。
+- `ActionQueue`：按优先级展示可执行动作和 blocked reason。
+- `LineageFlow`：dataset/task/trial/artifact/result 的可点击来源链。
+- `TrajectoryTabs`：tab state 进入 URL query，支持键盘左右切换和焦点可见。
+- `DiffTable`：schema alignment、tool call mapping、message/content diff 的统一表格模型。
+- `JsonBlock`：Raw JSON 兜底查看，默认折叠或放到页面末尾。
+
+### 前端开发切片
+
+进入开发时按以下顺序推进：
+
+1. **FE-A：Trial deep link 和 result 回跳**
+   - `TrialPage` 支持 `?view=summary|timeline|messages|raw`。
+   - Task/result/artifact 的 trajectory 链接带目标 view。
+   - Playwright 覆盖直接打开 URL、点击 tab、键盘切换、result 回跳。
+
+2. **FE-B：Task Builder readiness**
+   - dataset/task_name/runtime/concurrency 的提交前检查更清楚。
+   - payload preview 和错误 summary 聚合。
+   - 从 dataset 详情进入 task builder 的预填状态进入 URL。
+
+3. **FE-C：Task Detail 恢复体验**
+   - action queue 的 available/waiting/blocked reason 收敛。
+   - failed/succeeded/published 三种状态首屏主动作稳定。
+   - artifact retry、ingest、publish 的成功/失败反馈使用 live region。
+
+4. **FE-D：Result Dataset 审核效率**
+   - trajectory audit links 以 source trial 聚合。
+   - samples review 的异常过滤、字段 profile 和分页继续打磨。
+   - 下载失败或空数据集显示恢复路径。
+
+5. **FE-E：Workbench 和 Settings 验收**
+   - Workbench 首屏 next actions 和 failure causes 作为运营入口。
+   - Settings 作为本地 E2E 检查入口，确认 secret 不泄露。
+   - 补齐 375/768/1024/1440px Playwright 截图或 smoke。
+
+每个切片完成后都跑：
+
+```bash
+cd synthetic-data-platform/web
+npm run build
+npm run test:ui
+npm run verify
+```
+
 ## 前端目标态设计基线
 
 本平台前端按“后训练 agent 轨迹数据合成控制台”设计，不按 Harbor
@@ -469,7 +734,8 @@ Settings
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
 - Tasks/Results 列表搜索使用 deferred query value，减少快速输入时的列表请求抖动。
-- Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
+- Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs，且
+  tab 支持 `?view=summary|timeline|messages|raw` deep link。
 - Timeline 基础结构化审核视图：source、message、tool_calls、observation。
 - OpenAI messages 基础结构化审核视图：role、content、tool_calls、tool_call_id。
 - Trajectory 审核过滤：Timeline 支持 source/search 过滤，OpenAI Messages 支持 role/search 过滤。
@@ -488,7 +754,7 @@ Settings
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
 - Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
-- Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供源 trajectory 审核回跳。
+- Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view 的源 trajectory 审核回跳。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 - Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
@@ -688,7 +954,7 @@ npm run verify
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加 Task detail trajectory review queue、队列摘要、首个问题入口、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff、完整 message text delta、结构化 verifier quality gate 和 Summary review issues 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加 Task detail trajectory review queue、队列摘要、首个问题入口、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff、完整 message text delta、结构化 verifier quality gate、Summary review issues 和 Trial view deep link 能力，后续继续增强审核效率。
 本轮继续增强 Summary content diff，按 tool call id 展示 function name、arguments、response 的 match/mismatch/missing 状态和两侧可读值。
 本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
