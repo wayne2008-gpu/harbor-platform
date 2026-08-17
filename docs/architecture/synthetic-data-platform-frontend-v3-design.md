@@ -391,6 +391,12 @@ download JSONL / JSON
   missing response、orphan response、duplicate 等状态；新增完整 messages JSON
   和单条 message JSON 复制能力，复制结果使用 normalized OpenAI message payload，
   并通过 live status 反馈成功/失败。
+- `FE-V3-5 Result Dataset Console 强化` 已启动并完成第一批交付画像增强：
+  Result Detail 在 `Result delivery decision` 后新增
+  `Post-training export profile`，聚合 JSONL/JSON 交付状态、sample preview
+  范围、字段覆盖摘要和 lineage closure；字段覆盖明确基于当前详情页返回的
+  sample rows 计算，partial preview 场景继续引导用户通过 JSONL/JSON download
+  审核完整结果。
 
 如果要压缩成演示版，优先做：
 
