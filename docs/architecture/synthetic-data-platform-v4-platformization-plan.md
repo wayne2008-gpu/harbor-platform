@@ -33,7 +33,8 @@
 - TKE/AGS/Docker runtime capability 展示和 task builder 选择。
 - Task detail 的 execution stage、cancel、retry、artifact retry、ingest、publish。
 - Trial trajectory 的 ATIF/default、OpenAI messages schema、人工审核结论保存。
-- 全局 trial review queue。
+- 全局 trial review queue，已支持 state、task、runtime、schema、quality flag、
+  reviewer、search 和 pagination。
 - Result dataset 发布、samples 搜索/分页、JSONL/JSON 下载、source trial 回跳。
 - Synthetic API 入站 token scope baseline。
 - Cancel/retry/artifact-retry operation idempotency 持久化。
@@ -177,17 +178,22 @@ expires_at nullable
 
 目标：把 trajectory review 从“逐条看详情”提升为批量生产队列。
 
-建议增强：
+当前已实现：
 
 ```text
-GET /reviews/trials/query
+GET /reviews/trials?state=&task_id=&runtime=&schema=&quality_flag=&reviewer=&search=&limit=&offset=
+```
+
+后续建议增强：
+
+```text
 POST /reviews/trials/batch-decision
 GET /reviews/summary
 ```
 
 V4 前端：
 
-- `Reviews` 一级导航。
+- `Reviews` 一级导航已完成。
 - 队列支持 state、task、runtime、schema readiness、quality flag、reviewer 过滤。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
@@ -324,6 +330,10 @@ V4 增强：
   不再调用 Harbor；完成后重复请求返回首次结果；失败记录为 `failed` 并要求客户端使用新
   idempotency key 重试。兼容实现先把 reservation 状态写入现有
   `metadata_json` 保留键。
+- V4-4 已完成第一版：Reviews 进入一级导航；`GET /reviews/trials` 增加
+  `runtime`、`schema`、`quality_flag`、`reviewer` 过滤；queue item 增加
+  `runtime` 和派生 `quality_flags`，前端筛选全部写入 URL 并可恢复，quick decision
+  继续保留可聚焦 error summary、保存成功刷新 queue/workbench 的行为。
 
 已验证：
 
@@ -349,6 +359,8 @@ Frontend：
 cd synthetic-data-platform/web
 npm run verify
 ```
+
+结果：`22 passed`。
 
 本地 COS + TKE：
 
