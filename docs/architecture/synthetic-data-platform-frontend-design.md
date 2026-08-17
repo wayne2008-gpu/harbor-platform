@@ -460,7 +460,7 @@ Settings
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
-- Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，并提供直达轨迹审核入口。
+- Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，展示 Needs review / OpenAI messages / Ready 摘要，并提供首个问题和单 trial 轨迹审核入口。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
 - Workbench next actions：按阻塞、失败、活跃、待发布、最新结果和创建任务生成首屏动作队列。
@@ -563,6 +563,7 @@ Settings
 - Task builder 支持 dataset、task_name、runtime、agent、model、concurrency。
 - Task detail 展示 execution chain、Harbor state、input/materialization、artifact/sample/publish 状态。
 - cancel、retry run、retry artifacts、ingest samples、publish result dataset 的 available/waiting/blocked reason 可见。
+- Task detail 的 trajectory review queue 汇总待审核 trial、OpenAI messages 覆盖和 ready 数量，失败任务能优先打开首个问题 trial。
 
 验收：
 
@@ -687,7 +688,7 @@ npm run verify
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加 Task detail trajectory review queue、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff 和 Summary review issues 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加 Task detail trajectory review queue、队列摘要、首个问题入口、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff 和 Summary review issues 能力，后续继续增强审核效率。
 本轮继续增强 Summary content diff，按 tool call id 展示 function name、arguments、response 的 match/mismatch/missing 状态和两侧可读值。
 本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
