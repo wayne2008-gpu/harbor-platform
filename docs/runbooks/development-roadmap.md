@@ -176,6 +176,7 @@ GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
 GET /runtime-capabilities
+GET /audit-events
 ```
 
 Synthetic API governance baseline:
@@ -229,6 +230,8 @@ Flow:
     of app-layer wide-list aggregation
 23. trace Synthetic API failures with request IDs and persist business audit
     events for dataset/task/review/publish/download mutations
+24. query synthetic audit events by request ID, action, resource, task/result
+    dataset, status, actor, search text, and pagination from the web console
 
 Current sample ingestion behavior:
 
