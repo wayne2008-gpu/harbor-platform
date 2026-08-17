@@ -311,6 +311,11 @@ V4 增强：
 当前状态：
 
 - V4-0 已完成：方案文档和 roadmap 入口已冻结。
+- V4-1 已完成第一版：新增 SQL-backed `synthetic_samples` 和
+  `synthetic_sample_sources`，`ingest_samples` 会写入 task sample rows，publish
+  会把 sample rows 绑定到 result dataset；task/result samples API 保持原 response
+  和 pagination headers，同时支持 `search/q`、`limit`、`offset` 和
+  `quality_flag`。旧 `samples_json` 仍作为兼容快照和 fallback。
 - V4-3 已完成：Synthetic API 在 cancel、retry、artifact retry 执行副作用前先创建
   operation idempotency reservation；同 key 并发请求命中 `in_progress` 时返回 409，
   不再调用 Harbor；完成后重复请求返回首次结果；失败记录为 `failed` 并要求客户端使用新
@@ -325,7 +330,7 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-结果：`80 passed`。
+结果：`82 passed`。
 
 Synthetic API：
 

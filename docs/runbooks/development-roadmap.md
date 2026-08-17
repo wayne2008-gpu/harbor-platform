@@ -451,7 +451,10 @@ Planned milestones:
    completed with
    [`synthetic-data-platform-v4-platformization-plan.md`](../architecture/synthetic-data-platform-v4-platformization-plan.md).
 2. V4-1: add SQL-backed `synthetic_samples` and source lineage rows; keep current
-   samples API response contract and pagination headers.
+   samples API response contract and pagination headers. Current status:
+   implemented in `synthetic-data-platform`; task/result sample queries read
+   SQL sample rows when present, keep `samples_json` fallback, and support
+   `quality_flag` filtering.
 3. V4-2: freeze result dataset sample snapshots for reproducible JSONL/JSON
    downloads.
 4. V4-3: add operation idempotency reservation states for concurrent same-key
