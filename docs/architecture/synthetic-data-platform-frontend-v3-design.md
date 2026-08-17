@@ -338,6 +338,7 @@ download JSONL / JSON
 | trial review queue | `GET /reviews/trials?state=...&limit=...&offset=...` |
 | task events | `GET /synthetic-tasks/{id}/events?phase=...&limit=...&offset=...` |
 | safe settings | `GET /settings` |
+| runtime capabilities | `GET /runtime-capabilities` |
 
 本轮前端要补齐的后端缺口：
 
@@ -350,6 +351,7 @@ download JSONL / JSON
 | 能力 | API | 状态 |
 | --- | --- | --- |
 | artifact browser 下载策略 | `GET /synthetic-tasks/{task_id}/artifacts/{artifact_id}/download-url` 返回 signed URL first / API proxy fallback 策略；`GET /synthetic-tasks/{task_id}/artifacts/{artifact_id}/download` 提供平台代理下载 | FE-V3 增量实现 |
+| runtime capability API | `GET /runtime-capabilities` 返回配置化 runtime provider、enabled 状态、runner claim requirements 和 handoff 说明 | FE-V3 增量实现 |
 | 人工审核结论持久化 | `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision` | FE-V3-1 已实现 |
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` | FE-V3-5 增量实现 |
 | task/trial 审核队列聚合 | `GET /reviews/trials?state=...&limit=...&offset=...` | FE-V3 增量实现 |
@@ -426,6 +428,12 @@ download JSONL / JSON
   URL 时返回 Synthetic Data Platform API proxy 下载地址。Task Detail 与
   Result Detail 的 source artifact browser 展示下载合同提示，点击后按策略打开
   signed URL 或触发 proxy 下载，并通过 live status 回报实际路径。
+- `runtime capability API` 已完成第一版：synthetic API 新增
+  `GET /runtime-capabilities`，由 `platform.toml` 的
+  `[[runtime_capabilities]]` 配置返回 provider、enabled 状态、runner claim
+  requirements 和 handoff 说明；Task Builder 不再只依赖硬编码 runtime cards，
+  Settings 新增 `Runtime capabilities` 面板用于部署检查，接口失败时前端明确
+  fallback 到本地默认值。
 
 如果要压缩成演示版，优先做：
 
