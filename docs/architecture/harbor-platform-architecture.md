@@ -102,6 +102,9 @@ dataset create/register/upload, synthetic task create/cancel/retry/artifact retr
 sample ingest, result dataset publish/download, trial review decision updates,
 and artifact download access. These audit rows are owned by the synthetic
 platform and complement, rather than replace, control-plane `api_audit_events`.
+The synthetic platform exposes `GET /audit-events` and a first-class Audit
+console page so operators can troubleshoot by request ID, action, resource, task,
+result dataset, status, actor, and search filters.
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
