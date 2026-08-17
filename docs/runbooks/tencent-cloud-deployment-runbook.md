@@ -3,8 +3,9 @@
 本 runbook 定义 Phase 10 的线上部署目标。它面向真实环境：
 TKE + TencentDB MySQL + TDMQ for RabbitMQ + COS + TCR。
 
-当前仓库还没有完整生产 K8s manifests，本文件先固定部署契约、配置归属、
-上线顺序、验收项和回滚边界。后续补 manifests 时必须按这里的分层落地。
+当前仓库已经提供第一版生产导向 K8s base manifests。本文件固定部署契约、
+配置归属、上线顺序、验收项和回滚边界；环境专属 overlay、Ingress、HPA、
+PDB 和 NetworkPolicy 仍按这里的分层继续补齐。
 
 ## 目标拓扑
 
@@ -109,7 +110,7 @@ select version_num from alembic_version;
 当前 head 是：
 
 ```text
-0006_claim_scheduling_fields
+0007_idempotency_tenant_scope
 ```
 
 ### TDMQ for RabbitMQ
@@ -350,7 +351,7 @@ harbor-api health: succeeded
 harbor-api readiness: succeeded
 synthetic API health: succeeded
 frontend reachable: succeeded
-MySQL alembic head: 0006_claim_scheduling_fields
+MySQL alembic head: 0007_idempotency_tenant_scope
 runner online: >= 1
 runner providers: contains tke
 runner features: contains cos-input
@@ -405,8 +406,9 @@ COS 回滚：
   仍待补充。
 - COS credential、RabbitMQ URL、MySQL URL、API token 和 tenant ID 的 env/K8s
   Secret 引用已补齐。
-- 已有最小服务间 Bearer token + tenant header gate；对终端用户开放前仍需
-  补完整登录、RBAC、审计和 tenant-aware idempotency persistence。
+- 已有最小服务间 Bearer token + tenant header gate，cancel/retry/artifact
+  retry 的 idempotency persistence 已按 tenant 隔离；对终端用户开放前仍需
+  补完整登录、RBAC 和审计。
 - TKE provider 当前主要使用 kubeconfig 配置，in-cluster ServiceAccount 默认发现是后续优化。
 - Compose 脚本是本地验证工具；线上可以复用流程，不应直接依赖本地端口假设。
 
@@ -421,4 +423,4 @@ COS 回滚：
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |
 | M39 | 生产 E2E 脚本 | 已完成：`synthetic-cos-tke-e2e.sh` 支持生产 base URL、runtime、dataset、timeout、统一或分服务 auth header/bearer token |
-| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；runner 和 synthetic 出站 harbor-api client 会携带对应 header。剩余：完整用户登录/RBAC/审计和 tenant-aware idempotency persistence |
+| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；runner 和 synthetic 出站 harbor-api client 会携带对应 header；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离。剩余：完整用户登录/RBAC/审计 |
