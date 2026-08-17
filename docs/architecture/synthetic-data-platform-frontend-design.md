@@ -348,6 +348,7 @@ Settings
 - Download panel 明确两种格式：
   - JSONL：后训练样本消费优先格式。
   - JSON：包含元数据和 samples 的完整导出。
+- Export contract gate 明确 JSONL 样本行、完整 JSON 元数据、source trials 和 source artifacts 是否满足交付审计。
 - Samples review 提供质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 
 结果审核重点：
@@ -470,6 +471,7 @@ Settings
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、source task/source dataset 筛选和回跳、详情、source dataset 直达、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
+- Result dataset export contract gates：检查 JSONL rows、Full JSON metadata、source trials 和 source artifacts 是否可交付。
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
 - Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
@@ -687,18 +689,19 @@ npm run verify
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核分页、异常定位和字段 profile。
+状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile 和 export contract gates。
 
 目标：
 
 - 强化 samples review：分页、搜索、异常定位、字段覆盖和字段 profile。
 - 结果数据集 lineage 明确展示 input dataset、task、trial、artifact。
-- 下载区解释 JSONL/JSON 两种 contract。
+- 下载区解释 JSONL/JSON 两种 contract，并以 gate 形式提示样本、元数据、source trials、source artifacts 是否满足交付。
 
 验收：
 
 - 从 result dataset 能跳回 source task/trial/artifact。
 - JSONL/JSON 下载入口可用，错误有恢复提示。
+- Export contract 能判断 JSONL、Full JSON、source trials、source artifacts 是否 ready。
 - 能在 result dataset 中直接定位缺 content、缺 reward、低 reward、空字符串、稀疏样本。
 
 ### F5：Workbench 收敛
