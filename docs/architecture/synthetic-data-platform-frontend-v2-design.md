@@ -386,6 +386,12 @@ FE-V2-1、FE-V2-3、FE-V2-4、FE-V2-5，把服务端分页和审核持久化先�
   tool thread integrity、schema parity、audit provenance 汇总成训练数据消费视角的
   Ready / Needs review / Blocked / Checking 判断，并补充正常轨迹和异常 OpenAI tool
   thread 的 UI smoke。
+- `FE-V2-5 Result dataset 审核和下载` 已启动并完成第一批结果交付增强：Result
+  Detail 已覆盖 delivery decision、review checklist、lineage flow、trajectory audit
+  links、export contract、JSONL/JSON download recovery、sample quality summary、field
+  profile；本轮补充 `Result sample review scope`，明确 full / partial / empty
+  preview 的审核范围，当 API reported `sample_count` 大于返回 `samples.length`
+  时把完整交付路径导向 JSONL/JSON downloads，并补充 partial preview UI smoke。
 
 ## 开发顺序
 
