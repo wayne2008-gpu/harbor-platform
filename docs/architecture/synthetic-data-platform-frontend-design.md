@@ -764,7 +764,7 @@ Settings
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
 - Result dataset sample review：质量摘要、服务端 search/pagination、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值、异常样本过滤和行级异常标签。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
-- Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view 的源 trajectory 审核回跳。
+- Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view/hash 的源 trajectory 审核回跳，覆盖 Summary decision、Timeline、OpenAI Messages 和 schema diff 区域。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 - Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
@@ -772,7 +772,7 @@ Settings
 需要继续优化：
 
 - Trial 页面后续可继续增加更完整 step 文本 diff 和 verifier 专项规则配置。
-- Result dataset 页面后续可继续增强抽样策略、更完整可配置质量规则和 trajectory diff 回跳。
+- Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
 
@@ -994,7 +994,7 @@ deep link 能力，后续继续增强审核效率。
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值配置、异常定位、字段 profile、export contract gates、source trajectory audit links 和 result review checklist。
+状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值配置、异常定位、字段 profile、export contract gates、source trajectory audit links、source trial 精确 deep link 回跳和 result review checklist。
 
 目标：
 
