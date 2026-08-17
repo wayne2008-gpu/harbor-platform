@@ -299,6 +299,9 @@ Current target:
   runners
 - control-plane startup runs Alembic migrations to head for versioned databases;
   existing unversioned local schemas are reconciled and stamped to head
+- control-plane API calls are persisted as service-to-service audit events with
+  tenant, principal, token scopes, required scope, path, status code, request ID,
+  client metadata, and derived job ID
 
 Implemented interface groups:
 
@@ -312,6 +315,7 @@ GET  /internal/jobs/{job_id}/control
 POST /internal/jobs/claim
 POST /jobs/{job_id}/retry
 POST /jobs/{job_id}/artifacts/retry
+POST /internal/audit-events/query
 ```
 
 Trajectory schema lookup:
@@ -335,8 +339,8 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- add full user/session auth, fine-grained RBAC, and audit logs before exposing
-  query endpoints to end users directly
+- add full user/session auth, fine-grained RBAC, and end-user audit correlation
+  before exposing query endpoints to end users directly
 - define production migration rollout rules for TencentDB, including backup,
   rollback, and multi-version service compatibility checks
 
@@ -393,5 +397,7 @@ Implementation milestones:
    `harbor-runner` and the synthetic platform harbor-api client attach matching
    outbound headers with separate production token env names. K8s manifests
    inject component Secrets. Cancel/retry/artifact retry idempotency persistence
-   is tenant-scoped. Remaining security scope: full user/session auth,
-   fine-grained RBAC, and audit logs.
+   is tenant-scoped. Control-plane API calls are persisted in
+   `api_audit_events` and queryable through `POST /internal/audit-events/query`.
+   Remaining security scope: full user/session auth, fine-grained RBAC, and
+   end-user audit correlation.
