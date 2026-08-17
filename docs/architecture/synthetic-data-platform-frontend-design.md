@@ -326,6 +326,7 @@ Settings
 - Timeline 默认按 step 顺序展示，并保留 message、tool call、observation 的视觉区分。
 - OpenAI Messages tab 用后训练消费视角展示 role/content/tool_calls/tool_call_id。
 - Summary tab 展示 ATIF/default 与 OpenAI messages 的 schema alignment：覆盖、行数、tool call、observation/tool response 和异常数。
+- Summary tab 展示 trial quality gates：reward、verifier、exception 和轨迹 schema readiness，前置判断 trial 是否适合进入后训练数据集审核。
 - Summary tab 提供 tool call id 级别的跨 schema 明细映射和基础 diff，方便定位 ATIF call/observation 与 OpenAI call/response 是否对应、name/arguments/response 是否一致。
 - Summary tab 提供 content diff table，按 tool call id 对比 function name、arguments、response 三类可消费信号，并展示两种 schema 的原始可读值。
 - Summary tab 提供 message diff table，按 role 和 turn 对比 ATIF/default 与 OpenAI messages 的 system/developer/user/assistant 自然语言消息内容。
@@ -475,6 +476,7 @@ Settings
 - Trajectory schema mapping：Summary tab 按 tool call id 映射 ATIF call/observation 与 OpenAI call/response，并标记 aligned / partial / unlinked 与基础 diff。
 - Trajectory content diff：Summary tab 按 tool call id 对比 function name、arguments、response，并保留 ATIF/default 与 OpenAI messages 两侧的可读内容。
 - Trajectory message diff：Summary tab 按 role/turn 对比 system/developer/user/assistant 文本内容，标记 match/mismatch/missing。
+- Trial quality gates：Summary tab 前置展示 reward、verifier、exception 和 ATIF/OpenAI schema readiness，帮助判断 trial 是否可进入样本发布审核。
 - Trial Summary review issues：汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供 tab 快捷跳转。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
 - OpenAI message thread review：检测重复 tool call id、缺 tool response、orphan tool response、重复 tool response，并进入 anomaly-only 过滤。
@@ -686,6 +688,7 @@ npm run verify
 本轮继续增强 Summary content diff，按 tool call id 展示 function name、arguments、response 的 match/mismatch/missing 状态和两侧可读值。
 本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
+本轮继续增强 Trial quality gates，按 reward、verifier、exception 和轨迹 schema readiness 前置展示 trial 进入后训练数据集审核的质量门。
 
 目标：
 
