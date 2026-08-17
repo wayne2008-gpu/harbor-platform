@@ -252,12 +252,14 @@ Current status:
 - M24 adds the local COS input materialization smoke payload, optional smoke
   assertions for `input_state` and `input-manifest`, and the local E2E runbook:
   [`cos-input-materialization-local-e2e.md`](cos-input-materialization-local-e2e.md).
+- Synthetic dataset upload now validates archive catalog before COS upload:
+  archives must be readable tar files with safe members and at least one
+  `task.toml`; explicit `task_names` must exist in that catalog.
 
 Hardening backlog:
 
 - add scheduled retention cleanup beyond immediate `retain_local = false`
 - add real-COS integration smoke gated by credentials
-- add synthetic business dataset catalog validation
 
 ## Phase 9: Control Plane Operations
 
