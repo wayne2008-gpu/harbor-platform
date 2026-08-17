@@ -375,6 +375,7 @@ Settings
 - dataset storage backend
 - COS bucket/region/prefix/endpoint
 - secret 是否 configured
+- 安全和本地 E2E readiness gates：secret display、Harbor API、Database、Dataset COS、COS credential flags、E2E commands
 - 本地验证命令
 
 ## 视觉系统
@@ -460,6 +461,7 @@ Settings
 - Workbench next actions：按阻塞、失败、活跃、待发布、最新结果和创建任务生成首屏动作队列。
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
 - Workbench runtime/provider load：按 `environment.type` 聚合 total、active、failed、completed 任务数。
+- Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
 - Tasks/Results 列表搜索使用 deferred query value，减少快速输入时的列表请求抖动。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs。
@@ -597,12 +599,13 @@ Settings
 
 - Workbench 首屏回答三个问题：现在能不能跑、哪里失败了、下一步做什么。
 - 展示 readiness、next actions、failed runs、failure causes、active runs、runtime/provider load、latest results。
-- Settings 只读展示安全配置摘要和本地 E2E 命令，不暴露 secret 明文。
+- Settings 只读展示安全配置摘要、E2E readiness gates 和本地 E2E 命令，不暴露 secret 明文。
 
 验收：
 
 - 首屏能定位平台阻塞点和恢复入口。
 - 失败任务、运行中任务、最新结果都有直达链接。
+- Settings readiness summary 能判断 secret display、Harbor API、Database、Dataset COS、COS credentials、E2E commands 是否 ready。
 - 本地 E2E 上传 COS、TKE runtime、结果下载的验证命令可复制。
 
 ### FE7：前端验收和回归
@@ -722,3 +725,19 @@ npm run verify
 - 首屏能判断平台是否可运行、是否有失败任务、下一步应该做什么。
 - Next actions 能直达 failed queue、active tasks、publish candidates、latest result 或 task creation。
 - 移动端首屏优先展示状态和主动作。
+
+### F6：Settings 收敛
+
+状态：基础版已完成，已增加安全配置摘要、E2E readiness gates、命令复制和 secret 明文隐藏验证。
+
+目标：
+
+- 只读展示运行配置，不暴露 database password、COS secret_id、secret_key、session_token 明文。
+- 用 readiness gates 判断 Harbor API、Database、Dataset COS、COS credential flags 和 E2E commands 是否可用于本地验证。
+- 本地 E2E 上传 COS、TKE runtime、结果下载的验证命令可复制。
+
+验收：
+
+- Settings readiness summary 能显示安全配置和本地 E2E 阻塞点。
+- Safe config JSON 不包含 secret 明文。
+- Frontend quality gate、COS/TKE preflight、Full COS/TKE E2E 命令可复制。
