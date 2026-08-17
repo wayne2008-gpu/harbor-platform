@@ -133,6 +133,10 @@ The message queue does not own durable job state. If a message is redelivered, t
 
 The preferred runner acquisition path is `POST /internal/jobs/claim`. Claiming
 combines capability matching and lease creation in one control-plane operation.
+Jobs have `queue` and `priority` scheduling fields. Claim matching orders queued
+work by descending priority and FIFO creation time, can filter by runner-provided
+`queues`, and can enforce per-claim `queue_quotas` so one queue cannot consume an
+entire multi-job claim batch.
 For dispatch wake-ups that name a specific job, callers can pass `job_id` so the
 claim cannot lease unrelated work.
 RabbitMQ remains a wake-up channel; MySQL-backed claim state decides what actually

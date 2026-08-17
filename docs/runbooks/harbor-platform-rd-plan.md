@@ -231,6 +231,8 @@ WHERE id = :job_id
 ```
 
 - leased 后启动 local subprocess。
+- claim 匹配支持 `queue`、`priority`、指定 `job_id` 和 per-queue quota；
+  高优先级先被 claim，同队列同优先级保持 FIFO。
 - running 时续租。
 - 周期性解析 `result.json` 和 trial results，写入 `jobs`、`trials`、`job_events`。
 - runner 观察 `cancel_requested_at` 并取消 subprocess。

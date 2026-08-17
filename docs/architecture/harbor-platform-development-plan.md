@@ -275,6 +275,8 @@ It must not import Harbor runner internals or read runner-local `jobs/`.
 | `id` | varchar(32) pk | Control-plane job ID; also Harbor `job_name` |
 | `state` | varchar(32) | See job state machine |
 | `job_config_json` | json | Resolved Harbor `JobConfig` |
+| `priority` | int | Higher values claim first within matching queues |
+| `queue` | varchar(128) | Scheduling queue, defaults to `default` |
 | `provider` | varchar(32) | `docker`, `ags`, `tke`, etc. derived from config |
 | `runner_id` | varchar(128) null | Current owner |
 | `lease_id` | varchar(64) null | Current lease |
@@ -291,6 +293,7 @@ It must not import Harbor runner internals or read runner-local `jobs/`.
 Indexes:
 
 - `(state, created_at)`
+- `(state, queue, priority, created_at)`
 - `(runner_id, state)`
 - `(lease_expires_at)`
 - `(updated_at)`
@@ -480,6 +483,10 @@ WHERE id = :job_id
 ```
 
 The update succeeds only when exactly one row is affected.
+
+The control-plane claim API selects candidate jobs by capability requirements,
+optional `queues`, optional exact `job_id`, and per-queue `queue_quotas`.
+Candidates are ordered by descending `priority`, then FIFO creation/update time.
 
 Running jobs should renew lease while the subprocess is alive. If the lease
 expires, another runner may reclaim only after it confirms the old runner is
