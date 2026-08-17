@@ -276,6 +276,7 @@ download: JSONL / JSON
    - Playwright 覆盖直接打开 URL、点击 tab、键盘切换、result 回跳。
 
 2. **FE-B：Task Builder readiness**
+   - 状态：已完成 dataset 选择写回 `datasetId` query、builder readiness gates 和 Playwright 覆盖。
    - dataset/task_name/runtime/concurrency 的提交前检查更清楚。
    - payload preview 和错误 summary 聚合。
    - 从 dataset 详情进入 task builder 的预填状态进入 URL。
@@ -718,7 +719,7 @@ Settings
 - 移动端 app shell 使用 sticky 顶部应用栏和容器内横向 primary navigation rail，避免页面级横向滚动。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
 - Dataset 上传/登记、列表筛选、详情、task_name 过滤、version family、使用记录、result datasets 回溯、基于 dataset 创建任务。
-- Task 创建、提交前 dataset readiness 检查、列表、已发布结果直达、详情、sync/cancel/retry/artifact retry。
+- Task 创建、提交前 dataset readiness / task builder readiness 检查、`datasetId` query 同步、payload preview、列表、已发布结果直达、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作；published 状态可直接打开 result dataset。
 - Task detail action queue：根据 runtime、artifact、sample、publish 状态给出优先级恢复/发布动作，并复用安全确认流程。
