@@ -437,6 +437,7 @@ Message body:
   "schema_version": 1,
   "message_id": "01J...",
   "job_id": "01J...",
+  "action": "run",
   "created_at": "2026-08-14T00:00:00Z",
   "routing": {
     "provider": "ags",
@@ -445,14 +446,19 @@ Message body:
 }
 ```
 
+`action` defaults to `run`. Artifact retry wake-up messages use
+`artifact-retry`; runners must still claim the job through the control plane
+before re-uploading artifacts.
+
 Runner behavior:
 
 1. Receive message.
-2. Read job from MySQL.
-3. If job is not `queued`, ack and ignore.
-4. Try to atomically lease the job.
-5. If lease fails, ack and ignore.
-6. Start local Harbor subprocess.
+2. Claim work from the control plane; the message is only a wake-up hint.
+3. If no claim is available, ack and ignore.
+4. For `run`, start local Harbor subprocess.
+5. For `artifact-retry`, re-upload/register existing local artifacts without
+   re-running Harbor.
+6. If lease/claim fails, ack and ignore.
 7. Write progress snapshots to MySQL.
 8. Mark terminal state.
 9. Ack message only after terminal state or deliberate non-ownership decision.

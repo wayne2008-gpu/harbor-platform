@@ -246,6 +246,8 @@ Current target:
 - runners can poll job control and terminate `harbor-runtime` on cancel request
 - runners can claim jobs through `POST /internal/jobs/claim`; claim owns
   capability matching and lease creation in one control-plane operation
+- claim requests can target a specific `job_id`, which lets artifact retry
+  wake-up messages claim the exact job they were emitted for
 - job retry creates a new job attempt with `parent_job_id`, `root_job_id`, and
   `attempt`
 - cancel, retry, and artifact retry persist `idempotency_key` records; repeated
@@ -254,6 +256,9 @@ Current target:
 - artifact retry records a retry request by resetting `artifact_state`; the
   original runner later claims an `artifact-retry` action and re-uploads/registers
   existing local artifacts without re-running `harbor-runtime`
+- artifact retry publishes a best-effort dispatch wake-up signal with
+  `action = "artifact-retry"`; runner still claims through control-plane leases,
+  so MySQL remains the source of truth
 - input materialization downloads have runner-local retry settings
 - `harbor-runtime` derives OpenAI messages trajectory files from valid ATIF
   `agent/trajectory*.json` files
@@ -302,8 +307,6 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- publish a wake-up signal for artifact retry requests instead of relying only on
-  runner polling
 - add priority, quota, and fairness rules to claim matching
 - extend idempotency records with tenant/auth scope once auth lands
 - add auth and tenant scoping before exposing query endpoints broadly

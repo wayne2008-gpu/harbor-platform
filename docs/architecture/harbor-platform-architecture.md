@@ -124,7 +124,7 @@ Use MySQL as the state source:
 Use RabbitMQ as the default dispatch channel:
 
 - queue: `harbor_jobs`
-- message body: `job_id` plus minimal routing metadata
+- message body: `job_id`, `action`, and minimal routing metadata
 - consumers: Harbor runners
 
 The message queue does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
@@ -133,8 +133,11 @@ The message queue does not own durable job state. If a message is redelivered, t
 
 The preferred runner acquisition path is `POST /internal/jobs/claim`. Claiming
 combines capability matching and lease creation in one control-plane operation.
+For dispatch wake-ups that name a specific job, callers can pass `job_id` so the
+claim cannot lease unrelated work.
 RabbitMQ remains a wake-up channel; MySQL-backed claim state decides what actually
-runs.
+runs. Dispatch `action` defaults to `run`; artifact retry wake-ups use
+`artifact-retry` and still require the runner to claim an artifact retry lease.
 
 Cancellation is also control-plane owned. `POST /jobs/{job_id}/cancel` records
 cancel metadata and moves queued jobs directly to `cancelled` or running/leased

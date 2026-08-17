@@ -78,7 +78,8 @@ M0 到 M5 是第一批必须交付内容。M6 到 M8 可以在 MVP 稳定后排�
 
 - contracts 不依赖 synthetic data 平台。
 - 状态枚举能覆盖 queued、leased、running、succeeded、failed、cancelled、timed_out。
-- RabbitMQ message 只包含 job_id 和最小 routing metadata。
+- RabbitMQ message 只包含 job_id、action 和最小 routing metadata；action
+  默认 `run`，artifact retry 唤醒使用 `artifact-retry`。
 
 ## M1: Harbor Runner Run-Once
 
