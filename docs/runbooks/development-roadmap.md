@@ -241,6 +241,9 @@ Flow:
     or COS credentials
 26. sync OpenAI message trajectory artifacts into Synthetic-owned structured
     message rows and query them by schema, role, search text, and pagination
+27. consume structured OpenAI message rows in the Trial Detail frontend with
+    explicit index sync, server-side role/search pagination, and URL-restorable
+    controls
 
 Current sample ingestion behavior:
 
@@ -506,6 +509,13 @@ Planned milestones:
    repository uses count/group_by/limit queries for rollups and top lists while
    preserving the existing response contract.
 7. V4-6: add synthetic API audit baseline and surface request IDs in recoverable
-   frontend errors.
-8. V4-7: run backend tests, frontend verify, and COS + TKE E2E smoke as the
+   frontend errors. Current status: implemented in `synthetic-data-platform`;
+   `X-Request-ID` is returned on API responses, error bodies expose
+   `request_id`, frontend `ApiError` preserves request IDs, and
+   `synthetic_audit_events` is queryable from the Audit console.
+8. V4-7: connect the Trial OpenAI Messages UI to structured trajectory message
+   rows. Current status: implemented in `synthetic-data-platform`; the Trial
+   Detail Messages tab queries `GET /trajectory/messages`, exposes `Sync index`,
+   and supports server-side role/search pagination with URL-restorable controls.
+9. V4-8: run backend tests, frontend verify, and COS + TKE E2E smoke as the
    release gate.
