@@ -8,7 +8,7 @@ Usage: deploy/k8s/scripts/tke-preflight.sh [--static-only|--cluster]
 Static checks:
   - render the Kustomize base or overlay
   - verify the rendered manifest is non-empty
-  - verify required manifest references
+  - verify required workload, availability, and config manifest references
   - fail on CHANGE_ME image placeholders unless explicitly allowed
 
 Cluster checks with --cluster:
@@ -159,6 +159,13 @@ require_rendered_text "name: harbor-api"
 require_rendered_text "name: harbor-runner"
 require_rendered_text "name: synthetic-data-platform"
 require_rendered_text "name: synthetic-data-platform-web"
+require_rendered_text "name: harbor-api-pdb"
+require_rendered_text "name: harbor-runner-pdb"
+require_rendered_text "name: synthetic-data-platform-pdb"
+require_rendered_text "name: synthetic-data-platform-web-pdb"
+require_rendered_text "name: harbor-api-hpa"
+require_rendered_text "name: synthetic-data-platform-hpa"
+require_rendered_text "name: synthetic-data-platform-web-hpa"
 require_rendered_text "name: harbor-control-plane-config"
 require_rendered_text "name: synthetic-data-platform-config"
 require_rendered_text "name: harbor-runner-config"

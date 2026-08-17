@@ -5,8 +5,9 @@ platform deployment path.
 
 Current scope:
 
-- `base/`: namespaces, runner RBAC, service accounts, Deployments, and
-  ClusterIP Services for `harbor-api`, synthetic API/Web, and `harbor-runner`.
+- `base/`: namespaces, runner RBAC, service accounts, Deployments,
+  ClusterIP Services, PodDisruptionBudgets, and API/Web HPAs for `harbor-api`,
+  synthetic API/Web, and `harbor-runner`.
 
 The manifests reference ConfigMaps and Secrets, but do not define real runtime
 config. Component config stays in the component repositories and should be
@@ -112,6 +113,13 @@ agents require model credentials from the runner environment.
 `harbor-api` uses `/health` for liveness and `/ready` for readiness. `/ready`
 checks the database connection and verifies that `alembic_version` is at the
 current migration head.
+
+The base includes PodDisruptionBudgets for `harbor-api`, synthetic API/Web, and
+`harbor-runner`. It also includes CPU-based HPAs for the stateless API/Web
+Deployments. `harbor-runner` intentionally has no HPA in the base because a
+scale-down while a Pod owns active Harbor work can interrupt a run; scale
+runners deliberately through Deployment replicas, queue quotas, and
+`max_running_jobs`.
 
 Apply the current base:
 

@@ -7,3 +7,5 @@ resources:
   - harbor-api.yaml
   - synthetic-data-platform.yaml
   - harbor-runner.yaml
+  - poddisruptionbudgets.yaml
+  - horizontalpodautoscalers.yaml

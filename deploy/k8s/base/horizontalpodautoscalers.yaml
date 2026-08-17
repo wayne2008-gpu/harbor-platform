@@ -1,0 +1,70 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: harbor-api-hpa
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: harbor-api
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: synthetic-data-platform-hpa
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: synthetic-data-platform
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: synthetic-data-platform-web-hpa
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: synthetic-data-platform-web
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

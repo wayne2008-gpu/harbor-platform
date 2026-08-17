@@ -407,8 +407,8 @@ COS 回滚：
 
 ## 当前限制
 
-- 当前提供基础 Deployment/Service manifests；Ingress、HPA、PDB、NetworkPolicy
-  仍待补充。
+- 当前提供基础 Deployment/Service、PDB、API/Web HPA manifests；Ingress 和
+  NetworkPolicy 仍待在生产 overlay 中按域名、TLS、外部依赖 CIDR/namespace 补充。
 - COS credential、RabbitMQ URL、MySQL URL、API token 和 tenant ID 的 env/K8s
   Secret 引用已补齐。
 - 已有最小服务间 Bearer token + tenant header + token scope gate。
@@ -426,7 +426,7 @@ COS 回滚：
 | --- | --- | --- |
 | M33 | 生产配置模板 | 已完成：三个子项目各有不含真实 secret 的 `.example.toml` |
 | M34 | TKE namespace/RBAC manifests | 已完成：`deploy/k8s/base` 渲染通过，runner ServiceAccount 具备最小 Pod/exec/log 权限 |
-| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、runner manifests 通过 kustomize 和 client dry-run |
+| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染 |
 | M36 | TencentDB migration gate | 已完成：启动自动 migration，`/ready` 校验 head version，失败会阻止服务就绪 |
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |
