@@ -397,6 +397,13 @@ FE-V2-1、FE-V2-3、FE-V2-4、FE-V2-5，把服务端分页和审核持久化先�
   profile；本轮补充 `Result sample review scope`，明确 full / partial / empty
   preview 的审核范围，当 API reported `sample_count` 大于返回 `samples.length`
   时把完整交付路径导向 JSONL/JSON downloads，并补充 partial preview UI smoke。
+- `FE-V2-6 Workbench/Settings/E2E 验收` 已启动并完成第一批 E2E handoff 增强：
+  Settings 的 `Local E2E validation` 新增端到端 acceptance gate，把 preflight、
+  publish-required full run、frontend live check 和浏览器验收项串起来；Workbench
+  新增 `Local COS/TKE E2E handoff`，从 readiness、dataset、active/failed run、
+  latest result 派生当前阻塞点和下一步入口；Full COS/TKE copy command 默认带
+  `HARBOR_E2E_REQUIRE_PUBLISH=1` 和 `HARBOR_E2E_FRONTEND_LIVE_CHECK=1`，UI
+  smoke 已覆盖新增面板、命令和下载验收文案。
 
 ## 开发顺序
 
@@ -425,6 +432,7 @@ HARBOR_E2E_DATASET_DIR=/home/ubuntu/project/harbor/benchmark_verify/otel-bench-a
 HARBOR_E2E_RUNTIME=tke \
 HARBOR_E2E_TASK_NAME=go-http-tracing \
 HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
+HARBOR_E2E_REQUIRE_PUBLISH=1 \
 HARBOR_E2E_TIMEOUT_SEC=1800 \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
