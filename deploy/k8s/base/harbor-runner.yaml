@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harbor-runner
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: harbor-runner
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: harbor-runner
+      app.kubernetes.io/part-of: harbor-platform
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: harbor-runner
+        app.kubernetes.io/part-of: harbor-platform
+    spec:
+      serviceAccountName: harbor-runner
+      containers:
+        - name: harbor-runner
+          image: example.tencentcloudcr.com/harbor-platform/harbor-runner:CHANGE_ME
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HARBOR_RUNNER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: HARBOR_TKE_CONFIG
+              value: /config/tke.toml
+          envFrom:
+            - secretRef:
+                name: harbor-runner-secret
+            - secretRef:
+                name: harbor-runner-agent-env
+                optional: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: runner-config
+              mountPath: /config/runner.toml
+              subPath: runner.toml
+              readOnly: true
+            - name: tke-config
+              mountPath: /config/tke.toml
+              subPath: tke.toml
+              readOnly: true
+            - name: runner-kubeconfig
+              mountPath: /config/kubeconfig
+              subPath: kubeconfig
+              readOnly: true
+            - name: runner-jobs
+              mountPath: /var/lib/harbor/jobs
+      volumes:
+        - name: runner-config
+          configMap:
+            name: harbor-runner-config
+        - name: tke-config
+          configMap:
+            name: harbor-tke-config
+        - name: runner-kubeconfig
+          secret:
+            secretName: harbor-runner-kubeconfig
+        - name: runner-jobs
+          emptyDir: {}

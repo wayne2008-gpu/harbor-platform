@@ -175,7 +175,6 @@ before runtime starts because its input could not be materialized.
 
 ## Backlog
 
-- replace literal TOML COS credentials with env/K8s Secret references
 - add scheduled retention cleanup for materialized input directories
 - support dataset manifests beyond single `tar.gz` archives
 - add real-COS smoke tests gated by credentials

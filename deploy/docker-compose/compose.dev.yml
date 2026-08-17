@@ -14,35 +14,16 @@ services:
       timeout: 5s
       retries: 10
 
-  rocketmq-namesrv:
-    image: apache/rocketmq:5.3.1
-    command: ["sh", "mqnamesrv"]
+  rabbitmq:
+    image: rabbitmq:3-management
     ports:
-      - "9876:9876"
-
-  rocketmq-broker:
-    image: apache/rocketmq:5.3.1
-    command: ["sh", "mqbroker", "-c", "/home/rocketmq/broker.conf"]
-    volumes:
-      - ./rocketmq-broker.conf:/home/rocketmq/broker.conf:ro
-    depends_on:
-      - rocketmq-namesrv
-    ports:
-      - "10911:10911"
-
-  rocketmq-init:
-    image: apache/rocketmq:5.3.1
-    command:
-      - sh
-      - -c
-      - >-
-        for i in 1 2 3 4 5 6 7 8 9 10; do
-        sh mqadmin updateTopic -n rocketmq-namesrv:9876 -c DefaultCluster -t harbor_jobs && exit 0;
-        sleep 2;
-        done;
-        exit 1
-    depends_on:
-      - rocketmq-broker
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   harbor-api:
     build:
@@ -50,43 +31,15 @@ services:
       dockerfile: deploy/docker-compose/Dockerfile.control-plane
     environment:
       HARBOR_CONTROL_PLANE_DATABASE_URL: mysql+pymysql://harbor:harbor@mysql:3306/harbor_control_plane
-      HARBOR_ROCKETMQ_NAMESRV: rocketmq-namesrv:9876
-      HARBOR_ROCKETMQ_TOPIC: harbor_jobs
-      HARBOR_ARTIFACT_ALLOWED_ROOT: /workspace/jobs
     depends_on:
       mysql:
         condition: service_healthy
-      rocketmq-init:
-        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8080:8080"
     volumes:
-      - ./config/control-plane.toml:/config/control-plane.toml:ro
-      - runner-jobs:/workspace/jobs:ro
-
-  harbor-runner-1:
-    build:
-      context: ../..
-      dockerfile: deploy/docker-compose/Dockerfile.runner
-    environment:
-      HARBOR_RUNNER_ID: runner-1
-    volumes:
-      - ./config/runner.toml:/config/runner.toml:ro
-      - runner-jobs:/workspace/jobs
-    depends_on:
-      - harbor-api
-
-  harbor-runner-2:
-    build:
-      context: ../..
-      dockerfile: deploy/docker-compose/Dockerfile.runner
-    environment:
-      HARBOR_RUNNER_ID: runner-2
-    volumes:
-      - ./config/runner.toml:/config/runner.toml:ro
-      - runner-jobs:/workspace/jobs
-    depends_on:
-      - harbor-api
+      - ../../harbor-control-plane/config/control-plane.local.toml:/config/control-plane.toml:ro
 
   synthetic-data-platform:
     build:
@@ -94,10 +47,22 @@ services:
       dockerfile: deploy/docker-compose/Dockerfile.synthetic-data-platform
     environment:
       HARBOR_API_BASE_URL: http://harbor-api:8080
+      SYNTHETIC_DATA_PLATFORM_DATABASE_URL: mysql+pymysql://harbor:harbor@mysql:3306/harbor_control_plane
     depends_on:
-      - harbor-api
+      harbor-api:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     ports:
       - "8081:8081"
 
-volumes:
-  runner-jobs:
+  synthetic-data-platform-web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker-compose/Dockerfile.synthetic-data-platform-web
+    environment:
+      SYNTHETIC_DATA_PLATFORM_API_TARGET: http://synthetic-data-platform:8081
+    depends_on:
+      - synthetic-data-platform
+    ports:
+      - "5173:5173"

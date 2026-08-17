@@ -17,10 +17,17 @@ jobs:
   contracts:
     name: Contracts
     runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: false
+      - name: Checkout contracts submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive harbor-service-contracts
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -29,7 +36,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Test contracts
-        working-directory: packages/harbor-service-contracts
+        working-directory: harbor-service-contracts
         run: |
           uv sync --frozen --dev
           uv run pytest tests -q
@@ -43,11 +50,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
-      - name: Checkout Harbor submodule
+      - name: Checkout control-plane submodule
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive harbor harbor-control-plane harbor-service-contracts
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -56,7 +63,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Lint and test control plane
-        working-directory: services/harbor-control-plane
+        working-directory: harbor-control-plane
         run: |
           uv sync --frozen --dev
           uv run ruff check src tests
@@ -65,10 +72,17 @@ jobs:
   synthetic-data-platform:
     name: Synthetic Data Platform
     runs-on: ubuntu-latest
+    env:
+      SUBMODULE_TOKEN: ${{ secrets.HARBOR_SUBMODULE_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: false
+      - name: Checkout synthetic-data-platform submodule
+        run: |
+          git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git submodule sync --recursive
+          git submodule update --init --recursive synthetic-data-platform
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -77,7 +91,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Lint and test synthetic data platform
-        working-directory: services/synthetic-data-platform
+        working-directory: synthetic-data-platform
         run: |
           uv sync --frozen --dev
           uv run ruff check src tests
@@ -96,7 +110,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive harbor
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -124,7 +138,7 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive harbor
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -156,34 +170,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
-      - name: Checkout Harbor submodule
+      - name: Checkout compose validation submodules
         run: |
           git config --global url."https://x-access-token:${SUBMODULE_TOKEN}@github.com/".insteadOf "git@github.com:"
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive harbor harbor-control-plane harbor-service-contracts synthetic-data-platform
       - name: Validate Compose files and smoke assets
         working-directory: deploy/docker-compose
         env:
-          HARBOR_RUNNER_DOCKER_HOST: tcp://host.docker.internal:2375
-          HARBOR_RUNNER_DOCKER_TLS_CERTS: ${{ github.workspace }}/deploy/docker-compose/.local/ci-rootless-docker-certs
-          HARBOR_PLATFORM_HOST_ROOT: ${{ github.workspace }}
-          HARBOR_RUNNER_HOST_JOBS_DIR: ${{ github.workspace }}/deploy/docker-compose/.local/ci-runner-jobs
-          HARBOR_AGS_CONFIG: ${{ github.workspace }}/deploy/docker-compose/.local/ci-ags.toml
-          AGS_SECRET_ID: ci-placeholder-secret-id
-          AGS_SECRET_KEY: ci-placeholder-secret-key
-          AGS_E2B_API_KEY: ci-placeholder-e2b-api-key
-          AGS_E2B_DOMAIN: ci.example.invalid
+          HARBOR_PLATFORM_ROOT: ${{ github.workspace }}
         run: |
-          bash -n scripts/create-rootless-docker-tls-certs.sh
           bash -n scripts/submit-and-wait-job.sh
-          mkdir -p .local/ci-runner-jobs
-          printf '# placeholder AGS config for compose rendering\n' > "$HARBOR_AGS_CONFIG"
-          ./scripts/create-rootless-docker-tls-certs.sh "$HARBOR_RUNNER_DOCKER_TLS_CERTS"
           docker compose -f compose.dev.yml config >/tmp/harbor-compose-dev.yml
-          docker compose -f compose.dev.yml -f compose.rootless-docker.yml config >/tmp/harbor-compose-rootless.yml
-          docker compose -f compose.dev.yml -f compose.rootless-docker-tls.yml config >/tmp/harbor-compose-rootless-tls.yml
-          docker compose -f compose.dev.yml -f compose.rootless-docker-tls.yml -f compose.rootless-docker-host-paths.yml config >/tmp/harbor-compose-rootless-host-paths.yml
-          docker compose -f compose.dev.yml -f compose.ags.yml config >/tmp/harbor-compose-ags.yml
-          jq empty smoke/docker-touch-file-smoke-job.json
-          jq empty smoke/docker-touch-file-smoke-job.host-paths.json
+          docker compose -f compose.dev.yml -f compose.synthetic-upload.yml config >/tmp/harbor-compose-upload.yml
+          jq empty smoke/docker-touch-file-smoke-job.local.json
           jq empty smoke/ags-otel-bench-smoke-job.json

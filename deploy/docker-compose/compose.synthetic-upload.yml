@@ -1,0 +1,6 @@
+services:
+  synthetic-data-platform:
+    environment:
+      SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
+    volumes:
+      - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro

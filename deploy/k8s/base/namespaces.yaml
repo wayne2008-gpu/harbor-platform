@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor-platform
+  labels:
+    app.kubernetes.io/part-of: harbor-platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor-agent-runtime
+  labels:
+    app.kubernetes.io/part-of: harbor-platform
+    harbor.openai.com/runtime-scope: agent

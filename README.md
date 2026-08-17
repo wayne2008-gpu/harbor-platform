@@ -8,9 +8,9 @@ owns deployment manifests, local end-to-end smoke tests, and cross-repo docs.
 
 ```text
 harbor/                              # Harbor fork: runtime and runner
-services/harbor-control-plane/       # harbor-api/control-plane
-services/synthetic-data-platform/    # synthetic data business platform
-packages/harbor-service-contracts/   # shared service contracts
+harbor-control-plane/                # harbor-api/control-plane
+synthetic-data-platform/             # synthetic data business platform
+harbor-service-contracts/            # shared service contracts
 deploy/                              # Compose/Kubernetes deployment assets
 docs/                                # architecture and runbooks
 ```
@@ -21,8 +21,13 @@ docs/                                # architecture and runbooks
 git submodule update --init --recursive
 ```
 
-Local Docker Compose configuration lives under:
+Component runtime configuration lives with the component that reads it:
 
 ```text
-deploy/docker-compose/config/
+harbor/config/runner.local.toml
+harbor-control-plane/config/control-plane.local.toml
 ```
+
+`deploy/docker-compose/` owns only the local control-plane stack and smoke-test
+wiring. Run `harbor-runner` from the `harbor/` submodule for local end-to-end
+tests.

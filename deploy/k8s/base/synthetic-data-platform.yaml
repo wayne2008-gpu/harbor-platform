@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synthetic-data-platform
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: harbor-platform
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-data-platform
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: harbor-platform
+    spec:
+      containers:
+        - name: synthetic-data-platform
+          image: example.tencentcloudcr.com/harbor-platform/synthetic-data-platform-api:CHANGE_ME
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: SYNTHETIC_DATA_PLATFORM_CONFIG
+              value: /config/platform.toml
+          envFrom:
+            - secretRef:
+                name: synthetic-data-platform-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: platform-config
+              mountPath: /config/platform.toml
+              subPath: platform.toml
+              readOnly: true
+      volumes:
+        - name: platform-config
+          configMap:
+            name: synthetic-data-platform-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: synthetic-data-platform
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: harbor-platform
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synthetic-data-platform-web
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: web
+      app.kubernetes.io/part-of: harbor-platform
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: synthetic-data-platform
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: harbor-platform
+    spec:
+      containers:
+        - name: synthetic-data-platform-web
+          image: example.tencentcloudcr.com/harbor-platform/synthetic-data-platform-web:CHANGE_ME
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5173
+          env:
+            - name: SYNTHETIC_DATA_PLATFORM_API_TARGET
+              value: http://synthetic-data-platform.harbor-platform.svc.cluster.local:8081
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: synthetic-data-platform-web
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+  ports:
+    - name: http
+      port: 5173
+      targetPort: http
