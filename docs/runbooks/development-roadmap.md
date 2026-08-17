@@ -209,6 +209,9 @@ Flow:
 18. save and reload manual trial review decisions for trajectory audit
 19. expose configured runtime/provider capabilities for task creation and
     deployment readiness checks
+20. persist synthetic operation idempotency for cancel, retry, and artifact
+    retry so repeated client requests return the first task result without
+    duplicating synthetic retry records
 
 Current sample ingestion behavior:
 
