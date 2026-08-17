@@ -116,19 +116,24 @@ Apply the current base:
 kubectl apply -k deploy/k8s/base
 ```
 
-Validate manifests without applying:
-
-```bash
-kubectl kustomize deploy/k8s/base > /tmp/harbor-platform-k8s-base.yaml
-kubectl apply --dry-run=client -f /tmp/harbor-platform-k8s-base.yaml
-```
-
-Run the deployment preflight before applying an environment-specific overlay.
-The base manifests intentionally contain `CHANGE_ME` image placeholders, so
-base-only validation must opt into allowing placeholders:
+Render the base and run offline static validation:
 
 ```bash
 HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 \
+  deploy/k8s/scripts/tke-preflight.sh --static-only
+```
+
+`--static-only` intentionally avoids `kubectl apply --dry-run=client` because
+recent `kubectl` versions still perform API discovery for client dry-run and
+therefore require a reachable cluster. The base manifests intentionally contain
+`CHANGE_ME` image placeholders, so base-only validation must opt into allowing
+placeholders.
+
+You can also keep the rendered YAML for inspection:
+
+```bash
+HARBOR_K8S_RENDERED_MANIFEST=/tmp/harbor-platform-k8s-base.yaml \
+  HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 \
   deploy/k8s/scripts/tke-preflight.sh --static-only
 ```
 
