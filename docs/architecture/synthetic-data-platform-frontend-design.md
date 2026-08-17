@@ -603,11 +603,12 @@ Settings
 - Summary tab 提供 tool call id 级别的跨 schema 明细映射和基础 diff，方便定位 ATIF call/observation 与 OpenAI call/response 是否对应、name/arguments/response 是否一致。
 - Summary tab 提供 content diff table，按 tool call id 对比 function name、arguments、response 三类可消费信号，并展示两种 schema 的原始可读值。
 - Summary tab 提供 message diff table，按 role 和 turn 对比 ATIF/default 与 OpenAI messages 的 system/developer/user/assistant 自然语言消息内容，并展示缺失/不同/匹配的 Text delta 与两侧完整文本。
+- Summary tab 提供 step text diff table，逐条检查 ATIF/default timeline step 文本是否进入 OpenAI messages，并把缺失 step text 纳入 Summary decision、handoff 和 audit checklist。
 - Summary tab 汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供直达对应审核 tab 的快捷入口。
 - Timeline / OpenAI Messages 提供异常摘要、anomaly-only 过滤和行级异常标签。
 - OpenAI Messages 审核补充线程级 tool call 规则：重复 tool call id、缺 tool response、orphan tool response、重复 tool response 都应作为后训练消费质量信号。
 - Raw JSON 只作为兜底，不作为默认阅读方式。
-- 后续增强支持更完整 step 文本 diff 和更细粒度 verifier 专项规则配置；`verifier_min_score` 基础规则已具备。
+- 后续增强支持更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 
 ### Results
 
@@ -753,6 +754,7 @@ Settings
 - Trajectory schema mapping：Summary tab 按 tool call id 映射 ATIF call/observation 与 OpenAI call/response，并标记 aligned / partial / unlinked 与基础 diff。
 - Trajectory content diff：Summary tab 按 tool call id 对比 function name、arguments、response，并保留 ATIF/default 与 OpenAI messages 两侧的可读内容。
 - Trajectory message diff：Summary tab 按 role/turn 对比 system/developer/user/assistant 文本内容，标记 match/mismatch/missing，并展示 Text delta、缺失方向、差异起点和两侧完整文本。
+- Trajectory step text diff：Summary tab 按 ATIF/default timeline step 检查文本是否出现在 OpenAI messages 中，展示 match/missing、Text delta 和 OpenAI match。
 - Trial quality gates：Summary tab 前置展示 reward、verifier、exception 和 ATIF/OpenAI schema readiness；verifier 支持 status、reason、score、threshold、label 结构化摘要和 `verifier_min_score` URL 阈值配置，帮助判断 trial 是否可进入样本发布审核。
 - Trial Summary review issues：汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供 tab 快捷跳转。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
@@ -771,7 +773,7 @@ Settings
 
 需要继续优化：
 
-- Trial 页面后续可继续增加更完整 step 文本 diff 和更细粒度 verifier 专项规则配置；`verifier_min_score` 基础规则已具备。
+- Trial 页面后续可继续增加更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
@@ -973,6 +975,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
 本轮继续增强 Trial quality gates，按 reward、verifier、exception 和轨迹 schema readiness 前置展示 trial 进入后训练数据集审核的质量门，并增加 `verifier_min_score` URL 阈值配置。
+本轮继续增强 Summary step text diff，检查 ATIF/default timeline step 文本是否进入 OpenAI messages，并将 step text gap 纳入 Summary decision、post-training handoff 和 audit checklist。
 
 目标：
 
@@ -981,6 +984,7 @@ deep link 能力，后续继续增强审核效率。
 - provenance 表支持 schema 快速识别和下载。
 - Summary tab 对齐 ATIF/default 与 OpenAI messages 的覆盖、行数、tool call、observation/tool response 和异常数。
 - Summary tab 按 tool call id 展示 ATIF call/observation 与 OpenAI call/response 的映射状态和 name/arguments/response diff。
+- Summary tab 按 ATIF/default timeline step 展示 step text 与 OpenAI messages 的 match/missing 状态和 Text delta。
 - Summary tab 聚合 Timeline/OpenAI/schema mapping 审核问题，并能直达 Timeline 或 OpenAI Messages。
 - 对缺 source、缺内容、错误信号、tool response 关联问题做基础异常定位。
 
