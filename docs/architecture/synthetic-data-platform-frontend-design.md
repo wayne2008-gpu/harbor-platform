@@ -350,6 +350,7 @@ Settings
 - 顶部 metric：sample_count、source task、source dataset、created。
 - Samples preview 用表格，避免直接堆 JSON。
 - Lineage 展示 input dataset -> synthetic task -> trials/artifacts -> result dataset。
+- Trajectory audit links 按 source trial 聚合 trial-result、trajectory、OpenAI messages 和 sample source artifact 状态，并直达源 trial 轨迹审核页。
 - Download panel 明确两种格式：
   - JSONL：后训练样本消费优先格式。
   - JSON：包含元数据和 samples 的完整导出。
@@ -487,6 +488,7 @@ Settings
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
 - Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
+- Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供源 trajectory 审核回跳。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 - Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
@@ -710,12 +712,13 @@ npm run verify
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile 和 export contract gates。
+状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile、export contract gates 和 source trajectory audit links。
 
 目标：
 
 - 强化 samples review：分页、搜索、异常定位、字段覆盖和字段 profile。
 - 结果数据集 lineage 明确展示 input dataset、task、trial、artifact。
+- 从 result dataset 的质量问题能直接回跳到 source trial trajectory 审核页。
 - 下载区解释 JSONL/JSON 两种 contract，并以 gate 形式提示样本、元数据、source trials、source artifacts 是否满足交付。
 
 验收：
