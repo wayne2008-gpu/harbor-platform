@@ -964,7 +964,7 @@ npm run verify
 ### F3：Trajectory Review
 
 状态：基础版已完成，已增加 Task detail trajectory review queue、全局
-`/reviews/trials` 审核队列页、队列摘要、首个问题入口、过滤、分页、折叠、
+`/reviews/trials` 审核队列页、队列快速审核决策、队列摘要、首个问题入口、过滤、分页、折叠、
 基础异常定位、schema alignment、tool call id 映射、基础 diff、完整 message
 text delta、结构化 verifier quality gate、Summary review issues 和 Trial view
 deep link 能力，后续继续增强审核效率。
