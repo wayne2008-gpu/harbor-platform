@@ -533,3 +533,12 @@ Planned milestones:
    `240e0e8d1f9147b5b353ab37419ec637`. Release-gate hardening found and fixed
    the control-plane MySQL audit-event path index migration issue in
    `harbor-control-plane` PR #4.
+10. V4-9: add a production-oriented Reviews summary endpoint and dashboard
+    strip. Current status: implemented in `synthetic-data-platform`; PR #41
+    added `GET /reviews/summary` with total/open/reviewed/unreviewed counts,
+    OpenAI-message readiness, flagged trial count, state/runtime/schema/quality
+    flag buckets, and priority review items. The Reviews page now renders
+    global queue metrics from this endpoint while retaining URL-backed filters
+    and server-side pagination for `/reviews/trials`. Verification:
+    `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.
