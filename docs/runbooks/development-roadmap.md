@@ -248,6 +248,9 @@ Current target:
   capability matching and lease creation in one control-plane operation
 - job retry creates a new job attempt with `parent_job_id`, `root_job_id`, and
   `attempt`
+- cancel, retry, and artifact retry persist `idempotency_key` records; repeated
+  requests with the same job, operation, and key return the first operation's
+  result without repeating side effects
 - artifact retry records a retry request by resetting `artifact_state`; the
   original runner later claims an `artifact-retry` action and re-uploads/registers
   existing local artifacts without re-running `harbor-runtime`
@@ -302,7 +305,7 @@ Hardening backlog:
 - publish a wake-up signal for artifact retry requests instead of relying only on
   runner polling
 - add priority, quota, and fairness rules to claim matching
-- add idempotency-key persistence for cancel/retry requests
+- extend idempotency records with tenant/auth scope once auth lands
 - add auth and tenant scoping before exposing query endpoints broadly
 
 ## Phase 10: Cloud Deployment
