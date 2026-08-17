@@ -369,7 +369,11 @@ Implementation milestones:
 2. M34: add TKE namespace/RBAC manifests for runner-managed agent-runtime Pods.
    Current status: implemented in `deploy/k8s/base`.
 3. M35: add TKE Deployment/Service manifests for `harbor-api`, synthetic API/Web,
-   and `harbor-runner`. Current status: implemented in `deploy/k8s/base`.
+   and `harbor-runner`. Current status: implemented in `deploy/k8s/base`, with
+   PodDisruptionBudgets for all service Deployments and CPU-based HPAs for the
+   stateless API/Web Deployments. Runner horizontal scale remains deliberate via
+   Deployment replicas, queue quotas, and `max_running_jobs` rather than an HPA
+   that might scale down active work.
 4. M36: add TencentDB migration readiness gate and startup failure behavior.
    Current status: implemented with startup migration, `/ready` head-version
    check, and K8s readinessProbe on `harbor-api`.

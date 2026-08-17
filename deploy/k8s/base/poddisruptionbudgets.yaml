@@ -1,0 +1,63 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-api-pdb
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: harbor-api
+      app.kubernetes.io/part-of: harbor-platform
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: synthetic-data-platform-pdb
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: harbor-platform
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: synthetic-data-platform-web-pdb
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: web
+      app.kubernetes.io/part-of: harbor-platform
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harbor-runner-pdb
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: harbor-runner
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: harbor-runner
+      app.kubernetes.io/part-of: harbor-platform
