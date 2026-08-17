@@ -397,6 +397,11 @@ download JSONL / JSON
   范围、字段覆盖摘要和 lineage closure；字段覆盖明确基于当前详情页返回的
   sample rows 计算，partial preview 场景继续引导用户通过 JSONL/JSON download
   审核完整结果。
+- `FE-V3-6 Live E2E UI 验收` 已启动并完成第一批下载验收增强：
+  Playwright live test 在真实 COS/TKE workflow 页面上继续覆盖 Workbench、
+  Dataset Detail、Task Detail、Trial OpenAI Messages 和 Result Detail，并在
+  Result Detail 等待浏览器 download 事件，校验 `Download JSONL` 与
+  `Download JSON` 均产生非空文件；mock UI smoke 也覆盖同一下载事件路径。
 
 如果要压缩成演示版，优先做：
 
