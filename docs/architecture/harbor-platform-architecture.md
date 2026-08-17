@@ -44,7 +44,7 @@ harbor-platform/
   harbor-service-contracts/        # shared schemas/contracts submodule
   deploy/
     docker-compose/                # local control-plane stack and smoke jobs
-    k8s/                           # future TKE manifests
+    k8s/                           # TKE namespace/RBAC and service manifests
   docs/
     architecture/
     runbooks/
@@ -108,7 +108,9 @@ The super repo owns integration assets only:
 
 It should not become the owner of component implementation code or concrete
 component runtime configuration. `harbor-runner` config lives in `harbor/config/`;
-`harbor-api` config lives in `harbor-control-plane/config/`.
+TKE provider config lives in `harbor/config/`; `harbor-api` config lives in
+`harbor-control-plane/config/`; synthetic platform config lives in
+`synthetic-data-platform/config/`.
 
 ## State and Dispatch
 
@@ -173,12 +175,25 @@ In both modes:
 - MySQL remains the artifact index
 - `synthetic-data-platform` reads results and trajectories through `harbor-api`, not runner-local paths or COS credentials
 
-COS configuration is TOML-based in the current iteration, including literal COS
-credentials. The local runner reads `harbor/config/runner.local.toml`; the local
-control-plane stack mounts
-`harbor-control-plane/config/control-plane.local.toml` into
-`harbor-api`. Replacing credential fields with env/K8s Secret references is a
-later hardening step.
+COS non-secret configuration remains TOML-based. Local development can still use
+literal `secret_id` and `secret_key` fields for compatibility, while production
+templates use `secret_id_env`, `secret_key_env`, and optional
+`session_token_env` fields. The referenced environment variables are injected by
+Kubernetes Secrets in TKE manifests. The local runner reads
+`harbor/config/runner.local.toml`; the local control-plane stack mounts
+`harbor-control-plane/config/control-plane.local.toml` into `harbor-api`.
+Production templates also reference database and RabbitMQ connection strings via
+`database_url_env` and `rabbitmq_url_env`, keeping concrete passwords out of
+ConfigMaps and git-tracked TOML files.
+
+Production service-to-service access can be protected by config-driven Bearer
+token plus tenant header checks. `harbor-api` reads `[auth]` from
+`harbor-control-plane/config/control-plane.<env>.toml`; `synthetic-data-platform`
+uses `[auth]` for its own API and `[harbor_api_auth]` for outbound calls to
+`harbor-api`; `harbor-runner` uses `control_plane_bearer_token(_env)` and
+`control_plane_tenant_id(_env)` when calling the control plane. This is a
+minimum deployment gate, not a replacement for future user login, RBAC, audit,
+or tenant-aware idempotency persistence.
 
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 
@@ -255,3 +270,7 @@ Production replaces these with:
 - TKE harbor-api active/standby
 - TKE harbor-runner deployment
 - COS/object storage for artifacts
+
+The Tencent Cloud deployment contract, rollout order, acceptance checks, and
+rollback boundaries are documented in
+[`tencent-cloud-deployment-runbook.md`](../runbooks/tencent-cloud-deployment-runbook.md).

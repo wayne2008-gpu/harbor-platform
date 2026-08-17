@@ -19,12 +19,43 @@ expect_runners=${HARBOR_E2E_EXPECT_RUNNERS:-1}
 runner_timeout_sec=${HARBOR_E2E_RUNNER_TIMEOUT_SEC:-120}
 stale_after_sec=${HARBOR_E2E_STALE_AFTER_SEC:-60}
 require_input_state=${HARBOR_E2E_REQUIRE_INPUT_STATE:-succeeded}
+require_dataset_cos_uri=${HARBOR_E2E_REQUIRE_DATASET_COS_URI:-1}
+require_materialized_inputs=${HARBOR_E2E_REQUIRE_MATERIALIZED_INPUTS:-1}
+require_input_manifest=${HARBOR_E2E_REQUIRE_INPUT_MANIFEST:-1}
 require_cos_artifacts=${HARBOR_E2E_REQUIRE_COS_ARTIFACTS:-1}
 require_trajectory=${HARBOR_E2E_REQUIRE_TRAJECTORY:-0}
 require_openai_trajectory=${HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY:-$require_trajectory}
 require_publish=${HARBOR_E2E_REQUIRE_PUBLISH:-0}
 check_web=${HARBOR_E2E_CHECK_WEB:-1}
+frontend_live_check=${HARBOR_E2E_FRONTEND_LIVE_CHECK:-0}
 preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
+auth_header=${HARBOR_E2E_AUTH_HEADER:-}
+bearer_token=${HARBOR_E2E_BEARER_TOKEN:-}
+synthetic_auth_header=${HARBOR_E2E_SYNTHETIC_AUTH_HEADER:-$auth_header}
+synthetic_bearer_token=${HARBOR_E2E_SYNTHETIC_BEARER_TOKEN:-$bearer_token}
+harbor_auth_header=${HARBOR_E2E_HARBOR_AUTH_HEADER:-$auth_header}
+harbor_bearer_token=${HARBOR_E2E_HARBOR_BEARER_TOKEN:-$bearer_token}
+web_auth_header=${HARBOR_E2E_WEB_AUTH_HEADER:-$auth_header}
+web_bearer_token=${HARBOR_E2E_WEB_BEARER_TOKEN:-$bearer_token}
+synthetic_curl_args=()
+harbor_curl_args=()
+web_curl_args=()
+
+if [ -n "$synthetic_auth_header" ]; then
+  synthetic_curl_args=(-H "$synthetic_auth_header")
+elif [ -n "$synthetic_bearer_token" ]; then
+  synthetic_curl_args=(-H "Authorization: Bearer $synthetic_bearer_token")
+fi
+if [ -n "$harbor_auth_header" ]; then
+  harbor_curl_args=(-H "$harbor_auth_header")
+elif [ -n "$harbor_bearer_token" ]; then
+  harbor_curl_args=(-H "Authorization: Bearer $harbor_bearer_token")
+fi
+if [ -n "$web_auth_header" ]; then
+  web_curl_args=(-H "$web_auth_header")
+elif [ -n "$web_bearer_token" ]; then
+  web_curl_args=(-H "Authorization: Bearer $web_bearer_token")
+fi
 
 archive_path=""
 jsonl_path=""
@@ -55,13 +86,27 @@ require_command() {
 }
 
 fetch_json() {
-  curl -fsS "$1"
+  curl_url "$1"
 }
 
 post_json() {
   local url=$1
   local payload=$2
-  curl -fsS -H "content-type: application/json" --data-binary "$payload" "$url"
+  curl_url "$url" -H "content-type: application/json" --data-binary "$payload"
+}
+
+curl_url() {
+  local url=$1
+  shift
+  if [[ "$url" == "$harbor_api"* ]]; then
+    curl -fsS "${harbor_curl_args[@]}" "$@" "$url"
+    return
+  fi
+  if [[ "$url" == "$frontend_url"* ]]; then
+    curl -fsS "${web_curl_args[@]}" "$@" "$url"
+    return
+  fi
+  curl -fsS "${synthetic_curl_args[@]}" "$@" "$url"
 }
 
 assert_non_empty() {
@@ -148,7 +193,7 @@ wait_for_terminal_results() {
 wait_for_metadata() {
   local task_id=$1
   local deadline=$((SECONDS + metadata_timeout_sec))
-  local trial_count artifact_count trajectory_count openai_count cos_count metadata_ready
+  local trial_count artifact_count trajectory_count openai_count cos_count input_manifest_count metadata_ready
 
   while [ "$SECONDS" -lt "$deadline" ]; do
     results_json=$(fetch_json "$synthetic_api/synthetic-tasks/$task_id/results")
@@ -168,8 +213,12 @@ wait_for_metadata() {
         '[.artifacts[] | select(.storage_type == "cos" and ((.storage_key // "") != ""))] | length' \
         <<<"$results_json"
     )
+    input_manifest_count=$(
+      jq -r '[.artifacts[] | select(.kind == "input-manifest")] | length' \
+        <<<"$results_json"
+    )
     echo \
-      "$(date -Is) metadata trials=$trial_count artifacts=$artifact_count trajectories=$trajectory_count openai=$openai_count cos=$cos_count"
+      "$(date -Is) metadata trials=$trial_count artifacts=$artifact_count trajectories=$trajectory_count openai=$openai_count cos=$cos_count input_manifest=$input_manifest_count"
     metadata_ready=1
     if [ "$trial_count" -lt 1 ] || [ "$artifact_count" -lt 1 ]; then
       metadata_ready=0
@@ -183,6 +232,9 @@ wait_for_metadata() {
     if [ "$require_cos_artifacts" -ne 0 ] && [ "$cos_count" -lt 1 ]; then
       metadata_ready=0
     fi
+    if [ "$require_input_manifest" -ne 0 ] && [ "$input_manifest_count" -lt 1 ]; then
+      metadata_ready=0
+    fi
     if [ "$metadata_ready" -eq 1 ]; then
       return
     fi
@@ -191,6 +243,35 @@ wait_for_metadata() {
 
   echo "Timed out waiting for required metadata for synthetic task $task_id" >&2
   exit 1
+}
+
+run_frontend_live_check() {
+  local checked_dataset_id=$1
+  local checked_task_id=$2
+  local checked_trial_id=$3
+  local checked_result_dataset_id=${4:-}
+
+  if [ "$frontend_live_check" -eq 0 ]; then
+    return
+  fi
+
+  require_command npm
+  local script_dir web_dir
+  script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+  web_dir=$(cd "$script_dir/../../../synthetic-data-platform/web" && pwd)
+
+  echo "Running frontend live workflow check through Playwright."
+  SYNTHETIC_LIVE_BASE_URL="$frontend_url" \
+    SYNTHETIC_LIVE_AUTH_HEADER="$web_auth_header" \
+    SYNTHETIC_LIVE_BEARER_TOKEN="$web_bearer_token" \
+    SYNTHETIC_LIVE_DATASET_ID="$checked_dataset_id" \
+    SYNTHETIC_LIVE_DATASET_NAME="$dataset_name" \
+    SYNTHETIC_LIVE_TASK_ID="$checked_task_id" \
+    SYNTHETIC_LIVE_TASK_NAME="$task_name" \
+    SYNTHETIC_LIVE_TRIAL_ID="$checked_trial_id" \
+    SYNTHETIC_LIVE_RESULT_DATASET_ID="$checked_result_dataset_id" \
+    SYNTHETIC_LIVE_RUNTIME="$runtime" \
+    npm --prefix "$web_dir" run test:live
 }
 
 require_command curl
@@ -210,10 +291,10 @@ if [ ! -d "$dataset_dir" ]; then
 fi
 
 if [ "$check_web" -ne 0 ]; then
-  curl -fsS "$frontend_url" >/dev/null
+  curl_url "$frontend_url" >/dev/null
 fi
 fetch_json "$synthetic_api/health" >/dev/null
-fetch_json "$harbor_api/health" >/dev/null
+fetch_json "$harbor_api/ready" >/dev/null
 echo "Preflight: services reachable, dataset_dir=$dataset_dir runtime=$runtime task=$task_name"
 wait_for_runners
 if [ "$preflight_only" -ne 0 ]; then
@@ -231,7 +312,8 @@ archive_sha=$(sha256sum "$archive_path" | awk '{print $1}')
 echo "Prepared dataset archive: $archive_path sha256=$archive_sha"
 
 dataset_json=$(
-  curl -fsS -X POST "$synthetic_api/datasets/upload" \
+  curl_url "$synthetic_api/datasets/upload" \
+    -X POST \
     -F "file=@${archive_path};type=application/gzip" \
     -F "name=${dataset_name}" \
     -F "version=${dataset_version}" \
@@ -240,9 +322,17 @@ dataset_json=$(
 )
 dataset_id=$(jq -r '.id // empty' <<<"$dataset_json")
 dataset_uri=$(jq -r '.uri // empty' <<<"$dataset_json")
+dataset_storage_key=$(jq -r '.metadata.storage_key // empty' <<<"$dataset_json")
 dataset_checksum=$(jq -r '.checksum_sha256 // empty' <<<"$dataset_json")
 assert_non_empty "dataset id" "$dataset_id"
 assert_non_empty "dataset uri" "$dataset_uri"
+if [ "$require_dataset_cos_uri" -ne 0 ]; then
+  if [[ "$dataset_uri" != cos://* ]]; then
+    echo "Expected dataset uri to start with cos://, got $dataset_uri" >&2
+    exit 1
+  fi
+  assert_non_empty "dataset storage key" "$dataset_storage_key"
+fi
 echo "Uploaded dataset: id=$dataset_id uri=$dataset_uri"
 
 if [ "$dataset_checksum" != "$archive_sha" ]; then
@@ -291,6 +381,10 @@ if [ -n "$require_input_state" ]; then
     exit 1
   fi
 fi
+if [ "$require_materialized_inputs" -ne 0 ]; then
+  materialized_input_count=$(jq -r '.harbor_job.materialized_inputs | length' <<<"$results_json")
+  assert_count_at_least "materialized input count" "$materialized_input_count" 1
+fi
 
 wait_for_metadata "$task_id"
 trial_count=$(jq -r '.trials | length' <<<"$results_json")
@@ -308,6 +402,10 @@ cos_count=$(
     '[.artifacts[] | select(.storage_type == "cos" and ((.storage_key // "") != ""))] | length' \
     <<<"$results_json"
 )
+input_manifest_count=$(
+  jq -r '[.artifacts[] | select(.kind == "input-manifest")] | length' \
+    <<<"$results_json"
+)
 assert_count_at_least "trial count" "$trial_count" 1
 assert_count_at_least "artifact count" "$artifact_count" 1
 if [ "$require_trajectory" -ne 0 ]; then
@@ -318,6 +416,9 @@ if [ "$require_openai_trajectory" -ne 0 ]; then
 fi
 if [ "$require_cos_artifacts" -ne 0 ]; then
   assert_count_at_least "COS artifact count" "$cos_count" 1
+fi
+if [ "$require_input_manifest" -ne 0 ]; then
+  assert_count_at_least "input-manifest artifact count" "$input_manifest_count" 1
 fi
 
 trial_id=$(jq -r '.trials[0].id // empty' <<<"$results_json")
@@ -353,7 +454,7 @@ artifact_download_size=$(wc -c <"$artifact_download_path" | tr -d ' ')
 assert_count_at_least "artifact download byte count" "$artifact_download_size" 1
 echo "Verified artifact download through synthetic API."
 
-ingest_json=$(curl -fsS -X POST "$synthetic_api/synthetic-tasks/$task_id/ingest-samples")
+ingest_json=$(curl_url "$synthetic_api/synthetic-tasks/$task_id/ingest-samples" -X POST)
 ingested=$(jq -r '.ingested // 0' <<<"$ingest_json")
 echo "Ingested samples: $ingested"
 if [ "$ingested" -lt 1 ]; then
@@ -362,13 +463,14 @@ if [ "$ingested" -lt 1 ]; then
     exit 1
   fi
   echo "No sample source artifact was found; result dataset publish/download skipped."
+  run_frontend_live_check "$dataset_id" "$task_id" "$trial_id"
   echo "Frontend dataset URL: $frontend_url/datasets/$dataset_id"
   echo "Frontend task URL: $frontend_url/tasks/$task_id"
   echo "Frontend trial URL: $frontend_url/tasks/$task_id/trials/$trial_id"
   exit 0
 fi
 
-publish_json=$(curl -fsS -X POST "$synthetic_api/synthetic-tasks/$task_id/publish")
+publish_json=$(curl_url "$synthetic_api/synthetic-tasks/$task_id/publish" -X POST)
 result_dataset_id=$(jq -r '.result_dataset.id // empty' <<<"$publish_json")
 assert_non_empty "result dataset id" "$result_dataset_id"
 result_json=$(fetch_json "$synthetic_api/result-datasets/$result_dataset_id")
@@ -376,17 +478,19 @@ sample_count=$(jq -r '.sample_count // 0' <<<"$result_json")
 assert_count_at_least "result dataset sample count" "$sample_count" 1
 
 jsonl_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result.XXXXXX.jsonl")
-curl -fsS "$synthetic_api/result-datasets/$result_dataset_id/download?format=jsonl" \
+curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=jsonl" \
   -o "$jsonl_path"
 jsonl_lines=$(wc -l <"$jsonl_path" | tr -d ' ')
 assert_count_at_least "JSONL line count" "$jsonl_lines" 1
 
 json_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result.XXXXXX.json")
-curl -fsS "$synthetic_api/result-datasets/$result_dataset_id/download?format=json" \
+curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=json" \
   -o "$json_path"
 jq -e --arg id "$result_dataset_id" \
   '.id == $id and (.samples | length >= 1)' \
   "$json_path" >/dev/null
+
+run_frontend_live_check "$dataset_id" "$task_id" "$trial_id" "$result_dataset_id"
 
 echo "Synthetic COS/TKE E2E passed."
 echo "Frontend dataset URL: $frontend_url/datasets/$dataset_id"

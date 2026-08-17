@@ -64,6 +64,33 @@ export HARBOR_PLATFORM_ROOT=$(cd ../.. && pwd)
 `HARBOR_SMOKE_REQUIRE_ARTIFACT_MANIFEST`、`HARBOR_SMOKE_POLL_INTERVAL_SEC`、
 `HARBOR_SMOKE_RUNNER_TIMEOUT_SEC`、`HARBOR_SMOKE_METADATA_TIMEOUT_SEC`。
 
+## RabbitMQ Claim Smoke
+
+如果要单独验证 RabbitMQ dispatch 和 MySQL claim，不依赖 runner polling，使用：
+
+```bash
+cd /home/ubuntu/project/harbor-platform
+HARBOR_RABBITMQ_SMOKE_PURGE_QUEUE=1 \
+./deploy/docker-compose/scripts/rabbitmq-claim-smoke.sh
+```
+
+这个脚本会：
+
+- 生成一个临时 runner config，`poll_control_plane_jobs = false`。
+- 启动一个临时宿主机 runner，只消费 RabbitMQ queue `harbor_jobs`。
+- 提交最小 Docker smoke job，并设置专用 control-plane queue。
+- 断言 job 成功、`runner_id` 匹配、trial/artifact metadata 可查。
+
+因为 runner 没有 polling，成功结果说明消息经过：
+
+```text
+harbor-api publish -> RabbitMQ consume -> POST /internal/jobs/claim -> runner execute
+```
+
+要指向 TDMQ for RabbitMQ，设置 `HARBOR_RABBITMQ_SMOKE_RABBITMQ_URL`、
+`HARBOR_RABBITMQ_SMOKE_RABBITMQ_QUEUE`、`HARBOR_RABBITMQ_SMOKE_RABBITMQ_EXCHANGE`
+和 `HARBOR_RABBITMQ_SMOKE_RABBITMQ_ROUTING_KEY`。脚本不会打印 RabbitMQ URL。
+
 如果要在本机模拟多个 runner，启动多个终端并为每个进程设置不同 ID：
 
 ```bash

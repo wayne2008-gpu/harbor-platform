@@ -127,7 +127,10 @@ Implemented storage modes:
 
 Current COS behavior:
 
-- TOML config uses literal `secret_id` and `secret_key` in this iteration.
+- Local TOML config can still use literal `secret_id` and `secret_key` for
+  compatibility. Production examples use `secret_id_env`, `secret_key_env`, and
+  optional `session_token_env`, with Kubernetes Secrets injecting the referenced
+  environment variables.
 - Runner stores attempt/execution-scoped keys:
   `{prefix}/jobs/{platform_job_id}/attempts/{attempt}/executions/{execution_id}/{relative_path}`.
 - Runner writes `artifacts/runner-execution.json` before starting
@@ -140,7 +143,6 @@ Current COS behavior:
 
 Hardening backlog:
 
-- replace literal COS credentials with env/K8s Secret references
 - add scheduled local retention cleanup beyond immediate `retain_local = false`
 - add real-COS integration smoke gated by credentials
 
@@ -180,7 +182,9 @@ Flow:
 4. store `synthetic_task_id -> harbor_job_id`
 5. poll/query Harbor status
 6. read trial results, trajectory, and artifact metadata through `harbor-api`
-7. parse samples into business tables when sample artifacts exist
+7. parse samples into business tables when sample artifacts exist, or derive one
+   training sample from `trajectory` artifacts with `metadata.schema =
+   "openai_messages"`
 8. cancel active Harbor jobs from the synthetic task detail view
 9. retry terminal Harbor jobs as new synthetic task records
 10. request artifact retry for terminal jobs
@@ -194,6 +198,15 @@ Flow:
     downloads
 17. inspect safe runtime settings without exposing database credentials or COS
     secrets
+
+Current sample ingestion behavior:
+
+- `kind = "sample"` / `kind = "samples"`: accepts either a JSON list, a JSON
+  object with `samples`, or one JSON object as one sample.
+- `kind = "trial-result"`: only imports the `samples` field when it is present.
+- `kind = "trajectory"` with `metadata.schema = "openai_messages"`: imports one
+  sample shaped as `{sample_type, messages, source_artifact}` for downstream
+  post-training data review and JSONL export.
 
 ## Phase 8: Input Dataset Materialization
 
@@ -231,7 +244,6 @@ Current status:
 
 Hardening backlog:
 
-- replace literal TOML COS credentials with env/K8s Secret references
 - add scheduled retention cleanup beyond immediate `retain_local = false`
 - add real-COS integration smoke gated by credentials
 - add synthetic business dataset catalog validation
@@ -262,8 +274,9 @@ Current target:
   `action = "artifact-retry"`; runner still claims through control-plane leases,
   so MySQL remains the source of truth
 - input materialization downloads have runner-local retry settings
-- `harbor-runtime` derives OpenAI messages trajectory files from valid ATIF
-  `agent/trajectory*.json` files
+- `harbor-runtime` writes fallback ATIF `agent/trajectory.json` files from
+  trial results when an agent does not emit native ATIF, then derives OpenAI
+  messages sidecars from `agent/trajectory*.json`
 - `harbor-runner` collects every ordinary file under `job_dir` for artifact
   storage; unclassified files are recorded as `kind = "artifact"`
 - artifact manifests act as metadata overlays for `kind`, `trial_id`, `schema`,
@@ -273,6 +286,13 @@ Current target:
   `JobResult.id`, and runner `execution_id`
 - COS artifact keys default to the attempt/execution namespace layout, with
   explicit `legacy` layout retained only for migration
+- control-plane startup reconciles additive legacy schema gaps for
+  `jobs.priority`, `jobs.queue`, and their claim scheduling indexes
+- runner control-plane polling treats transient claim/queue lookup failures as
+  retryable, so a brief `harbor-api` restart does not terminate keep-alive
+  runners
+- control-plane startup runs Alembic migrations to head for versioned databases;
+  existing unversioned local schemas are reconciled and stamped to head
 
 Implemented interface groups:
 
@@ -309,8 +329,12 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- extend idempotency records with tenant/auth scope once auth lands
-- add auth and tenant scoping before exposing query endpoints broadly
+- extend persisted idempotency records with tenant scope so replay semantics are
+  isolated per tenant
+- add full user/session auth and role-based permissions before exposing query
+  endpoints to end users directly
+- define production migration rollout rules for TencentDB, including backup,
+  rollback, and multi-version service compatibility checks
 
 ## Phase 10: Cloud Deployment
 
@@ -321,3 +345,47 @@ Replace local services with Tencent Cloud services:
 - local host runner processes -> TKE runner Pods
 - local artifact files -> COS/object storage
 - provider runtimes remain selectable: Docker, AGS, TKE, E2B, etc.
+
+Deployment contract and rollout checklist:
+
+- [`tencent-cloud-deployment-runbook.md`](tencent-cloud-deployment-runbook.md)
+
+Implementation milestones:
+
+1. M33: add production `.example.toml` templates in the component repos without
+   real secrets. Current status: implemented in
+   `harbor-control-plane/config/control-plane.production.example.toml`,
+   `synthetic-data-platform/config/platform.production.example.toml`,
+   `harbor/config/runner.production.example.toml`, and
+   `harbor/config/tke.production.example.toml`.
+2. M34: add TKE namespace/RBAC manifests for runner-managed agent-runtime Pods.
+   Current status: implemented in `deploy/k8s/base`.
+3. M35: add TKE Deployment/Service manifests for `harbor-api`, synthetic API/Web,
+   and `harbor-runner`. Current status: implemented in `deploy/k8s/base`.
+4. M36: add TencentDB migration readiness gate and startup failure behavior.
+   Current status: implemented with startup migration, `/ready` head-version
+   check, and K8s readinessProbe on `harbor-api`.
+5. M37: validate TDMQ for RabbitMQ publish/consume plus MySQL claim. Current
+   status: `deploy/docker-compose/scripts/rabbitmq-claim-smoke.sh` implemented;
+   local RabbitMQ-compatible smoke passed on August 17, 2026 with polling
+   disabled on the runner. Run the same script against TDMQ once production
+   endpoints and credentials are configured.
+6. M38: validate COS dataset input and artifact output in cloud. Current status:
+   local real COS/TKE smoke passed on August 17, 2026 with dataset `cos://`
+   upload, materialized inputs, `input-manifest`, COS artifacts, artifact
+   download, sample ingest, result dataset publish, and JSONL/JSON download.
+7. M39: parameterize production E2E smoke for URLs, auth, runtime, dataset, and
+   timeout. Current status: `synthetic-cos-tke-e2e.sh` supports production
+   synthetic API, harbor API, Web base URLs, runtime, dataset path, timeout,
+   unified auth header/bearer token, and per-service auth overrides.
+8. M40: replace TOML secrets with env/K8s Secret references and add tenant/auth
+   scope before broad exposure. Current status: COS credential env references
+   are implemented for runner artifact upload, runner input materialization,
+   harbor-api artifact reads, and synthetic dataset upload. Production TOML
+   examples now reference env var names for COS credentials, database URLs,
+   RabbitMQ URLs, API tokens, and tenant IDs. `harbor-api` and
+   `synthetic-data-platform` can enforce Bearer token plus `X-Tenant-ID`, while
+   `harbor-runner` and the synthetic platform harbor-api client can attach the
+   matching outbound headers. K8s manifests inject component Secrets.
+   Remaining security scope: full user/session auth, RBAC, and tenant-aware
+   idempotency persistence.

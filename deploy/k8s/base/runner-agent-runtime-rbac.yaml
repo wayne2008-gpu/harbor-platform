@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: harbor-agent-runtime-manager
+  namespace: harbor-agent-runtime
+  labels:
+    app.kubernetes.io/name: harbor-runner
+    app.kubernetes.io/part-of: harbor-platform
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: harbor-runner-agent-runtime-manager
+  namespace: harbor-agent-runtime
+  labels:
+    app.kubernetes.io/name: harbor-runner
+    app.kubernetes.io/part-of: harbor-platform
+subjects:
+  - kind: ServiceAccount
+    name: harbor-runner
+    namespace: harbor-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: harbor-agent-runtime-manager

@@ -1,5 +1,9 @@
 # Synthetic Data Platform Frontend Design
 
+> 开发入口文档：
+> [`synthetic-data-platform-frontend-implementation-plan.md`](synthetic-data-platform-frontend-implementation-plan.md)。
+> 本文保留详细页面设计和交互规则，实施排期、切片验收和当前开发顺序以前者为准。
+
 ## 目标
 
 `synthetic-data-platform` 前端是后训练 agent 轨迹数据合成平台的业务工作台，不是 Harbor 的运维控制台，也不是产品官网。
