@@ -400,7 +400,9 @@ Implementation milestones:
    examples now reference env var names for COS credentials, database URLs,
    RabbitMQ URLs, API tokens, and tenant IDs. `harbor-api` and
    `synthetic-data-platform` can enforce Bearer token plus `X-Tenant-ID`;
-   `harbor-api` can also bind tokens to `read`, `write`, and `internal` scopes.
+   `harbor-api` can bind tokens to `read`, `write`, and `internal` scopes, and
+   `synthetic-data-platform` can bind inbound tokens to coarse `read` / `write`
+   scopes.
    `harbor-runner` and the synthetic platform harbor-api client attach matching
    outbound headers with separate production token env names. K8s manifests
    inject component Secrets. Cancel/retry/artifact retry idempotency persistence

@@ -194,7 +194,10 @@ uses `[auth]` for its own API and `[harbor_api_auth]` for outbound calls to
 `control_plane_tenant_id(_env)` when calling the control plane. Control-plane
 tokens can be split into `read`, `write`, and `internal` scopes so the synthetic
 platform cannot call runner-only endpoints and runner tokens can be separated
-from user-facing workflow calls. This is a minimum deployment gate, not a
+from user-facing workflow calls. `synthetic-data-platform` also supports
+multiple inbound `[auth.tokens]` with coarse `read` / `write` scopes so console
+read traffic can be separated from dataset upload, task mutation, publish, and
+review-decision writes. This is a minimum deployment gate, not a
 replacement for future user login, fine-grained RBAC, or end-user permission
 modeling. Control-plane API calls are persisted as `api_audit_events` with
 tenant, principal, scopes, required scope, path, status, request ID, and derived

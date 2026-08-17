@@ -65,7 +65,8 @@ kubectl -n harbor-platform create secret generic harbor-api-secret \
 
 kubectl -n harbor-platform create secret generic synthetic-data-platform-secret \
   --from-literal=SYNTHETIC_DATA_PLATFORM_DATABASE_URL='mysql+pymysql://<user>:<password>@<mysql-host>:3306/synthetic_data_platform' \
-  --from-literal=SYNTHETIC_DATA_PLATFORM_API_TOKEN='<synthetic-platform-api-token>' \
+  --from-literal=SYNTHETIC_DATA_PLATFORM_READ_TOKEN='<synthetic-platform-read-token>' \
+  --from-literal=SYNTHETIC_DATA_PLATFORM_WRITE_TOKEN='<synthetic-platform-write-token>' \
   --from-literal=HARBOR_SYNTHETIC_HARBOR_API_TOKEN='<synthetic-to-harbor-api-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=SYNTHETIC_DATASET_COS_SECRET_ID='<cos-secret-id>' \
@@ -97,8 +98,10 @@ Use the same `HARBOR_TENANT_ID` in `harbor-api-secret`,
 control-plane production template uses separate inbound tokens:
 `HARBOR_SYNTHETIC_HARBOR_API_TOKEN` has read/write scope for the synthetic
 platform, while `HARBOR_RUNNER_CONTROL_PLANE_TOKEN` has read/write/internal
-scope for runner calls. `SYNTHETIC_DATA_PLATFORM_API_TOKEN` protects inbound
-synthetic platform API requests and can be a separate value.
+scope for runner calls. The synthetic platform production template also supports
+separate inbound tokens: `SYNTHETIC_DATA_PLATFORM_READ_TOKEN` protects read-only
+console/API calls, while `SYNTHETIC_DATA_PLATFORM_WRITE_TOKEN` is required for
+dataset upload/register, task operations, publish, and review decisions.
 
 If COS uses temporary credentials, add the matching optional session token
 variables to the component Secret:
