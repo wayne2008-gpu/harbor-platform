@@ -41,13 +41,13 @@
 
 需要注意的当前限制：
 
-- `GET /synthetic-tasks/{id}/samples` 和 `GET /result-datasets/{id}/samples` 已有
-  API 分页参数，但样本仍主要存放在 task/result 行内 `samples_json`，后端查询会先读取
-  整个样本列表再过滤分页。这能支撑 MVP，不适合作为大规模样本查询模型。
-- Synthetic operation idempotency 已覆盖顺序重放，但并发同 key 请求的原子 reservation
-  语义还需要专门加固，尤其是 `retry` 这种会创建新 synthetic task 的操作。
-- Workbench 和 review queue 目前以现有接口聚合为主，数据量增长后需要 SQL 聚合或专用
-  query endpoint。
+- `GET /synthetic-tasks/{id}/samples` 和 `GET /result-datasets/{id}/samples` 已优先读取
+  SQL-backed sample rows，并保留 `samples_json` 兼容 fallback；后续大规模场景还需要
+  进一步补质量规则聚合、索引策略和批量审核能力。
+- Synthetic operation idempotency 已具备并发 reservation 语义；后续还需要补
+  reservation 过期清理、观测指标和用户级审计关联。
+- Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
+  artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
 - 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。
 
 ## UI/UX 设计依据
@@ -202,7 +202,7 @@ V4 前端：
 
 目标：Workbench 不再通过多个宽列表派生关键状态。
 
-建议增强：
+当前已实现：
 
 ```text
 GET /workbench/summary
@@ -215,6 +215,10 @@ GET /workbench/summary
 - prioritized next actions。
 - recent failures by phase。
 - latest result datasets。
+
+当前第一版实现：app 层调用 repository summary snapshot；SQL repository 使用
+count/group_by/limit 查询生成 counts、task states、recent tasks、latest results 和
+publish candidates，runtime provider rollup 读取精简 task state/runtime 字段。
 
 ### 5. 审计和安全
 
@@ -334,6 +338,10 @@ V4 增强：
   `runtime`、`schema`、`quality_flag`、`reviewer` 过滤；queue item 增加
   `runtime` 和派生 `quality_flags`，前端筛选全部写入 URL 并可恢复，quick decision
   继续保留可聚焦 error summary、保存成功刷新 queue/workbench 的行为。
+- V4-5 已完成第一版：`GET /workbench/summary` 切到 repository summary snapshot；
+  SQL repository 使用 count/group_by/limit 查询聚合 counts、task states、
+  recent tasks、latest results、publish candidates，并新增 SQL repository 回归测试；
+  InMemory repository 保持同等语义。
 
 已验证：
 
@@ -343,7 +351,7 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-结果：`84 passed`。
+结果：`85 passed`。
 
 Synthetic API：
 
