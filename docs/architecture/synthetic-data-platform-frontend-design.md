@@ -282,6 +282,7 @@ download: JSONL / JSON
    - 从 dataset 详情进入 task builder 的预填状态进入 URL。
 
 3. **FE-C：Task Detail 恢复体验**
+   - 状态：已完成 operation feedback panel，集中展示 pending / success / error 和恢复建议，并补充 Playwright 覆盖。
    - action queue 的 available/waiting/blocked reason 收敛。
    - failed/succeeded/published 三种状态首屏主动作稳定。
    - artifact retry、ingest、publish 的成功/失败反馈使用 live region。
@@ -723,6 +724,7 @@ Settings
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作；published 状态可直接打开 result dataset。
 - Task detail action queue：根据 runtime、artifact、sample、publish 状态给出优先级恢复/发布动作，并复用安全确认流程。
+- Task detail operation feedback：集中展示 sync/cancel/retry/artifact retry/ingest/publish 的 pending、success、error 和下一步恢复建议。
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
