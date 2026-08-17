@@ -157,6 +157,8 @@ POST /synthetic-tasks
 GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
 GET /synthetic-tasks/{id}/results
+GET /synthetic-tasks/{id}/events
+GET /synthetic-tasks/{id}/logs
 GET /synthetic-tasks/{id}/artifacts
 GET /synthetic-tasks/{id}/trials
 GET /synthetic-tasks/{id}/trials/{trial_id}/result
@@ -232,6 +234,9 @@ Flow:
     events for dataset/task/review/publish/download mutations
 24. query synthetic audit events by request ID, action, resource, task/result
     dataset, status, actor, search text, and pagination from the web console
+25. inspect Harbor-derived task event timelines and run log previews from the
+    synthetic task detail page without giving the web console runner-local paths
+    or COS credentials
 
 Current sample ingestion behavior:
 

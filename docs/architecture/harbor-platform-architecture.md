@@ -95,6 +95,12 @@ above Harbor. It owns:
 
 It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
 
+Task detail diagnostics are also Harbor-backed. The synthetic platform exposes
+task event timelines and run log previews by querying Harbor job/trial/artifact
+metadata through `harbor-api`; log bytes are fetched through the artifact content
+proxy and returned as bounded previews plus download URLs. The web console never
+needs runner-local paths or COS credentials.
+
 The Synthetic API returns `X-Request-ID` on all responses and includes
 `request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
 Critical business operations are persisted as `synthetic_audit_events`, including
@@ -187,7 +193,8 @@ In both modes:
   metadata, but they do not decide whether a file is uploaded
 - runner records artifact rows through `harbor-api`
 - MySQL remains the artifact index
-- `synthetic-data-platform` reads results and trajectories through `harbor-api`, not runner-local paths or COS credentials
+- `synthetic-data-platform` reads results, trajectories, and run log previews
+  through `harbor-api`, not runner-local paths or COS credentials
 
 COS non-secret configuration remains TOML-based. Local development can still use
 literal `secret_id` and `secret_key` fields for compatibility, while production
