@@ -375,6 +375,11 @@ download JSONL / JSON
   `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision`，
   Trial Summary 新增 `Manual review decision` 表单，支持 reviewer 必填校验、
   decision 保存、labels/rationale 保存、刷新后回显。
+- `FE-V3-4 Trajectory Reviewer 强化` 已启动并完成第一批 Messages 增强：
+  OpenAI Messages 视图新增 `Tool thread map`，按 `tool_call_id` 展示 linked、
+  missing response、orphan response、duplicate 等状态；新增完整 messages JSON
+  和单条 message JSON 复制能力，复制结果使用 normalized OpenAI message payload，
+  并通过 live status 反馈成功/失败。
 
 如果要压缩成演示版，优先做：
 
