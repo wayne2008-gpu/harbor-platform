@@ -170,6 +170,7 @@ GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages
 GET /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 PUT /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 GET /reviews/trials
+POST /reviews/trials/batch-decision
 POST /synthetic-tasks/{id}/cancel
 POST /synthetic-tasks/{id}/retry
 POST /synthetic-tasks/{id}/artifacts/retry
@@ -244,6 +245,8 @@ Flow:
 27. consume structured OpenAI message rows in the Trial Detail frontend with
     explicit index sync, server-side role/search pagination, and URL-restorable
     controls
+28. apply one review decision to multiple current-page review queue trials from
+    the Reviews console and persist the batch operation as a single audit event
 
 Current sample ingestion behavior:
 
@@ -542,3 +545,12 @@ Planned milestones:
     and server-side pagination for `/reviews/trials`. Verification:
     `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
+11. V4-10: add current-page batch review decisions. Current status: implemented
+    in `synthetic-data-platform`; PR #42 added
+    `POST /reviews/trials/batch-decision`, duplicate item protection, one
+    audit event per batch, checkbox selection on the Reviews queue, and a batch
+    decision panel with validation, pending, success, and refresh states. The
+    first increment intentionally batches only the visible page and avoids
+    cross-page selection until review queue bulk operations have a stronger
+    selection model. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    and `npm --prefix web run verify`.
