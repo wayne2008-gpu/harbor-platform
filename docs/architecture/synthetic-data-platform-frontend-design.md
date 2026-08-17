@@ -761,7 +761,7 @@ Settings
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
 - Result dataset export contract gates：检查 JSONL rows、Full JSON metadata、source trials 和 source artifacts 是否可交付。
 - Samples review coverage：样本数、可见行数、字段数、可见字段覆盖行数。
-- Result dataset sample review：质量摘要、本地 search、异常样本过滤、行级异常标签和分页。
+- Result dataset sample review：质量摘要、服务端 search/pagination、URL 深链恢复、异常样本过滤和行级异常标签。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
 - Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view 的源 trajectory 审核回跳。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
@@ -771,7 +771,7 @@ Settings
 需要继续优化：
 
 - Trial 页面后续可继续增加更完整 step 文本 diff 和 verifier 专项规则配置。
-- Result dataset 页面后续可继续增强服务端分页、抽样策略、多维质量规则和 trajectory diff 回跳。
+- Result dataset 页面后续可继续增强抽样策略、多维质量规则和 trajectory diff 回跳。
 - Workbench 后续可继续增加成本摘要；该项需要后端先补充 token/runtime/provider cost 字段。
 - Task detail 后续可继续增加 cost breakdown；该项需要后端先补充 token/runtime/provider cost 字段。
 
@@ -993,7 +993,7 @@ deep link 能力，后续继续增强审核效率。
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile、export contract gates、source trajectory audit links 和 result review checklist。
+状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、异常定位、字段 profile、export contract gates、source trajectory audit links 和 result review checklist。
 
 目标：
 
