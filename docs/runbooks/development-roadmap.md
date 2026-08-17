@@ -174,6 +174,7 @@ GET /result-datasets/{id}
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
+GET /runtime-capabilities
 ```
 
 Flow:
@@ -201,6 +202,8 @@ Flow:
 17. inspect safe runtime settings without exposing database credentials or COS
     secrets
 18. save and reload manual trial review decisions for trajectory audit
+19. expose configured runtime/provider capabilities for task creation and
+    deployment readiness checks
 
 Current sample ingestion behavior:
 
