@@ -326,6 +326,7 @@ Settings
 - OpenAI Messages tab 用后训练消费视角展示 role/content/tool_calls/tool_call_id。
 - Summary tab 展示 ATIF/default 与 OpenAI messages 的 schema alignment：覆盖、行数、tool call、observation/tool response 和异常数。
 - Summary tab 提供 tool call id 级别的跨 schema 明细映射和基础 diff，方便定位 ATIF call/observation 与 OpenAI call/response 是否对应、name/arguments/response 是否一致。
+- Summary tab 汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供直达对应审核 tab 的快捷入口。
 - Timeline / OpenAI Messages 提供异常摘要、anomaly-only 过滤和行级异常标签。
 - Raw JSON 只作为兜底，不作为默认阅读方式。
 - 后续增强支持完整 step/message 文本 diff 和更深的 verifier 质量规则。
@@ -464,6 +465,7 @@ Settings
 - Trajectory 审核过滤：Timeline 支持 source/search 过滤，OpenAI Messages 支持 role/search 过滤。
 - Trajectory schema alignment：Summary tab 对齐 ATIF/default 与 OpenAI messages 的覆盖、行数、tool call、observation/tool response 和异常数。
 - Trajectory schema mapping：Summary tab 按 tool call id 映射 ATIF call/observation 与 OpenAI call/response，并标记 aligned / partial / unlinked 与基础 diff。
+- Trial Summary review issues：汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供 tab 快捷跳转。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、source task/source dataset 筛选和回跳、详情、source dataset 直达、JSONL/JSON 下载。
@@ -663,7 +665,7 @@ npm run verify
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加 Task detail trajectory review queue、过滤、折叠、基础异常定位、schema alignment、tool call id 映射和基础 diff 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加 Task detail trajectory review queue、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff 和 Summary review issues 能力，后续继续增强审核效率。
 
 目标：
 
@@ -672,6 +674,7 @@ npm run verify
 - provenance 表支持 schema 快速识别和下载。
 - Summary tab 对齐 ATIF/default 与 OpenAI messages 的覆盖、行数、tool call、observation/tool response 和异常数。
 - Summary tab 按 tool call id 展示 ATIF call/observation 与 OpenAI call/response 的映射状态和 name/arguments/response diff。
+- Summary tab 聚合 Timeline/OpenAI/schema mapping 审核问题，并能直达 Timeline 或 OpenAI Messages。
 - 对缺 source、缺内容、错误信号、tool response 关联问题做基础异常定位。
 
 验收：
