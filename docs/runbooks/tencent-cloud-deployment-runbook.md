@@ -4,8 +4,9 @@
 TKE + TencentDB MySQL + TDMQ for RabbitMQ + COS + TCR。
 
 当前仓库已经提供第一版生产导向 K8s base manifests。本文件固定部署契约、
-配置归属、上线顺序、验收项和回滚边界；环境专属 overlay、Ingress、HPA、
-PDB 和 NetworkPolicy 仍按这里的分层继续补齐。
+配置归属、上线顺序、验收项和回滚边界；当前也提供了 production overlay
+模板，包含 Ingress 和入站 NetworkPolicy。域名、TLS、镜像 tag、Ingress class
+和外部依赖 egress 策略仍由具体环境补齐。
 
 ## 目标拓扑
 
@@ -330,21 +331,25 @@ ServiceAccount 默认发现。
    - `harbor-tke-config` -> `/config/tke.toml`
    - `harbor-runner-kubeconfig` -> `/config/kubeconfig`
    - `harbor-runner-agent-env` -> optional model env secret
-4. 用 production overlay 跑静态 preflight：
+4. 复制 `deploy/k8s/overlays/production` 到环境专属位置，替换镜像 registry/tag、
+   `ingressClassName`、域名和 TLS secret。给 Ingress controller 所在 namespace
+   打上 `harbor.openai.com/ingress-access=true` label，否则 production overlay
+   的 NetworkPolicy 会拒绝入口流量。
+5. 用 production overlay 跑静态 preflight：
    `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --static-only`。
-5. 创建 ConfigMaps、Secrets、TKE namespace、RBAC、image pull secret 后，跑集群
+6. 创建 ConfigMaps、Secrets、TKE namespace、RBAC、image pull secret 后，跑集群
    preflight：
    `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --cluster`。
-6. 部署 `harbor-api`。
-7. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
-8. 部署 `synthetic-data-platform` API 和 Web。
-9. 检查 synthetic API `/health` 和 Web 首屏。
-10. 部署 `harbor-runner` Pods。
-11. 检查 `GET /runners?stale_after_sec=60`，确认 runner online，capabilities
+7. 部署 `harbor-api`。
+8. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
+9. 部署 `synthetic-data-platform` API 和 Web。
+10. 检查 synthetic API `/health` 和 Web 首屏。
+11. 部署 `harbor-runner` Pods。
+12. 检查 `GET /runners?stale_after_sec=60`，确认 runner online，capabilities
    包含 `tke` 和 `cos-input`。
-12. 上传一个小 Harbor dataset 到 COS。
-13. 创建 synthetic task，runtime 选择 `tke`。
-14. 等待 job 成功，验证 input materialization、artifact 上传、trajectory、
+13. 上传一个小 Harbor dataset 到 COS。
+14. 创建 synthetic task，runtime 选择 `tke`。
+15. 等待 job 成功，验证 input materialization、artifact 上传、trajectory、
     OpenAI messages trajectory、sample ingest、result dataset publish/download。
 
 ## 冒烟验收
@@ -407,8 +412,11 @@ COS 回滚：
 
 ## 当前限制
 
-- 当前提供基础 Deployment/Service、PDB、API/Web HPA manifests；Ingress 和
-  NetworkPolicy 仍待在生产 overlay 中按域名、TLS、外部依赖 CIDR/namespace 补充。
+- 当前提供基础 Deployment/Service、PDB、API/Web HPA manifests，以及
+  `deploy/k8s/overlays/production` 生产模板。该 overlay 已包含 synthetic Web
+  Ingress 和入站 NetworkPolicy；实际生产环境仍必须替换域名、TLS、镜像 tag、
+  Ingress class，并按 TencentDB、TDMQ、COS、DNS、Kubernetes API 的真实出口要求
+  另行补 egress NetworkPolicy。
 - COS credential、RabbitMQ URL、MySQL URL、API token 和 tenant ID 的 env/K8s
   Secret 引用已补齐。
 - 已有最小服务间 Bearer token + tenant header + token scope gate。
@@ -426,7 +434,7 @@ COS 回滚：
 | --- | --- | --- |
 | M33 | 生产配置模板 | 已完成：三个子项目各有不含真实 secret 的 `.example.toml` |
 | M34 | TKE namespace/RBAC manifests | 已完成：`deploy/k8s/base` 渲染通过，runner ServiceAccount 具备最小 Pod/exec/log 权限 |
-| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染 |
+| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
 | M36 | TencentDB migration gate | 已完成：启动自动 migration，`/ready` 校验 head version，失败会阻止服务就绪 |
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |

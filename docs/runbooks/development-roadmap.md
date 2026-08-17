@@ -373,7 +373,10 @@ Implementation milestones:
    PodDisruptionBudgets for all service Deployments and CPU-based HPAs for the
    stateless API/Web Deployments. Runner horizontal scale remains deliberate via
    Deployment replicas, queue quotas, and `max_running_jobs` rather than an HPA
-   that might scale down active work.
+   that might scale down active work. `deploy/k8s/overlays/production` adds a
+   production template for TCR image replacements, synthetic Web Ingress, and
+   ingress-only NetworkPolicies. Environment-specific host, TLS, ingress class,
+   image tags, and egress allowlists remain deployment-time overlay inputs.
 4. M36: add TencentDB migration readiness gate and startup failure behavior.
    Current status: implemented with startup migration, `/ready` head-version
    check, and K8s readinessProbe on `harbor-api`.

@@ -8,6 +8,8 @@ Current scope:
 - `base/`: namespaces, runner RBAC, service accounts, Deployments,
   ClusterIP Services, PodDisruptionBudgets, and API/Web HPAs for `harbor-api`,
   synthetic API/Web, and `harbor-runner`.
+- `overlays/production/`: production template overlay with TCR image
+  replacements, a synthetic web Ingress, and ingress-only NetworkPolicies.
 
 The manifests reference ConfigMaps and Secrets, but do not define real runtime
 config. Component config stays in the component repositories and should be
@@ -121,6 +123,33 @@ scale-down while a Pod owns active Harbor work can interrupt a run; scale
 runners deliberately through Deployment replicas, queue quotas, and
 `max_running_jobs`.
 
+The production overlay is a template, not a ready-to-apply environment config.
+Copy it to an environment-specific location outside git or into your deployment
+repo, then replace:
+
+- image registry and tags in `kustomization.yaml`
+- `spec.ingressClassName`
+- `synthetic.change-me.example.com`
+- `synthetic-data-platform-tls`
+
+The overlay exposes only `synthetic-data-platform-web`. The web service should
+proxy API calls to `synthetic-data-platform` inside the cluster; `harbor-api`
+stays internal and is reachable only from synthetic API and runner Pods.
+
+Before applying the production overlay, label the namespace that runs the
+Ingress controller:
+
+```bash
+kubectl label namespace <ingress-controller-namespace> \
+  harbor.openai.com/ingress-access=true
+```
+
+The included NetworkPolicies restrict ingress only. They do not restrict egress,
+so TencentDB, TDMQ for RabbitMQ, COS, DNS, and the Kubernetes API remain
+reachable according to cluster routing and cloud security groups. Add
+environment-specific egress NetworkPolicies only after the exact service
+endpoints, CIDRs, and DNS requirements are known.
+
 Apply the current base:
 
 ```bash
@@ -152,7 +181,15 @@ For a production overlay, point the script at the overlay and do not allow
 placeholder images:
 
 ```bash
-HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay \
+HARBOR_K8S_KUSTOMIZE_DIR=/path/to/filled/production/overlay \
+  deploy/k8s/scripts/tke-preflight.sh --static-only
+```
+
+To validate the checked-in template itself, allow placeholders explicitly:
+
+```bash
+HARBOR_K8S_KUSTOMIZE_DIR=deploy/k8s/overlays/production \
+  HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 \
   deploy/k8s/scripts/tke-preflight.sh --static-only
 ```
 
@@ -161,7 +198,7 @@ created in the cluster, run cluster checks. This command only reads cluster
 state and does not apply manifests:
 
 ```bash
-HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay \
+HARBOR_K8S_KUSTOMIZE_DIR=/path/to/filled/production/overlay \
   deploy/k8s/scripts/tke-preflight.sh --cluster
 ```
 
