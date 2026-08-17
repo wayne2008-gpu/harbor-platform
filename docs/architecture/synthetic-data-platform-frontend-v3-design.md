@@ -1,5 +1,9 @@
 # Synthetic Data Platform Frontend V3 Design
 
+> V4 平台化研发方案已经整理到
+> [`synthetic-data-platform-v4-platformization-plan.md`](synthetic-data-platform-v4-platformization-plan.md)。
+> 本文保留 V3 前端产品化设计和已完成能力记录。
+
 ## 目标
 
 本轮前端要把 `synthetic-data-platform` 做成“后训练 agent 轨迹数据合成平台”的
