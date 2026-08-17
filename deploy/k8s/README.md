@@ -123,6 +123,35 @@ kubectl kustomize deploy/k8s/base > /tmp/harbor-platform-k8s-base.yaml
 kubectl apply --dry-run=client -f /tmp/harbor-platform-k8s-base.yaml
 ```
 
+Run the deployment preflight before applying an environment-specific overlay.
+The base manifests intentionally contain `CHANGE_ME` image placeholders, so
+base-only validation must opt into allowing placeholders:
+
+```bash
+HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 \
+  deploy/k8s/scripts/tke-preflight.sh --static-only
+```
+
+For a production overlay, point the script at the overlay and do not allow
+placeholder images:
+
+```bash
+HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay \
+  deploy/k8s/scripts/tke-preflight.sh --static-only
+```
+
+After ConfigMaps, Secrets, namespaces, RBAC, and image pull secrets have been
+created in the cluster, run cluster checks. This command only reads cluster
+state and does not apply manifests:
+
+```bash
+HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay \
+  deploy/k8s/scripts/tke-preflight.sh --cluster
+```
+
+Set `HARBOR_K8S_CHECK_ROLLOUT=1` to also wait for the four service Deployments
+to be rolled out.
+
 Validate runner permissions:
 
 ```bash

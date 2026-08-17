@@ -330,16 +330,21 @@ ServiceAccount 默认发现。
    - `harbor-tke-config` -> `/config/tke.toml`
    - `harbor-runner-kubeconfig` -> `/config/kubeconfig`
    - `harbor-runner-agent-env` -> optional model env secret
-4. 部署 `harbor-api`。
-5. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
-6. 部署 `synthetic-data-platform` API 和 Web。
-7. 检查 synthetic API `/health` 和 Web 首屏。
-8. 部署 `harbor-runner` Pods。
-9. 检查 `GET /runners?stale_after_sec=60`，确认 runner online，capabilities
+4. 用 production overlay 跑静态 preflight：
+   `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --static-only`。
+5. 创建 ConfigMaps、Secrets、TKE namespace、RBAC、image pull secret 后，跑集群
+   preflight：
+   `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --cluster`。
+6. 部署 `harbor-api`。
+7. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
+8. 部署 `synthetic-data-platform` API 和 Web。
+9. 检查 synthetic API `/health` 和 Web 首屏。
+10. 部署 `harbor-runner` Pods。
+11. 检查 `GET /runners?stale_after_sec=60`，确认 runner online，capabilities
    包含 `tke` 和 `cos-input`。
-10. 上传一个小 Harbor dataset 到 COS。
-11. 创建 synthetic task，runtime 选择 `tke`。
-12. 等待 job 成功，验证 input materialization、artifact 上传、trajectory、
+12. 上传一个小 Harbor dataset 到 COS。
+13. 创建 synthetic task，runtime 选择 `tke`。
+14. 等待 job 成功，验证 input materialization、artifact 上传、trajectory、
     OpenAI messages trajectory、sample ingest、result dataset publish/download。
 
 ## 冒烟验收

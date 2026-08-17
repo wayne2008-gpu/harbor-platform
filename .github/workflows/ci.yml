@@ -180,7 +180,13 @@ jobs:
         env:
           HARBOR_PLATFORM_ROOT: ${{ github.workspace }}
         run: |
+          bash -n ../k8s/scripts/tke-preflight.sh
           bash -n scripts/submit-and-wait-job.sh
+          bash -n scripts/rabbitmq-claim-smoke.sh
+          bash -n scripts/synthetic-cos-tke-e2e.sh
+          if command -v kubectl >/dev/null 2>&1; then
+            HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 ../k8s/scripts/tke-preflight.sh --static-only
+          fi
           docker compose -f compose.dev.yml config >/tmp/harbor-compose-dev.yml
           docker compose -f compose.dev.yml -f compose.synthetic-upload.yml config >/tmp/harbor-compose-upload.yml
           jq empty smoke/docker-touch-file-smoke-job.local.json
