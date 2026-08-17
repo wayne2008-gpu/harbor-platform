@@ -456,7 +456,8 @@ Planned milestones:
    SQL sample rows when present, keep `samples_json` fallback, and support
    `quality_flag` filtering.
 3. V4-2: freeze result dataset sample snapshots for reproducible JSONL/JSON
-   downloads.
+   downloads. Current status: implemented; published result samples remain stable
+   when the source task ingests additional samples later.
 4. V4-3: add operation idempotency reservation states for concurrent same-key
    cancel/retry/artifact-retry requests. The first compatible implementation can
    store reservation status in existing operation metadata before a later schema
