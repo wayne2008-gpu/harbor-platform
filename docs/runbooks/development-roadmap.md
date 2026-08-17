@@ -420,3 +420,52 @@ Implementation milestones:
    `api_audit_events` and queryable through `POST /internal/audit-events/query`.
    Remaining security scope: full user/session auth, fine-grained RBAC, and
    end-user audit correlation.
+
+## Phase 11: Synthetic Platform V4 Productization
+
+Detailed plan:
+
+- [`synthetic-data-platform-v4-platformization-plan.md`](../architecture/synthetic-data-platform-v4-platformization-plan.md)
+
+Current target:
+
+- move from an end-to-end demo-grade synthetic console to a production-oriented
+  post-training agent trajectory data platform
+- keep the browser workflow centered on Dataset -> Synthetic task -> Trial
+  trajectory -> Samples -> Result dataset -> Download / lineage audit
+- promote global trial review into a first-class production queue
+- move sample querying from row-level `samples_json` list slicing toward SQL-backed
+  sample records, search, pagination, and quality flags
+- harden synthetic cancel/retry/artifact-retry idempotency with an atomic
+  reservation state so concurrent same-key retries cannot create duplicate
+  synthetic retry tasks
+- add synthetic-platform audit records and request IDs for dataset mutations,
+  task control, review decisions, sample ingest, publish, and downloads
+- keep settings and frontend diagnostics secret-safe; show configured flags and
+  readiness only
+- use local COS + TKE and production-parameterized E2E smoke as release gates
+
+Planned milestones:
+
+1. V4-0: freeze the platformization plan and split issues/PRs. Current status:
+   completed with
+   [`synthetic-data-platform-v4-platformization-plan.md`](../architecture/synthetic-data-platform-v4-platformization-plan.md).
+2. V4-1: add SQL-backed `synthetic_samples` and source lineage rows; keep current
+   samples API response contract and pagination headers.
+3. V4-2: freeze result dataset sample snapshots for reproducible JSONL/JSON
+   downloads.
+4. V4-3: add operation idempotency reservation states for concurrent same-key
+   cancel/retry/artifact-retry requests. The first compatible implementation can
+   store reservation status in existing operation metadata before a later schema
+   migration promotes it to columns. Current status: implemented in
+   `synthetic-data-platform`; same-key in-progress operations return 409 before
+   Harbor side effects, completed operations replay the first result, and failed
+   operations require a new idempotency key.
+5. V4-4: promote Reviews to a first-class frontend workflow with query filters,
+   URL deep links, and quick decision recovery.
+6. V4-5: make Workbench summary use dedicated backend aggregation with frontend
+   fallback.
+7. V4-6: add synthetic API audit baseline and surface request IDs in recoverable
+   frontend errors.
+8. V4-7: run backend tests, frontend verify, and COS + TKE E2E smoke as the
+   release gate.

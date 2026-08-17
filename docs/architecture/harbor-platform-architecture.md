@@ -96,6 +96,8 @@ It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappi
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
+The next platformization iteration is documented in
+[`synthetic-data-platform-v4-platformization-plan.md`](synthetic-data-platform-v4-platformization-plan.md).
 
 ### Harbor Platform Super Repo
 
