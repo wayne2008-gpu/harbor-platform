@@ -452,7 +452,7 @@ Settings
 - 顶层 app shell、sidebar、skip link、route focus management。
 - 移动端 app shell 使用 sticky 顶部应用栏和容器内横向 primary navigation rail，避免页面级横向滚动。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
-- Dataset 上传/登记、列表筛选、详情、task_name 过滤、使用记录、result datasets 回溯、基于 dataset 创建任务。
+- Dataset 上传/登记、列表筛选、详情、task_name 过滤、version family、使用记录、result datasets 回溯、基于 dataset 创建任务。
 - Task 创建、提交前 dataset readiness 检查、列表、已发布结果直达、详情、sync/cancel/retry/artifact retry。
 - Samples ingest 和 publish。
 - Task detail status overview：根据 running / succeeded / failed / published 状态给出当前 checkpoint 和下一步动作；published 状态可直接打开 result dataset。
@@ -539,13 +539,14 @@ Settings
 
 ### FE2：Dataset 管理闭环
 
-周期：1 天。
+周期：1 天。状态：基础版已完成，已增加同名 dataset version family 对比和指定版本创建任务入口。
 
 目标：
 
 - 完成 dataset 列表筛选、上传/登记、详情、readiness 和 task_name 展示。
 - 从 dataset 详情直达创建任务，并把 dataset/task_name 预填到 task builder。
 - 展示该 dataset 关联的 synthetic tasks 和 result datasets。
+- 展示同名 dataset 的版本族，能比较当前版本和 sibling versions 的 source、task_count、checksum，并选择指定版本创建任务。
 
 验收：
 
@@ -642,7 +643,7 @@ npm run verify
 ```
 
 前端进入开发时，优先顺序是 FE1 -> FE3 -> FE4 -> FE5 -> FE6。FE2
-当前已经具备基础能力，后续主要补齐 dataset 版本和管理体验；FE7 每个阶段
+当前已经具备基础能力，并已补充 dataset version family 管理体验；FE7 每个阶段
 都要滚动执行，不只在最后做。
 
 ## 历史开发排期和当前状态
