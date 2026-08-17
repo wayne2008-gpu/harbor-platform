@@ -377,6 +377,11 @@ FE-V2-1、FE-V2-3、FE-V2-4、FE-V2-5，把服务端分页和审核持久化先�
 - `FE-V2-1 App shell 和组件治理` 已启动并完成第一批基础治理：shell landmark 命名、
   可聚焦表格区域、统一 `StatusBadge` tone/aria contract、`MutationStatus` tone 扩展、
   run stage 当前步骤语义和对应 UI smoke。
+- `FE-V2-2 Dataset 管理增强` 已启动并完成第一批 task handoff 增强：Dataset
+  Detail 新增 `Task creation handoff`，把 dataset contract、task scope、runner
+  download、lineage anchor 汇总到创建任务前的检查面板；当用户选择 task names
+  时，面板会同步展示精确预填范围和 `/tasks/new` 链接参数，UI smoke 覆盖 n_tasks
+  模式和 taskName 精确预填模式。
 - `FE-V2-3 Task 创建和运行控制增强` 已启动并完成第一批 handoff 增强：Task
   Builder 和 Task Detail 统一展示 runtime handoff checklist，把提交请求、COS 输入
   materialization、runner lease、runtime start、artifact/sample handoff 串成可扫描检查点，
