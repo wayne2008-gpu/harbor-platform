@@ -316,6 +316,9 @@ V4 增强：
   会把 sample rows 绑定到 result dataset；task/result samples API 保持原 response
   和 pagination headers，同时支持 `search/q`、`limit`、`offset` 和
   `quality_flag`。旧 `samples_json` 仍作为兼容快照和 fallback。
+- V4-2 已完成：result dataset 发布时冻结 samples snapshot；后续同一 task 再
+  ingest 新 samples 不会改变已发布 result dataset 的 samples 查询、JSONL 下载或完整
+  JSON 下载。
 - V4-3 已完成：Synthetic API 在 cancel、retry、artifact retry 执行副作用前先创建
   operation idempotency reservation；同 key 并发请求命中 `in_progress` 时返回 409，
   不再调用 Harbor；完成后重复请求返回首次结果；失败记录为 `failed` 并要求客户端使用新
@@ -330,7 +333,7 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-结果：`82 passed`。
+结果：`84 passed`。
 
 Synthetic API：
 
