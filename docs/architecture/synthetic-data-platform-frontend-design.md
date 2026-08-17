@@ -451,6 +451,7 @@ Settings
 - Task detail sample publish readiness：展示 source artifacts、ingested samples、runtime gate、publish readiness。
 - Task operation disabled reason：cancel / retry / artifact retry / ingest / publish 的等待原因可见。
 - Task detail diagnostics：聚合 trial state、trial exception、artifact kind/schema、缺失 trajectory、runtime duration、失败根因和 artifact retry wake-up 状态。
+- Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，并提供直达轨迹审核入口。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
@@ -662,7 +663,7 @@ npm run verify
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加过滤、折叠、基础异常定位、schema alignment、tool call id 映射和基础 diff 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加 Task detail trajectory review queue、过滤、折叠、基础异常定位、schema alignment、tool call id 映射和基础 diff 能力，后续继续增强审核效率。
 
 目标：
 
