@@ -335,13 +335,13 @@ download JSONL / JSON
 | result download | `GET /result-datasets/{id}/download?format=jsonl|json` |
 | workbench summary | `GET /workbench/summary` |
 | trial review queue | `GET /reviews/trials?state=...&limit=...&offset=...` |
+| task events | `GET /synthetic-tasks/{id}/events?phase=...&limit=...&offset=...` |
 | safe settings | `GET /settings` |
 
 本轮前端要补齐的后端缺口：
 
 | 缺口 | 建议 API | 优先级 |
 | --- | --- | --- |
-| task event stream | `GET /synthetic-tasks/{id}/events` 或轻量 polling summary | P2 |
 | artifact browser 下载策略 | signed URL 或 API proxy 明确化 | P2 |
 
 已完成：
@@ -351,6 +351,7 @@ download JSONL / JSON
 | 人工审核结论持久化 | `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision` | FE-V3-1 已实现 |
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` | FE-V3-5 增量实现 |
 | task/trial 审核队列聚合 | `GET /reviews/trials?state=...&limit=...&offset=...` | FE-V3 增量实现 |
+| task event stream | `GET /synthetic-tasks/{id}/events?phase=...&limit=...&offset=...` | FE-V3 增量实现 |
 
 ## 开发切片
 
@@ -413,6 +414,11 @@ download JSONL / JSON
   approved/needs_review/rejected/blocked）、`task_id`、search、limit/offset；
   Workbench 新增全局 `Trial review queue` 面板，展示 open trial 数、manual
   decisions、OpenAI messages 覆盖和 trial 详情跳转。
+- `task event stream` 已完成第一版：synthetic API 新增
+  `GET /synthetic-tasks/{id}/events`，从 synthetic task record、Harbor job、
+  trials、artifacts、sample ingest 和 publish 状态实时合成可轮询事件视图，
+  支持 `phase`、search/q、limit/offset；Task Detail 新增 `Run events`
+  面板，展示事件总数、最新事件、phase 覆盖和事件时间线。
 
 如果要压缩成演示版，优先做：
 
