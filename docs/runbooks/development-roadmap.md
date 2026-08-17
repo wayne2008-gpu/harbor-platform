@@ -518,4 +518,18 @@ Planned milestones:
    Detail Messages tab queries `GET /trajectory/messages`, exposes `Sync index`,
    and supports server-side role/search pagination with URL-restorable controls.
 9. V4-8: run backend tests, frontend verify, and COS + TKE E2E smoke as the
-   release gate.
+   release gate. Current status: passed locally on August 18, 2026
+   (Asia/Shanghai). Verification covered `harbor-control-plane` tests/ruff,
+   compose rebuild, `harbor-api` MySQL migration readiness at
+   `0008_api_audit_events`, real COS dataset upload from
+   `/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`, TKE runtime
+   execution, COS artifact upload/download, sample ingest, result dataset
+   publish/download, OpenAI trajectory message sync/query, and synthetic Web
+   live Playwright rendering. Evidence IDs: dataset
+   `e1eee484389249aaa1f5078a363efe69`, synthetic task
+   `73063b12c15941f8b6de73307af1d4ee`, harbor job
+   `6032457cd1744c89a770c7b9e397d8eb`, trial
+   `f1e09428-3524-4bc5-8e06-9a3174f1af71`, result dataset
+   `240e0e8d1f9147b5b353ab37419ec637`. Release-gate hardening found and fixed
+   the control-plane MySQL audit-event path index migration issue in
+   `harbor-control-plane` PR #4.
