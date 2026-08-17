@@ -187,14 +187,17 @@ Production templates also reference database and RabbitMQ connection strings via
 ConfigMaps and git-tracked TOML files.
 
 Production service-to-service access can be protected by config-driven Bearer
-token plus tenant header checks. `harbor-api` reads `[auth]` from
+token, tenant header, and coarse token scopes. `harbor-api` reads `[auth]` from
 `harbor-control-plane/config/control-plane.<env>.toml`; `synthetic-data-platform`
 uses `[auth]` for its own API and `[harbor_api_auth]` for outbound calls to
 `harbor-api`; `harbor-runner` uses `control_plane_bearer_token(_env)` and
-`control_plane_tenant_id(_env)` when calling the control plane. This is a
-minimum deployment gate, not a replacement for future user login, RBAC, audit,
-or end-user permission modeling. Cancel/retry/artifact-retry idempotency records
-are persisted with tenant scope so replay behavior is isolated per tenant.
+`control_plane_tenant_id(_env)` when calling the control plane. Control-plane
+tokens can be split into `read`, `write`, and `internal` scopes so the synthetic
+platform cannot call runner-only endpoints and runner tokens can be separated
+from user-facing workflow calls. This is a minimum deployment gate, not a
+replacement for future user login, fine-grained RBAC, audit, or end-user
+permission modeling. Cancel/retry/artifact-retry idempotency records are
+persisted with tenant scope so replay behavior is isolated per tenant.
 
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 
