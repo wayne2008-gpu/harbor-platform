@@ -294,6 +294,7 @@ download: JSONL / JSON
    - 下载失败或空数据集显示恢复路径。
 
 5. **FE-E：Workbench 和 Settings 验收**
+   - 状态：基础版已完成，本轮新增 Settings local E2E execution plan，把上传、TKE 任务、轨迹审核、发布下载串成可扫描步骤。
    - Workbench 首屏 next actions 和 failure causes 作为运营入口。
    - Settings 作为本地 E2E 检查入口，确认 secret 不泄露。
    - 补齐 375/768/1024/1440px Playwright 截图或 smoke。
@@ -1019,7 +1020,7 @@ npm run verify
 
 ### F6：Settings 收敛
 
-状态：基础版已完成，已增加安全配置摘要、E2E readiness gates、命令复制和 secret 明文隐藏验证。
+状态：基础版已完成，已增加安全配置摘要、E2E readiness gates、local E2E execution plan、命令复制和 secret 明文隐藏验证。
 
 目标：
 
