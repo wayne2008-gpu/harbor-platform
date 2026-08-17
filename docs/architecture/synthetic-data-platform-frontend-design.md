@@ -441,6 +441,7 @@ Settings
 
 - React 19 + Vite + React Router + TanStack Query。
 - 顶层 app shell、sidebar、skip link、route focus management。
+- 移动端 app shell 使用 sticky 顶部应用栏和容器内横向 primary navigation rail，避免页面级横向滚动。
 - Workbench、Datasets、Tasks、Results、Settings 页面。
 - Dataset 上传/登记、列表筛选、详情、task_name 过滤、使用记录、result datasets 回溯、基于 dataset 创建任务。
 - Task 创建、提交前 dataset readiness 检查、列表、已发布结果直达、详情、sync/cancel/retry/artifact retry。
@@ -629,7 +630,7 @@ npm run verify
 
 ### F1：前端设计基线与表格可读性
 
-状态：基础版已完成，已增加 source review 筛选和字段 profile。
+状态：基础版已完成，已增加 source review 筛选、字段 profile 和移动端顶部导航 rail。
 
 目标：
 
