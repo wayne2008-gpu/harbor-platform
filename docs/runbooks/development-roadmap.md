@@ -165,6 +165,8 @@ GET /synthetic-tasks/{id}/trials/{trial_id}/result
 GET /synthetic-tasks/{id}/trials/{trial_id}/artifacts
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory?schema=openai_messages
+POST /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/sync
+GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages
 GET /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 PUT /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 GET /reviews/trials
@@ -237,6 +239,8 @@ Flow:
 25. inspect Harbor-derived task event timelines and run log previews from the
     synthetic task detail page without giving the web console runner-local paths
     or COS credentials
+26. sync OpenAI message trajectory artifacts into Synthetic-owned structured
+    message rows and query them by schema, role, search text, and pagination
 
 Current sample ingestion behavior:
 

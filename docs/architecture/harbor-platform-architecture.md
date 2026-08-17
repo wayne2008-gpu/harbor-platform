@@ -101,6 +101,13 @@ metadata through `harbor-api`; log bytes are fetched through the artifact conten
 proxy and returned as bounded previews plus download URLs. The web console never
 needs runner-local paths or COS credentials.
 
+OpenAI message trajectory review has a Synthetic-owned structured index.
+`POST /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/sync` reads the
+Harbor `schema=openai_messages` trajectory artifact, normalizes messages into
+`synthetic_trajectory_messages`, and replaces the task/trial/schema rows
+idempotently. `GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages`
+queries those rows by schema, role, search text, limit, and offset.
+
 The Synthetic API returns `X-Request-ID` on all responses and includes
 `request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
 Critical business operations are persisted as `synthetic_audit_events`, including
@@ -195,6 +202,9 @@ In both modes:
 - MySQL remains the artifact index
 - `synthetic-data-platform` reads results, trajectories, and run log previews
   through `harbor-api`, not runner-local paths or COS credentials
+- `synthetic-data-platform` may persist derived, business-facing indexes such as
+  OpenAI message trajectory rows, but the original artifact bytes remain owned
+  by Harbor artifact storage
 
 COS non-secret configuration remains TOML-based. Local development can still use
 literal `secret_id` and `secret_key` fields for compatibility, while production
