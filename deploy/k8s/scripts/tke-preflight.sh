@@ -7,11 +7,12 @@ Usage: deploy/k8s/scripts/tke-preflight.sh [--static-only|--cluster]
 
 Static checks:
   - render the Kustomize base or overlay
-  - run kubectl client-side dry-run
+  - verify the rendered manifest is non-empty
   - verify required manifest references
   - fail on CHANGE_ME image placeholders unless explicitly allowed
 
 Cluster checks with --cluster:
+  - run kubectl server-side dry-run against the rendered manifest
   - verify required namespaces, ConfigMaps, and Secrets exist
   - verify required Secret/ConfigMap keys exist without printing values
   - verify harbor-runner ServiceAccount can manage agent-runtime Pods
@@ -150,11 +151,8 @@ require_cmd kubectl
 
 log "Rendering Kustomize directory: $KUSTOMIZE_DIR"
 kubectl kustomize "$KUSTOMIZE_DIR" >"$RENDERED_MANIFEST"
+[[ -s "$RENDERED_MANIFEST" ]] || fail "rendered manifest is empty"
 ok "rendered manifests to $RENDERED_MANIFEST"
-
-log "Running kubectl client-side dry-run"
-kubectl apply --dry-run=client -f "$RENDERED_MANIFEST" >/dev/null
-ok "client-side dry-run passed"
 
 log "Checking rendered manifest references"
 require_rendered_text "name: harbor-api"
@@ -185,6 +183,10 @@ if [[ "$MODE" == "static" ]]; then
   log "Static preflight passed"
   exit 0
 fi
+
+log "Running kubectl server-side dry-run"
+kubectl apply --dry-run=server --validate=strict -f "$RENDERED_MANIFEST" >/dev/null
+ok "server-side dry-run passed"
 
 log "Running cluster preflight checks"
 kubectl get namespace "$PLATFORM_NS" >/dev/null

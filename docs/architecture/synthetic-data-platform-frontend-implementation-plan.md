@@ -1,5 +1,9 @@
 # Synthetic Data Platform Frontend Implementation Plan
 
+> 下一轮产品化前端设计见
+> [`synthetic-data-platform-frontend-v2-design.md`](synthetic-data-platform-frontend-v2-design.md)。
+> 本文下方保留已完成 MVP 的设计冻结、实施切片和验收记录；新开发优先按 V2 文档拆任务。
+
 ## 2026-08-17 设计冻结：产品化前端下一轮
 
 本轮先冻结前端设计，再进入开发。开发方式不是重写已有 MVP，而是在当前
