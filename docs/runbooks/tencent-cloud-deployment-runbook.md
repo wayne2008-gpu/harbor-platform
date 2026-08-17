@@ -411,9 +411,11 @@ COS 回滚：
   仍待补充。
 - COS credential、RabbitMQ URL、MySQL URL、API token 和 tenant ID 的 env/K8s
   Secret 引用已补齐。
-- 已有最小服务间 Bearer token + tenant header gate，cancel/retry/artifact
-  retry 的 idempotency persistence 已按 tenant 隔离；对终端用户开放前仍需
-  补完整登录、RBAC 和审计。
+- 已有最小服务间 Bearer token + tenant header + token scope gate。
+  `harbor-api` 可将 synthetic 平台 token 限制为 `read/write`，将 runner token
+  配成 `read/write/internal`；cancel/retry/artifact retry 的 idempotency
+  persistence 已按 tenant 隔离。对终端用户开放前仍需补完整登录、细粒度 RBAC
+  和审计。
 - TKE provider 当前主要使用 kubeconfig 配置，in-cluster ServiceAccount 默认发现是后续优化。
 - Compose 脚本是本地验证工具；线上可以复用流程，不应直接依赖本地端口假设。
 
@@ -428,4 +430,4 @@ COS 回滚：
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |
 | M39 | 生产 E2E 脚本 | 已完成：`synthetic-cos-tke-e2e.sh` 支持生产 base URL、runtime、dataset、timeout、统一或分服务 auth header/bearer token |
-| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；runner 和 synthetic 出站 harbor-api client 会携带对应 header；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离。剩余：完整用户登录/RBAC/审计 |
+| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；harbor-api 支持 `read/write/internal` token scopes；runner 和 synthetic 出站 harbor-api client 会携带对应 header；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离。剩余：完整用户登录、细粒度 RBAC、审计 |

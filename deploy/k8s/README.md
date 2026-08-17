@@ -53,7 +53,8 @@ Create required Secrets outside git:
 kubectl -n harbor-platform create secret generic harbor-api-secret \
   --from-literal=HARBOR_CONTROL_PLANE_DATABASE_URL='mysql+pymysql://<user>:<password>@<mysql-host>:3306/harbor_control_plane' \
   --from-literal=HARBOR_CONTROL_PLANE_RABBITMQ_URL='amqps://<user>:<password>@<tdmq-host>:5671/%2F' \
-  --from-literal=HARBOR_CONTROL_PLANE_API_TOKEN='<control-plane-api-token>' \
+  --from-literal=HARBOR_SYNTHETIC_HARBOR_API_TOKEN='<synthetic-to-harbor-api-token>' \
+  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-api-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_KEY='<cos-secret-key>' \
@@ -62,7 +63,7 @@ kubectl -n harbor-platform create secret generic harbor-api-secret \
 kubectl -n harbor-platform create secret generic synthetic-data-platform-secret \
   --from-literal=SYNTHETIC_DATA_PLATFORM_DATABASE_URL='mysql+pymysql://<user>:<password>@<mysql-host>:3306/synthetic_data_platform' \
   --from-literal=SYNTHETIC_DATA_PLATFORM_API_TOKEN='<synthetic-platform-api-token>' \
-  --from-literal=HARBOR_CONTROL_PLANE_API_TOKEN='<control-plane-api-token>' \
+  --from-literal=HARBOR_SYNTHETIC_HARBOR_API_TOKEN='<synthetic-to-harbor-api-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=SYNTHETIC_DATASET_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=SYNTHETIC_DATASET_COS_SECRET_KEY='<cos-secret-key>' \
@@ -70,7 +71,7 @@ kubectl -n harbor-platform create secret generic synthetic-data-platform-secret 
 
 kubectl -n harbor-platform create secret generic harbor-runner-secret \
   --from-literal=HARBOR_RUNNER_RABBITMQ_URL='amqps://<user>:<password>@<tdmq-host>:5671/%2F' \
-  --from-literal=HARBOR_CONTROL_PLANE_API_TOKEN='<control-plane-api-token>' \
+  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-api-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_KEY='<cos-secret-key>' \
@@ -88,10 +89,12 @@ kubectl -n harbor-platform create secret generic harbor-runner-agent-env \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Use the same `HARBOR_CONTROL_PLANE_API_TOKEN` and `HARBOR_TENANT_ID` in
-`harbor-api-secret`, `synthetic-data-platform-secret`, and
-`harbor-runner-secret` so synthetic API and runner calls can pass the
-control-plane gate. `SYNTHETIC_DATA_PLATFORM_API_TOKEN` protects inbound
+Use the same `HARBOR_TENANT_ID` in `harbor-api-secret`,
+`synthetic-data-platform-secret`, and `harbor-runner-secret`. The
+control-plane production template uses separate inbound tokens:
+`HARBOR_SYNTHETIC_HARBOR_API_TOKEN` has read/write scope for the synthetic
+platform, while `HARBOR_RUNNER_CONTROL_PLANE_TOKEN` has read/write/internal
+scope for runner calls. `SYNTHETIC_DATA_PLATFORM_API_TOKEN` protects inbound
 synthetic platform API requests and can be a separate value.
 
 If COS uses temporary credentials, add the matching optional session token

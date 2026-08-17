@@ -335,10 +335,8 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- extend persisted idempotency records with tenant scope so replay semantics are
-  isolated per tenant
-- add full user/session auth and role-based permissions before exposing query
-  endpoints to end users directly
+- add full user/session auth, fine-grained RBAC, and audit logs before exposing
+  query endpoints to end users directly
 - define production migration rollout rules for TencentDB, including backup,
   rollback, and multi-version service compatibility checks
 
@@ -390,8 +388,10 @@ Implementation milestones:
    harbor-api artifact reads, and synthetic dataset upload. Production TOML
    examples now reference env var names for COS credentials, database URLs,
    RabbitMQ URLs, API tokens, and tenant IDs. `harbor-api` and
-   `synthetic-data-platform` can enforce Bearer token plus `X-Tenant-ID`, while
-   `harbor-runner` and the synthetic platform harbor-api client can attach the
-   matching outbound headers. K8s manifests inject component Secrets.
-   Remaining security scope: full user/session auth, RBAC, and tenant-aware
-   idempotency persistence.
+   `synthetic-data-platform` can enforce Bearer token plus `X-Tenant-ID`;
+   `harbor-api` can also bind tokens to `read`, `write`, and `internal` scopes.
+   `harbor-runner` and the synthetic platform harbor-api client attach matching
+   outbound headers with separate production token env names. K8s manifests
+   inject component Secrets. Cancel/retry/artifact retry idempotency persistence
+   is tenant-scoped. Remaining security scope: full user/session auth,
+   fine-grained RBAC, and audit logs.
