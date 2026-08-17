@@ -375,6 +375,12 @@ download JSONL / JSON
   `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision`，
   Trial Summary 新增 `Manual review decision` 表单，支持 reviewer 必填校验、
   decision 保存、labels/rationale 保存、刷新后回显。
+- `FE-V3-3 Task Run Console 强化` 已启动并完成第一批运行控制摘要：
+  Task Detail 在 `Task status overview` 后新增 `Run control summary`，
+  聚合 runtime provider、input/artifact state、runner ownership、推荐动作、
+  execution stage progress；摘要复用现有 runtime handoff、action queue 和
+  execution chain 状态，覆盖 succeeded、running、input failed、artifact failed
+  等主要运行场景。
 - `FE-V3-4 Trajectory Reviewer 强化` 已启动并完成第一批 Messages 增强：
   OpenAI Messages 视图新增 `Tool thread map`，按 `tool_call_id` 展示 linked、
   missing response、orphan response、duplicate 等状态；新增完整 messages JSON
