@@ -288,6 +288,7 @@ download: JSONL / JSON
    - artifact retry、ingest、publish 的成功/失败反馈使用 live region。
 
 4. **FE-D：Result Dataset 审核效率**
+   - 状态：基础版已完成，本轮新增 result review checklist，首屏聚合 samples、异常、reward、lineage 和 export contract 的交付判断。
    - trajectory audit links 以 source trial 聚合。
    - samples review 的异常过滤、字段 profile 和分页继续打磨。
    - 下载失败或空数据集显示恢复路径。
@@ -983,7 +984,7 @@ npm run verify
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile、export contract gates 和 source trajectory audit links。
+状态：基础版已完成，已增加样本审核分页、异常定位、字段 profile、export contract gates、source trajectory audit links 和 result review checklist。
 
 目标：
 
