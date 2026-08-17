@@ -334,13 +334,13 @@ download JSONL / JSON
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` |
 | result download | `GET /result-datasets/{id}/download?format=jsonl|json` |
 | workbench summary | `GET /workbench/summary` |
+| trial review queue | `GET /reviews/trials?state=...&limit=...&offset=...` |
 | safe settings | `GET /settings` |
 
 本轮前端要补齐的后端缺口：
 
 | 缺口 | 建议 API | 优先级 |
 | --- | --- | --- |
-| task/trial 审核队列聚合 | `GET /reviews/trials?state=...` | P2 |
 | task event stream | `GET /synthetic-tasks/{id}/events` 或轻量 polling summary | P2 |
 | artifact browser 下载策略 | signed URL 或 API proxy 明确化 | P2 |
 
@@ -350,6 +350,7 @@ download JSONL / JSON
 | --- | --- | --- |
 | 人工审核结论持久化 | `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision` | FE-V3-1 已实现 |
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` | FE-V3-5 增量实现 |
+| task/trial 审核队列聚合 | `GET /reviews/trials?state=...&limit=...&offset=...` | FE-V3 增量实现 |
 
 ## 开发切片
 
@@ -406,6 +407,12 @@ download JSONL / JSON
   Dataset Detail、Task Detail、Trial OpenAI Messages 和 Result Detail，并在
   Result Detail 等待浏览器 download 事件，校验 `Download JSONL` 与
   `Download JSON` 均产生非空文件；mock UI smoke 也覆盖同一下载事件路径。
+- `task/trial 审核队列聚合` 已完成第一版：synthetic API 新增
+  `GET /reviews/trials`，按已有 task、Harbor trials、trial artifacts 和人工
+  review decision 实时聚合，支持 state 过滤（open/all/reviewed/unreviewed/
+  approved/needs_review/rejected/blocked）、`task_id`、search、limit/offset；
+  Workbench 新增全局 `Trial review queue` 面板，展示 open trial 数、manual
+  decisions、OpenAI messages 覆盖和 trial 详情跳转。
 
 如果要压缩成演示版，优先做：
 
