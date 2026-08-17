@@ -963,7 +963,11 @@ npm run verify
 
 ### F3：Trajectory Review
 
-状态：基础版已完成，已增加 Task detail trajectory review queue、队列摘要、首个问题入口、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff、完整 message text delta、结构化 verifier quality gate、Summary review issues 和 Trial view deep link 能力，后续继续增强审核效率。
+状态：基础版已完成，已增加 Task detail trajectory review queue、全局
+`/reviews/trials` 审核队列页、队列摘要、首个问题入口、过滤、分页、折叠、
+基础异常定位、schema alignment、tool call id 映射、基础 diff、完整 message
+text delta、结构化 verifier quality gate、Summary review issues 和 Trial view
+deep link 能力，后续继续增强审核效率。
 本轮继续增强 Summary content diff，按 tool call id 展示 function name、arguments、response 的 match/mismatch/missing 状态和两侧可读值。
 本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
