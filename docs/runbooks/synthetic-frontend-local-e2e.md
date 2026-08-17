@@ -380,8 +380,9 @@ npm run test:live
 - Task Detail 显示 published/succeeded 状态、input/artifact/sample 阶段和
   trajectory review queue。
 - Trial 页面可通过 `?view=messages` 打开 OpenAI Messages tab。
-- Result Detail 显示 lineage、review checklist、export contract、samples，并能
-  触发 `Download JSONL` 前端下载流程。
+- Result Detail 显示 lineage、review checklist、export contract、samples，并
+  通过浏览器 download 事件校验 `Download JSONL` 和 `Download JSON` 都能落地
+  非空文件。
 
 ## 清理
 
