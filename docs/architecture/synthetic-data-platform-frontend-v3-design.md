@@ -331,6 +331,7 @@ download JSONL / JSON
 | ingest samples | `POST /synthetic-tasks/{id}/ingest-samples` |
 | publish result dataset | `POST /synthetic-tasks/{id}/publish` |
 | result datasets | `GET /result-datasets`、`GET /result-datasets/{id}` |
+| result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` |
 | result download | `GET /result-datasets/{id}/download?format=jsonl|json` |
 | workbench summary | `GET /workbench/summary` |
 | safe settings | `GET /settings` |
@@ -339,7 +340,6 @@ download JSONL / JSON
 
 | 缺口 | 建议 API | 优先级 |
 | --- | --- | --- |
-| result samples 分页/搜索 | `GET /result-datasets/{id}/samples?page=...&q=...` | P1 |
 | task/trial 审核队列聚合 | `GET /reviews/trials?state=...` | P2 |
 | task event stream | `GET /synthetic-tasks/{id}/events` 或轻量 polling summary | P2 |
 | artifact browser 下载策略 | signed URL 或 API proxy 明确化 | P2 |
@@ -349,6 +349,7 @@ download JSONL / JSON
 | 能力 | API | 状态 |
 | --- | --- | --- |
 | 人工审核结论持久化 | `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision` | FE-V3-1 已实现 |
+| result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` | FE-V3-5 增量实现 |
 
 ## 开发切片
 
@@ -396,7 +397,10 @@ download JSONL / JSON
   `Post-training export profile`，聚合 JSONL/JSON 交付状态、sample preview
   范围、字段覆盖摘要和 lineage closure；字段覆盖明确基于当前详情页返回的
   sample rows 计算，partial preview 场景继续引导用户通过 JSONL/JSON download
-  审核完整结果。
+  审核完整结果。第二批增量新增
+  `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...`，Result
+  Detail 的 samples 区块改为服务端分页/搜索，当前页内继续支持 anomaly-only
+  审核。
 - `FE-V3-6 Live E2E UI 验收` 已启动并完成第一批下载验收增强：
   Playwright live test 在真实 COS/TKE workflow 页面上继续覆盖 Workbench、
   Dataset Detail、Task Detail、Trial OpenAI Messages 和 Result Detail，并在
