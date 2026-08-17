@@ -195,9 +195,13 @@ uses `[auth]` for its own API and `[harbor_api_auth]` for outbound calls to
 tokens can be split into `read`, `write`, and `internal` scopes so the synthetic
 platform cannot call runner-only endpoints and runner tokens can be separated
 from user-facing workflow calls. This is a minimum deployment gate, not a
-replacement for future user login, fine-grained RBAC, audit, or end-user
-permission modeling. Cancel/retry/artifact-retry idempotency records are
-persisted with tenant scope so replay behavior is isolated per tenant.
+replacement for future user login, fine-grained RBAC, or end-user permission
+modeling. Control-plane API calls are persisted as `api_audit_events` with
+tenant, principal, scopes, required scope, path, status, request ID, and derived
+job ID; internal callers can query them through
+`POST /internal/audit-events/query`. Cancel/retry/artifact-retry idempotency
+records are persisted with tenant scope so replay behavior is isolated per
+tenant.
 
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 
