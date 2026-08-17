@@ -228,6 +228,7 @@ Settings
 
 - 顶部 readiness strip：Synthetic API、Harbor API、dataset storage、dataset count。
 - Metrics：datasets、task_names、active runs、result datasets。
+- Next actions：按 setup blocker、failed runs、active runs、publish candidates、latest result、create task 生成首屏动作队列。
 - Quick start：创建任务、上传/登记 dataset、打开本地 E2E、查看 results。
 - Needs attention：失败任务和恢复入口。
 - Recent runs：最近 synthetic tasks 表格。
@@ -456,6 +457,7 @@ Settings
 - Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，并提供直达轨迹审核入口。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
+- Workbench next actions：按阻塞、失败、活跃、待发布、最新结果和创建任务生成首屏动作队列。
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
 - Workbench runtime/provider load：按 `environment.type` 聚合 total、active、failed、completed 任务数。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
@@ -594,7 +596,7 @@ Settings
 目标：
 
 - Workbench 首屏回答三个问题：现在能不能跑、哪里失败了、下一步做什么。
-- 展示 readiness、failed runs、failure causes、active runs、runtime/provider load、latest results。
+- 展示 readiness、next actions、failed runs、failure causes、active runs、runtime/provider load、latest results。
 - Settings 只读展示安全配置摘要和本地 E2E 命令，不暴露 secret 明文。
 
 验收：
@@ -706,15 +708,17 @@ npm run verify
 
 ### F5：Workbench 收敛
 
-状态：基础版已完成，已增加失败原因聚合和 runtime/provider 运行摘要。
+状态：基础版已完成，已增加失败原因聚合、runtime/provider 运行摘要和首屏 next actions 队列。
 
 目标：
 
 - Workbench 从“卡片集合”收敛成运营首页。
 - 最近任务、失败任务、最新结果变成主要扫描内容。
+- 按阻塞、失败、活跃、待发布、最新结果和创建任务生成 next actions。
 - readiness 只保留影响下一步操作的状态。
 
 验收：
 
 - 首屏能判断平台是否可运行、是否有失败任务、下一步应该做什么。
+- Next actions 能直达 failed queue、active tasks、publish candidates、latest result 或 task creation。
 - 移动端首屏优先展示状态和主动作。
