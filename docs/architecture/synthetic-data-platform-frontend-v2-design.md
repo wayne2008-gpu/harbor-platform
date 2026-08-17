@@ -329,7 +329,7 @@ download JSONL / JSON
 
 | 缺口 | 影响 | 优先级 |
 | --- | --- | --- |
-| Workbench summary API | 当前依赖前端拉多组列表派生摘要，大数据量时效率差 | P1 |
+| Workbench summary API | 已启动兼容实现：`GET /workbench/summary` 返回 counts、readiness、runtime providers、recent tasks、latest results、publish candidates；当前仍基于 repository `list_*` 聚合，后续大数据量改 SQL 聚合 | P1 |
 | Dataset 服务端分页/搜索/版本族 | dataset 数量变多后列表和版本回溯会重 | P1 |
 | Trajectory review decision 持久化 | 目前只能展示审核判断，不能保存人工审核结果 | P1 |
 | Result sample 服务端分页/搜索/异常过滤 | result dataset 变大后不能靠前端全量处理 | P1 |
@@ -404,6 +404,11 @@ FE-V2-1、FE-V2-3、FE-V2-4、FE-V2-5，把服务端分页和审核持久化先�
   latest result 派生当前阻塞点和下一步入口；Full COS/TKE copy command 默认带
   `HARBOR_E2E_REQUIRE_PUBLISH=1` 和 `HARBOR_E2E_FRONTEND_LIVE_CHECK=1`，UI
   smoke 已覆盖新增面板、命令和下载验收文案。
+- `FE-V2-6` 继续完成第一批 Workbench summary API 增强：synthetic API 新增
+  `GET /workbench/summary`，把 readiness、inventory counts、task state counts、
+  runtime provider load、recent tasks、latest result datasets、publish candidates
+  汇总成后端 rollup；Workbench 页面新增 `Summary API` 面板展示该后端合同和
+  freshness，UI smoke 覆盖 summary counts、runtime providers 和 handoff contract。
 
 ## 开发顺序
 
