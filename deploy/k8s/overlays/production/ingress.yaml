@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: synthetic-data-platform-web-ingress
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - synthetic.change-me.example.com
+      secretName: synthetic-data-platform-tls
+  rules:
+    - host: synthetic.change-me.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: synthetic-data-platform-web
+                port:
+                  name: http

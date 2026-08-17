@@ -1,0 +1,84 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: harbor-platform-default-deny-ingress
+  namespace: harbor-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: harbor-platform
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: synthetic-data-platform-web-network-ingress
+  namespace: harbor-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: web
+      app.kubernetes.io/part-of: harbor-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              harbor.openai.com/ingress-access: "true"
+      ports:
+        - protocol: TCP
+          port: 5173
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: synthetic-data-platform-api-ingress
+  namespace: harbor-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: harbor-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: synthetic-data-platform
+              app.kubernetes.io/component: web
+              app.kubernetes.io/part-of: harbor-platform
+      ports:
+        - protocol: TCP
+          port: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: harbor-api-ingress
+  namespace: harbor-platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: harbor-api
+      app.kubernetes.io/part-of: harbor-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: synthetic-data-platform
+              app.kubernetes.io/component: api
+              app.kubernetes.io/part-of: harbor-platform
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: harbor-runner
+              app.kubernetes.io/part-of: harbor-platform
+      ports:
+        - protocol: TCP
+          port: 8080

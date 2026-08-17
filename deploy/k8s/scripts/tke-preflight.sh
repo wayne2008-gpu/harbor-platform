@@ -9,7 +9,7 @@ Static checks:
   - render the Kustomize base or overlay
   - verify the rendered manifest is non-empty
   - verify required workload, availability, and config manifest references
-  - fail on CHANGE_ME image placeholders unless explicitly allowed
+  - fail on template placeholders unless explicitly allowed
 
 Cluster checks with --cluster:
   - run kubectl server-side dry-run against the rendered manifest
@@ -22,7 +22,7 @@ Environment:
   HARBOR_K8S_KUSTOMIZE_DIR              default: deploy/k8s/base
   HARBOR_K8S_PLATFORM_NAMESPACE         default: harbor-platform
   HARBOR_K8S_AGENT_NAMESPACE            default: harbor-agent-runtime
-  HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES   set 1 to allow CHANGE_ME images
+  HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES   set 1 to allow image/template placeholders
   HARBOR_K8S_RENDERED_MANIFEST          optional output path for rendered YAML
   HARBOR_K8S_CHECK_ROLLOUT              set 1 to run kubectl rollout status
 USAGE
@@ -69,9 +69,11 @@ else
 fi
 
 TEMP_VALUE="$(mktemp)"
+TEMP_PLACEHOLDERS="$(mktemp)"
 cleanup() {
   [[ -n "$TEMP_RENDERED" ]] && rm -f "$TEMP_RENDERED"
   rm -f "$TEMP_VALUE"
+  rm -f "$TEMP_PLACEHOLDERS"
 }
 trap cleanup EXIT
 
@@ -175,16 +177,25 @@ require_rendered_text "name: synthetic-data-platform-secret"
 require_rendered_text "name: harbor-runner-secret"
 require_rendered_text "harbor-runner-kubeconfig"
 
-if grep -n 'image: .*CHANGE_ME' "$RENDERED_MANIFEST" >/tmp/harbor-k8s-placeholder-images.$$; then
+if grep -nE 'CHANGE_ME|change-me|replace-me' "$RENDERED_MANIFEST" >"$TEMP_PLACEHOLDERS"; then
   if [[ "$ALLOW_PLACEHOLDERS" == "1" ]]; then
-    warn "CHANGE_ME image placeholders are present but allowed"
+    warn "template placeholders are present but allowed"
   else
-    cat /tmp/harbor-k8s-placeholder-images.$$ >&2
-    rm -f /tmp/harbor-k8s-placeholder-images.$$
-    fail "replace image CHANGE_ME placeholders or set HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 for base-only validation"
+    cat "$TEMP_PLACEHOLDERS" >&2
+    fail "replace template placeholders or set HARBOR_K8S_ALLOW_PLACEHOLDER_IMAGES=1 for template validation"
   fi
 fi
-rm -f /tmp/harbor-k8s-placeholder-images.$$
+
+if grep -q '^kind: Ingress$' "$RENDERED_MANIFEST"; then
+  require_rendered_text "name: synthetic-data-platform-web-ingress"
+fi
+
+if grep -q '^kind: NetworkPolicy$' "$RENDERED_MANIFEST"; then
+  require_rendered_text "name: harbor-platform-default-deny-ingress"
+  require_rendered_text "name: synthetic-data-platform-web-network-ingress"
+  require_rendered_text "name: synthetic-data-platform-api-ingress"
+  require_rendered_text "name: harbor-api-ingress"
+fi
 
 if [[ "$MODE" == "static" ]]; then
   log "Static preflight passed"
