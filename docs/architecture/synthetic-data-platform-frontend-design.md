@@ -330,6 +330,7 @@ Settings
 - Summary tab 提供 content diff table，按 tool call id 对比 function name、arguments、response 三类可消费信号，并展示两种 schema 的原始可读值。
 - Summary tab 汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供直达对应审核 tab 的快捷入口。
 - Timeline / OpenAI Messages 提供异常摘要、anomaly-only 过滤和行级异常标签。
+- OpenAI Messages 审核补充线程级 tool call 规则：重复 tool call id、缺 tool response、orphan tool response、重复 tool response 都应作为后训练消费质量信号。
 - Raw JSON 只作为兜底，不作为默认阅读方式。
 - 后续增强支持完整 step/message 文本 diff 和更深的 verifier 质量规则。
 
@@ -474,6 +475,7 @@ Settings
 - Trajectory content diff：Summary tab 按 tool call id 对比 function name、arguments、response，并保留 ATIF/default 与 OpenAI messages 两侧的可读内容。
 - Trial Summary review issues：汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供 tab 快捷跳转。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
+- OpenAI message thread review：检测重复 tool call id、缺 tool response、orphan tool response、重复 tool response，并进入 anomaly-only 过滤。
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、source task/source dataset 筛选和回跳、详情、source dataset 直达、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
@@ -680,6 +682,7 @@ npm run verify
 
 状态：基础版已完成，已增加 Task detail trajectory review queue、过滤、折叠、基础异常定位、schema alignment、tool call id 映射、基础 diff 和 Summary review issues 能力，后续继续增强审核效率。
 本轮继续增强 Summary content diff，按 tool call id 展示 function name、arguments、response 的 match/mismatch/missing 状态和两侧可读值。
+本轮继续增强 OpenAI Messages 线程级 tool call 审核，覆盖重复 id、缺 response、orphan response 和重复 response。
 
 目标：
 
