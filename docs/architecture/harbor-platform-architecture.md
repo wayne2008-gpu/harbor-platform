@@ -91,8 +91,17 @@ above Harbor. It owns:
 - sample ingestion and quality review
 - dataset versions and publishing
 - cost/business reporting
+- user-facing API request tracing and business audit events
 
 It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
+
+The Synthetic API returns `X-Request-ID` on all responses and includes
+`request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
+Critical business operations are persisted as `synthetic_audit_events`, including
+dataset create/register/upload, synthetic task create/cancel/retry/artifact retry,
+sample ingest, result dataset publish/download, trial review decision updates,
+and artifact download access. These audit rows are owned by the synthetic
+platform and complement, rather than replace, control-plane `api_audit_events`.
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
