@@ -165,6 +165,7 @@ GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory?schema=openai_messages
 GET /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 PUT /synthetic-tasks/{id}/trials/{trial_id}/review-decision
+GET /reviews/trials
 POST /synthetic-tasks/{id}/cancel
 POST /synthetic-tasks/{id}/retry
 POST /synthetic-tasks/{id}/artifacts/retry
@@ -212,6 +213,8 @@ Flow:
 20. persist synthetic operation idempotency for cancel, retry, and artifact
     retry so repeated client requests return the first task result without
     duplicating synthetic retry records
+21. review trials from a first-class Reviews queue with state/task/runtime/schema/
+    quality flag/reviewer filters and URL-restorable pagination
 
 Current sample ingestion behavior:
 
@@ -466,7 +469,11 @@ Planned milestones:
    Harbor side effects, completed operations replay the first result, and failed
    operations require a new idempotency key.
 5. V4-4: promote Reviews to a first-class frontend workflow with query filters,
-   URL deep links, and quick decision recovery.
+   URL deep links, and quick decision recovery. Current status: implemented in
+   `synthetic-data-platform`; `GET /reviews/trials` supports
+   state/task/runtime/schema/quality flag/reviewer/search/pagination, queue
+   items expose `runtime` and `quality_flags`, and the frontend has a primary
+   Reviews nav entry plus URL-backed filters.
 6. V4-5: make Workbench summary use dedicated backend aggregation with frontend
    fallback.
 7. V4-6: add synthetic API audit baseline and surface request IDs in recoverable
