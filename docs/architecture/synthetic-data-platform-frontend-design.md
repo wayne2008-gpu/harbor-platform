@@ -481,6 +481,7 @@ Settings
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
 - Playwright 响应式 smoke 覆盖多个 viewport。
+- Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
 
 需要继续优化：
 
@@ -611,6 +612,9 @@ Settings
 ### FE7：前端验收和回归
 
 周期：0.5 天。
+
+状态：滚动执行中。本轮已把 loading、error、empty state 纳入 Playwright
+质量门，并继续保留导航焦点、长列表、响应式 viewport 和页面级横向溢出检查。
 
 目标：
 
