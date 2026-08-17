@@ -178,6 +178,16 @@ GET /settings
 GET /runtime-capabilities
 ```
 
+Synthetic API governance baseline:
+
+- every response includes `X-Request-ID`
+- error bodies include `request_id` for HTTP, validation, Harbor proxy, and auth
+  failures
+- the web console preserves `ApiError.requestId` and shows it in shared error
+  states
+- key write/download actions are persisted to `synthetic_audit_events` with
+  action, resource, task/result dataset IDs, actor, metadata, and request ID
+
 `GET /synthetic-tasks/{id}/samples` keeps the legacy full-list response when no
 pagination parameters are provided. For UI-scale review it also accepts
 `search`/`q`, `limit`, and `offset`, and returns `X-Total-Count`, `X-Offset`,
@@ -217,6 +227,8 @@ Flow:
     quality flag/reviewer filters and URL-restorable pagination
 22. read Workbench operational rollups from a repository summary snapshot instead
     of app-layer wide-list aggregation
+23. trace Synthetic API failures with request IDs and persist business audit
+    events for dataset/task/review/publish/download mutations
 
 Current sample ingestion behavior:
 
