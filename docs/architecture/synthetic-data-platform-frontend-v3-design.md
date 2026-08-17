@@ -333,6 +333,7 @@ download JSONL / JSON
 | result datasets | `GET /result-datasets`、`GET /result-datasets/{id}` |
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` |
 | result download | `GET /result-datasets/{id}/download?format=jsonl|json` |
+| artifact download strategy | `GET /synthetic-tasks/{id}/artifacts/{artifact_id}/download-url`、`GET /synthetic-tasks/{id}/artifacts/{artifact_id}/download` |
 | workbench summary | `GET /workbench/summary` |
 | trial review queue | `GET /reviews/trials?state=...&limit=...&offset=...` |
 | task events | `GET /synthetic-tasks/{id}/events?phase=...&limit=...&offset=...` |
@@ -342,12 +343,13 @@ download JSONL / JSON
 
 | 缺口 | 建议 API | 优先级 |
 | --- | --- | --- |
-| artifact browser 下载策略 | signed URL 或 API proxy 明确化 | P2 |
+| 当前无剩余 P2 阻塞缺口 | - | - |
 
 已完成：
 
 | 能力 | API | 状态 |
 | --- | --- | --- |
+| artifact browser 下载策略 | `GET /synthetic-tasks/{task_id}/artifacts/{artifact_id}/download-url` 返回 signed URL first / API proxy fallback 策略；`GET /synthetic-tasks/{task_id}/artifacts/{artifact_id}/download` 提供平台代理下载 | FE-V3 增量实现 |
 | 人工审核结论持久化 | `GET/PUT /synthetic-tasks/{task_id}/trials/{trial_id}/review-decision` | FE-V3-1 已实现 |
 | result samples 分页/搜索 | `GET /result-datasets/{id}/samples?search=...&limit=...&offset=...` | FE-V3-5 增量实现 |
 | task/trial 审核队列聚合 | `GET /reviews/trials?state=...&limit=...&offset=...` | FE-V3 增量实现 |
@@ -419,6 +421,11 @@ download JSONL / JSON
   trials、artifacts、sample ingest 和 publish 状态实时合成可轮询事件视图，
   支持 `phase`、search/q、limit/offset；Task Detail 新增 `Run events`
   面板，展示事件总数、最新事件、phase 覆盖和事件时间线。
+- `artifact browser 下载策略` 已完成第一版：synthetic API 的
+  `download-url` 返回明确策略对象，优先使用 Harbor signed URL；没有 signed
+  URL 时返回 Synthetic Data Platform API proxy 下载地址。Task Detail 与
+  Result Detail 的 source artifact browser 展示下载合同提示，点击后按策略打开
+  signed URL 或触发 proxy 下载，并通过 live status 回报实际路径。
 
 如果要压缩成演示版，优先做：
 
