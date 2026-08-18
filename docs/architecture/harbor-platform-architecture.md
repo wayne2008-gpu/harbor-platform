@@ -115,6 +115,13 @@ published results over the same filters as `GET /result-datasets`, so the
 Results console does not derive list-level readiness from a single paginated
 page.
 
+Synthetic task inventory observability is also Synthetic-owned. `GET
+/synthetic-tasks/summary` summarizes task count, active/completed/failed state,
+result dataset readiness, publish candidates, missing dataset links,
+state/runtime/dataset buckets, and recent updates over the same filters as
+`GET /synthetic-tasks`, so the Tasks console does not derive run readiness from
+one paginated page.
+
 The Synthetic API returns `X-Request-ID` on all responses and includes
 `request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
 Critical business operations are persisted as `synthetic_audit_events`, including
