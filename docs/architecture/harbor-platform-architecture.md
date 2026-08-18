@@ -389,11 +389,12 @@ platform cannot call runner-only endpoints and runner tokens can be separated
 from user-facing workflow calls. `synthetic-data-platform` also supports
 multiple inbound `[auth.tokens]` with coarse `read` / `write` scopes so console
 read traffic can be separated from dataset upload, task mutation, publish, and
-review-decision writes. This is a minimum deployment gate, not a
-replacement for future user login, fine-grained RBAC, or end-user permission
-modeling. Control-plane API calls are persisted as `api_audit_events` with
-tenant, principal, scopes, required scope, path, status, request ID, and derived
-job ID; internal callers can query them through
+review-decision writes. This is a minimum deployment gate, not a replacement
+for future user login, fine-grained RBAC, or end-user permission modeling.
+Synthetic API requests propagate `X-Request-ID` and `X-End-User` to harbor-api
+calls. Control-plane API calls are persisted as `api_audit_events` with tenant,
+service principal, optional end user, scopes, required scope, path, status,
+request ID, and derived job ID; internal callers can query them through
 `POST /internal/audit-events/query`. Cancel/retry/artifact-retry idempotency
 records are persisted with tenant scope so replay behavior is isolated per
 tenant.

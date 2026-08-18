@@ -117,7 +117,7 @@ select version_num from alembic_version;
 当前 head 是：
 
 ```text
-0008_api_audit_events
+0009_api_audit_end_user
 ```
 
 ### TDMQ for RabbitMQ
@@ -373,7 +373,7 @@ harbor-api health: succeeded
 harbor-api readiness: succeeded
 synthetic API health: succeeded
 frontend reachable: succeeded
-MySQL alembic head: 0008_api_audit_events
+MySQL alembic head: 0009_api_audit_end_user
 runner online: >= 1
 runner providers: contains tke
 runner features: contains cos-input
@@ -439,9 +439,11 @@ COS 回滚：
 - 已有最小服务间 Bearer token + tenant header + token scope gate。
   `harbor-api` 可将 synthetic 平台 token 限制为 `read/write`，将 runner token
   配成 `read/write/internal`；cancel/retry/artifact retry 的 idempotency
-  persistence 已按 tenant 隔离；control-plane API 调用会写入
-  `api_audit_events`，并可通过 `POST /internal/audit-events/query` 查询。
-  对终端用户开放前仍需补完整登录、细粒度 RBAC 和 end-user audit correlation。
+  persistence 已按 tenant 隔离；synthetic API 会把入站 `X-Request-ID` 和
+  `X-End-User` 透传到 harbor-api；control-plane API 调用会写入
+  `api_audit_events`，并可通过 `POST /internal/audit-events/query` 按
+  `end_user` 查询。对终端用户开放前仍需补完整登录、细粒度 RBAC 和
+  end-user permission modeling。
 - TKE provider 线上默认使用 in-cluster ServiceAccount；kubeconfig 仅作为集群外 runner 或调试模式。
 - Compose 脚本是本地验证工具；线上可以复用流程，不应直接依赖本地端口假设。
 
@@ -456,4 +458,4 @@ COS 回滚：
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；脚本已追加 full/approved-only COS result export 和 approved-only scoped download gate；生产复用同脚本和线上配置 |
 | M39 | 生产 E2E 脚本 | 已完成：`synthetic-cos-tke-e2e.sh` 支持生产 base URL、runtime、dataset、timeout、统一或分服务 auth header/bearer token |
-| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；harbor-api 支持 `read/write/internal` token scopes；synthetic API 支持多入站 token 和 `read/write` scope；runner 和 synthetic 出站 harbor-api client 会携带对应 header；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离；control-plane API audit events 已持久化并可通过 internal query 查询。剩余：完整用户登录、细粒度 RBAC、end-user audit correlation |
+| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；harbor-api 支持 `read/write/internal` token scopes；synthetic API 支持多入站 token 和 `read/write` scope；runner 和 synthetic 出站 harbor-api client 会携带对应 header；synthetic 会透传 `X-Request-ID` 和 `X-End-User` 到 harbor-api；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离；control-plane API audit events 已持久化并可通过 internal query 按 `end_user` 查询。剩余：完整用户登录、细粒度 RBAC、end-user permission modeling |
