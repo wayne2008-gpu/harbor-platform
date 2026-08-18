@@ -156,6 +156,7 @@ Current first version:
 POST /synthetic-tasks
 GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
+GET /synthetic-tasks/{id}/samples/summary
 GET /synthetic-tasks/{id}/results
 GET /synthetic-tasks/{id}/events
 GET /synthetic-tasks/{id}/logs
@@ -177,6 +178,7 @@ POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
 GET /result-datasets
 GET /result-datasets/{id}
+GET /result-datasets/{id}/samples/summary
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
@@ -249,6 +251,8 @@ Flow:
     the Reviews console and persist the batch operation as a single audit event
 29. apply one review decision to all trial reviews matching the current Reviews
     filters, with expected-count protection before persistence
+30. read task/result sample quality summaries from backend endpoints so quality
+    metrics are not derived from only the current browser page
 
 Current sample ingestion behavior:
 
@@ -564,5 +568,16 @@ Planned milestones:
     selection metadata into the batch audit event. The Reviews page now exposes
     `Batch matching filters` when the current query is narrowed and no more
     than 500 trials match, then saves through the shared batch decision panel.
+    Verification: `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.
+13. V4-12: add sample quality summary endpoints. Current status: implemented
+    in `synthetic-data-platform`; PR #44 added
+    `GET /synthetic-tasks/{id}/samples/summary` and
+    `GET /result-datasets/{id}/samples/summary` with `search/q` and
+    `quality_flag` support. The endpoints return total/matching counts,
+    flagged rows, reward coverage, low reward count, and quality flag buckets
+    using the same quality flag rules as sample queries. Result Dataset Detail
+    now uses the result summary endpoint for dataset-wide quality cards instead
+    of deriving those cards only from the current paginated sample page.
     Verification: `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
