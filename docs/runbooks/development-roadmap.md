@@ -1302,3 +1302,11 @@ Planned milestones:
     selected result dataset links, then deep-links to Audit with the same action
     or request ID filter. The Audit action/resource selectors now include result
     dataset acceptance decision and batch decision event types.
+72. V4-71: surface result acceptance backlog on Workbench. Current status:
+    implemented in `synthetic-data-platform`; Workbench now queries `GET
+    /result-datasets/summary`, displays pending, approved, blocked/rejected, and
+    download-ready result dataset counts, and promotes unreviewed, needs-review,
+    blocked, or rejected result datasets into the next-action queue with
+    deep-links to Results filters. Verification: `npm --prefix web run
+    typecheck`, `npm --prefix web run test:ui -- --grep "workbench summarizes
+    readiness"`, `npm --prefix web run verify`, and `git diff --check`.

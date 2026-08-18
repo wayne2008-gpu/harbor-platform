@@ -189,6 +189,10 @@ the console to derive those values from one paginated page.
 The Workbench reads recent `result_dataset_review_decision.batch_upsert` audit
 events and links back to filtered Audit views, so batch acceptance activity is
 visible from the operational landing page.
+The Workbench also reads `GET /result-datasets/summary` to show result
+acceptance backlog counts, prioritize unreviewed/needs-review/blocked result
+datasets in next actions, and deep-link operators back to the matching Results
+filters before downstream training handoff.
 The Workbench also queries `GET /operations/idempotency/summary` and `GET
 /operations/idempotency` to show cancel/retry/artifact-retry reservation health,
 operation-level status, and recent reservation records. The record list returns
