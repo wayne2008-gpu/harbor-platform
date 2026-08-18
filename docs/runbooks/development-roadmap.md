@@ -253,6 +253,8 @@ Flow:
     filters, with expected-count protection before persistence
 30. read task/result sample quality summaries from backend endpoints so quality
     metrics are not derived from only the current browser page
+31. compute task/result sample quality summaries through repository-level
+    contracts and SQL sample-row aggregation, with legacy JSON fallback
 
 Current sample ingestion behavior:
 
@@ -581,3 +583,12 @@ Planned milestones:
     of deriving those cards only from the current paginated sample page.
     Verification: `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
+14. V4-13: move sample quality summaries into the repository contract. Current
+    status: implemented in `synthetic-data-platform`; PR #45 added
+    `SampleSummaryResult`, `summarize_task_samples`, and
+    `summarize_result_dataset_samples` so API endpoints delegate summary
+    computation to repository implementations. SQL repositories now summarize
+    from `synthetic_samples` quality flag columns when structured sample rows
+    exist, while preserving the legacy JSON snapshot fallback for older task
+    and result dataset records. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, and `npm --prefix web run verify`.
