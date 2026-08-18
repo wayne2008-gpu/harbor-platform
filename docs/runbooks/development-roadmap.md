@@ -745,6 +745,16 @@ Implementation milestones:
     `uv run pytest -q`, `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
+41. M73: filter result datasets by export readiness. Current status:
+    implemented in `synthetic-data-platform`; `/result-datasets` and
+    `/result-datasets/summary` now accept `export_readiness` filters for ready,
+    failed, active, missing-export, and missing-download-link queues, and the
+    Results UI exposes a URL-backed selector with active filter recovery.
+    Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_list_result_datasets_supports_search_filter_and_pagination_headers tests/test_app.py::test_result_datasets_summary_reports_filtered_operational_counts tests/test_sql_repository.py::test_sql_repository_summarizes_result_datasets -q`,
+    `uv run pytest -q`, `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1171,6 +1181,16 @@ Planned milestones:
     downstream handoff readiness for the full filtered result set. Verification:
     `uv run ruff check .`,
     `uv run pytest tests/test_app.py::test_result_datasets_summary_reports_filtered_operational_counts -q`,
+    `uv run pytest -q`, `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+59. V4-58: filter result datasets by export readiness. Current status:
+    implemented in `synthetic-data-platform`; the result dataset list and
+    summary APIs share repository-level `export_readiness` filtering, and the
+    Results page exposes a deep-linkable selector for download-ready, failed,
+    running, missing export, and missing download-link result queues.
+    Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_list_result_datasets_supports_search_filter_and_pagination_headers tests/test_app.py::test_result_datasets_summary_reports_filtered_operational_counts tests/test_sql_repository.py::test_sql_repository_summarizes_result_datasets -q`,
     `uv run pytest -q`, `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.

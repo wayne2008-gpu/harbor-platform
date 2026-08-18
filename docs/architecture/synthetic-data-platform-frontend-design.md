@@ -993,6 +993,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续把 Result export handoff 带到 Workbench next actions，首页读取最近结果数据集的 export history，优先提示失败、运行中、缺失 export 或缺失下载链接的结果交付风险。
 本轮继续把 Result export readiness 带到 Results 列表，当前页结果数据集直接展示 Checking、Failed、Running、No export、No link、Ready 状态，并链接到下载区。
 本轮继续把 Result export readiness 汇总下沉到 `/result-datasets/summary`，Results 摘要区展示当前筛选范围的 export-ready 指标、readiness buckets 和 status buckets。
+本轮继续让 Results 支持 `export_readiness` URL 筛选，结果列表和 summary 使用同一筛选范围，便于直接进入 failed、running、missing export、missing link 或 download-ready 队列。
 
 目标：
 
@@ -1032,6 +1033,7 @@ worker claim 元数据可视化，以及 Results 列表/摘要层的 export read
 - JSONL/JSON 下载入口可用，错误有恢复提示。
 - Export contract 能判断 JSONL、Full JSON、source trials、source artifacts 是否 ready。
 - Results 列表和 summary 能判断 result export 是否 ready、failed、running、missing export 或缺少下载链接。
+- Results 支持按 export readiness 深链筛选，列表、summary 和 active filter summary 保持一致。
 - 能在 result dataset 中直接定位缺 content、缺 reward、低 reward、空字符串、稀疏样本。
 
 ### F5：Workbench 收敛
