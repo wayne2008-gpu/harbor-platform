@@ -174,6 +174,7 @@ GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory?schema=openai_messages
 POST /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/sync
 GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages
+GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/summary
 GET /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 PUT /synthetic-tasks/{id}/trials/{trial_id}/review-decision
 GET /reviews/trials
@@ -1221,4 +1222,18 @@ Planned milestones:
     `uv run pytest tests/test_app.py::test_operation_idempotency_summary_reports_counts_without_keys tests/test_sql_repository.py::test_sql_repository_summarizes_operation_idempotency -q`,
     `uv run pytest -q`,
     `npm --prefix web run test:ui -- -g "audit operation reservations|workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+63. V4-62: add aggregate trajectory message summary for Trial Detail. Current
+    status: implemented in `synthetic-data-platform`; `GET
+    /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/summary`
+    summarizes structured OpenAI message rows by schema, role, and search query,
+    returning total/matching counts, role buckets, tool-call and tool-response
+    counts, missing tool IDs, empty content, unknown roles, and error-signal rows
+    without returning message bodies. The Trial Detail Messages tab now uses this
+    backend summary for whole-trajectory metrics while keeping the paginated
+    message list and page-level anomaly review as separate UI surfaces.
+    Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_trial_trajectory_message_sync_persists_openai_messages tests/test_sql_repository.py::test_sql_repository_replaces_and_queries_trajectory_messages -q`,
+    `uv run pytest -q`,
+    `npm --prefix web run test:ui -- -g "OpenAI message review flags|m11 core path|task pages expose filtering"`,
     `npm --prefix web run verify`, and `git diff --check`.
