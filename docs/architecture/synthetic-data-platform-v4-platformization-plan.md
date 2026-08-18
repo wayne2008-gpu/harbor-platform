@@ -256,6 +256,7 @@ V4 前端：
 
 ```text
 GET /workbench/summary
+GET /generation-metrics/summary
 ```
 
 返回：
@@ -265,11 +266,17 @@ GET /workbench/summary
 - prioritized next actions。
 - recent failures by phase。
 - result acceptance backlog。
+- generation metrics：task/result/sample yield、observed runtime、runtime/model/provider
+  bucket、reported token usage。
 - latest result datasets。
 
 当前第一版实现：app 层调用 repository summary snapshot；SQL repository 使用
 count/group_by/limit 查询生成 counts、task states、recent tasks、latest results 和
 publish candidates，runtime provider rollup 读取精简 task state/runtime 字段。
+V4-77 后，result publish 会把 source task job config 和 Harbor trial-result usage
+字段沉淀为 result metadata 下的 `generation_metrics`；Workbench summary 和独立
+generation metrics summary 从 durable task/result metadata 聚合运行、模型、provider
+和 token usage。当前不做金额换算，模型价格表和成本分摊仍留给后续业务报表层。
 
 ### 5. 审计和安全
 

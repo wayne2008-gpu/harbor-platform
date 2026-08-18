@@ -202,6 +202,7 @@ GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
 GET /runtime-capabilities
+GET /generation-metrics/summary
 GET /audit-events
 GET /operations/idempotency
 GET /operations/idempotency/summary
@@ -1378,3 +1379,17 @@ Planned milestones:
     `uv run pytest tests/test_app.py::test_sample_summary_reports_dataset_wide_quality_counts tests/test_sql_repository.py::test_sql_repository_summarizes_sample_quality_from_rows -q`,
     `npm --prefix web run typecheck`, and `npm --prefix web run test:ui -- --grep
     "result downloads expose recovery paths|m11 core path"`.
+78. V4-77: expose generation runtime/model/provider usage metrics. Current
+    status: implemented in `synthetic-data-platform`; `/workbench/summary` now
+    includes `generation_metrics`, and `GET /generation-metrics/summary` exposes
+    the same snapshot directly. The snapshot rolls up task/result counts,
+    generated sample yield, observed terminal-task runtime, average runtime,
+    samples per completed task/result dataset, runtime/model/provider buckets,
+    and token usage when Harbor trial-result metadata reports usage fields. Result
+    publish metadata now stores a durable `generation_metrics` snapshot so
+    Workbench can show model/provider/token evidence without re-querying Harbor
+    trials. This is usage observability only; monetary cost conversion still
+    needs model price configuration. Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_workbench_summary_returns_operational_rollup_without_secrets tests/test_sql_repository.py::test_sql_repository_returns_workbench_summary_snapshot -q`,
+    `npm --prefix web run typecheck`, and `npm --prefix web run test:ui -- --grep
+    "workbench summarizes readiness"`.

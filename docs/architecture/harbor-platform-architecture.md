@@ -90,7 +90,7 @@ above Harbor. It owns:
 - prompt/template management
 - sample ingestion and quality review
 - dataset versions and publishing
-- cost/business reporting
+- generation usage, cost, and business reporting
 - user-facing API request tracing and business audit events
 
 It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
@@ -167,6 +167,15 @@ Result sample field-profile observability is Synthetic-owned. `GET
 counts, type buckets, and example values over the same server-side sample
 search/quality filters as the sample list and summary APIs, so Result Detail
 does not derive full dataset field coverage from one paginated browser page.
+Generation usage observability is Synthetic-owned. `/workbench/summary` embeds a
+`generation_metrics` snapshot, and `GET /generation-metrics/summary` exposes the
+same rollup directly. The snapshot summarizes task/result counts, generated
+sample yield, observed terminal-task runtime, runtime/model/provider buckets, and
+reported token usage from durable result metadata. Result publish stores a
+`generation_metrics` metadata snapshot from the source task job config and Harbor
+trial-result usage fields when they are present. This is not monetary billing:
+provider/model price tables and final cost allocation remain a later Synthetic
+business-reporting layer.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed

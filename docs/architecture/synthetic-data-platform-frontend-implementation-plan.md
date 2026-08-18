@@ -631,8 +631,10 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   profile 和 JSONL/JSON download feedback。
 - FE-5 已完成：Workbench 首屏覆盖 Platform API、Harbor API、Dataset COS、
   COS credentials、Datasets readiness，并保留 next actions、failure causes、
-  runtime/provider load、recent runs、latest results；Settings 展示只读安全配置、
-  Local E2E readiness、COS/TKE preflight、Full COS/TKE E2E 命令和 manual
+  runtime/provider load、recent runs、latest results；V4-77 后 Summary API 区块
+  展示 generation usage metrics，包括 sample yield、observed runtime、
+  runtime/model/provider bucket 和 reported token usage。Settings 展示只读安全
+  配置、Local E2E readiness、COS/TKE preflight、Full COS/TKE E2E 命令和 manual
   checkpoints，Playwright 覆盖 375/768/1024/1440/wide 响应式截图和无横向溢出。
 - 前端入口已改为 route-level lazy loading：Workbench、Datasets、Tasks/Trials、
   Results 页面按路由拆包，首包从约 519KB 降到约 294KB，Vite 大 chunk 警告消失。
