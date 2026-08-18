@@ -419,8 +419,8 @@ Current target:
 - control-plane startup runs Alembic migrations to head for versioned databases;
   existing unversioned local schemas are reconciled and stamped to head
 - control-plane API calls are persisted as service-to-service audit events with
-  tenant, principal, token scopes, required scope, path, status code, request ID,
-  client metadata, and derived job ID
+  tenant, principal, optional end user, token scopes, required scope, path,
+  status code, request ID, client metadata, and derived job ID
 
 Implemented interface groups:
 
@@ -458,8 +458,8 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- add full user/session auth, fine-grained RBAC, and end-user audit correlation
-  before exposing query endpoints to end users directly
+- add full user/session auth, fine-grained RBAC, and end-user permission
+  enforcement before exposing query endpoints to end users directly
 - define production migration rollout rules for TencentDB, including backup,
   rollback, and multi-version service compatibility checks
 
@@ -527,12 +527,16 @@ Implementation milestones:
    `synthetic-data-platform` can bind inbound tokens to coarse `read` / `write`
    scopes.
    `harbor-runner` and the synthetic platform harbor-api client attach matching
-   outbound headers with separate production token env names. K8s manifests
-   inject component Secrets. Cancel/retry/artifact retry idempotency persistence
-   is tenant-scoped. Control-plane API calls are persisted in
-   `api_audit_events` and queryable through `POST /internal/audit-events/query`.
-   Remaining security scope: full user/session auth, fine-grained RBAC, and
-   end-user audit correlation.
+   outbound headers with separate production token env names. Synthetic API
+   requests also propagate `X-Request-ID` and `X-End-User` into harbor-api
+   calls so control-plane `api_audit_events` can be correlated back to the
+   operator without mixing end-user identity into service-token `principal`.
+   K8s manifests inject component Secrets. Cancel/retry/artifact retry
+   idempotency persistence is tenant-scoped. Control-plane API calls are
+   persisted in `api_audit_events` and queryable through
+   `POST /internal/audit-events/query`, including by `end_user`. Remaining
+   security scope: full user/session auth, fine-grained RBAC, and end-user
+   permission modeling.
 9. M41: expose safe control-plane settings summary for production readiness.
    Current status: implemented in `harbor-control-plane`; authenticated
    `GET /settings` returns database migration readiness, RabbitMQ/RocketMQ
@@ -1562,3 +1566,14 @@ Planned milestones:
     Harbor targeted environment tests report `150 passed`, targeted Harbor
     ruff check passes, and Kubernetes static preflight passes with placeholder
     images explicitly allowed.
+94. V4-93: propagate end-user audit correlation across synthetic and
+    control-plane APIs. Current status: implemented across
+    `harbor-service-contracts`, `harbor-control-plane`, and
+    `synthetic-data-platform`; API audit contracts now include `end_user`,
+    control-plane persists and filters it through Alembic revision
+    `0009_api_audit_end_user`, and synthetic forwards per-request
+    `X-Request-ID` plus `X-End-User` on harbor-api calls while keeping static
+    service auth headers authoritative. Verification: contracts pytest reports
+    `8 passed`; control-plane pytest reports `97 passed`; synthetic pytest
+    reports `152 passed`; synthetic frontend verify reports `25 passed`; ruff
+    checks pass for control-plane and the touched synthetic files.
