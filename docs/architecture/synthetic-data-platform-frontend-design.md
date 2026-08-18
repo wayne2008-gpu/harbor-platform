@@ -988,6 +988,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续将 Review queue guidance 下沉到 Synthetic API contract，`decision_guidance` 由服务端返回，前端优先使用服务端判断并保留本地 fallback。
 本轮继续让 Review queue guidance 可操作化，`/reviews/trials` 增加 guidance decision/source URL 筛选，并把同一筛选范围用于 summary 和批量审核决策。
 本轮继续增强 Review queue summary，服务端返回 guidance decision/source 分布，前端摘要区展示 saved/current/suggested 与建议决策构成。
+本轮继续把 Review queue summary 带到 Workbench 首屏，全局 trial review 面板展示 open 队列的 guidance decision/source rollup。
 
 目标：
 
