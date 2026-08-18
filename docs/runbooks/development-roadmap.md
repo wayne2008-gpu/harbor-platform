@@ -540,6 +540,12 @@ Implementation milestones:
     and last checked time for readiness inputs such as synthetic settings,
     Harbor settings, runtime capabilities, Workbench summary, and dataset list
     fetches, without exposing secret values.
+15. M47: include operation idempotency summary in Workbench observed evidence.
+    Current status: implemented in `synthetic-data-platform`; Workbench
+    diagnostics now include the browser-observed status for
+    `/operations/idempotency/summary`, so operators can confirm run readiness,
+    backend rollups, and idempotency reservation observability from one
+    diagnostics panel without exposing idempotency keys or request payloads.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -790,3 +796,7 @@ Planned milestones:
     render TanStack Query evidence so operators can see whether the key
     readiness fetches passed, failed, are still checking, or have not run in the
     current browser session.
+33. V4-32: connect idempotency observability to Workbench diagnostics. Current
+    status: implemented in `synthetic-data-platform`; Workbench readiness
+    diagnostics now include the operation idempotency summary request as
+    observed evidence alongside readiness and dataset checks.
