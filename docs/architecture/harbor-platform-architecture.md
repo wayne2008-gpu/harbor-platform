@@ -181,18 +181,20 @@ being silently treated as real zero-cost usage. Task detail result reads also
 return a live task-level `generation_metrics` object with the same cost estimate
 contract, derived from the task job config plus current Harbor job/trial evidence.
 Generation cost config can optionally define summary/task budget thresholds in
-the same micro-unit as `estimated_cost_micros`; cost estimate responses expose a
-derived `budget_status` for operator visibility in Workbench and Task Detail.
+the same micro-unit as `estimated_cost_micros`, and can carry an operator-defined
+`price_table_version`; cost estimate responses expose the version and a derived
+`budget_status` for operator visibility in Workbench and Task Detail.
 When a result dataset is published, Synthetic also stores a
 `generation_cost_snapshot` in result metadata, freezing the publish-time
-task-scope estimate and budget status with a safe config summary. Dynamic
-Workbench estimates can change with current configuration; published result
-metadata remains a handoff audit snapshot. Result Detail surfaces that frozen
-snapshot as the handoff cost view, so already-published result datasets are not
-recalculated against later price-table or budget-threshold changes.
+task-scope estimate, price table version, and budget status with a safe config
+summary. Dynamic Workbench estimates can change with current configuration;
+published result metadata remains a handoff audit snapshot. Result Detail
+surfaces that frozen snapshot as the handoff cost view, so already-published
+result datasets are not recalculated against later price-table or
+budget-threshold changes.
 This is still an estimate layer: final account-level billing reconciliation,
-historical price-version snapshots, and invoice-grade attribution remain later
-Synthetic business-reporting work.
+full price-rule history, and invoice-grade attribution remain later Synthetic
+business-reporting work.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed

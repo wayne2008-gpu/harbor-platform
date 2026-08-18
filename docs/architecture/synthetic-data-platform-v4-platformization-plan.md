@@ -285,11 +285,13 @@ job/trial evidence 展示 runtime、model、provider、token usage 和 configure
 estimate，用于单次生成任务排查。V4-80 后，`generation_cost` 可选配置
 `summary_budget_micros`、`task_budget_micros` 和 `budget_warning_ratio`，
 `cost_estimate` 响应返回 `budget_status`，Workbench 和 Task Detail 可以直接显示
-disabled / not configured / within / near / exceeded 状态。V4-81 后，result
-publish metadata 增加 `generation_cost_snapshot`，冻结发布当时的 task-scope
-cost estimate、budget status 和安全配置摘要，供结果数据集交付审计使用。V4-82 后，
-Result Detail 专门展示这份冻结快照，包括 estimated cost、budget status、reported
-tokens、model price evidence 和发布时的预算阈值，不使用当前价格配置重算历史结果。
+disabled / not configured / within / near / exceeded 状态。V4-83 后，
+`generation_cost` 可选配置 `price_table_version`，并随 `cost_estimate` 响应返回。
+V4-81 后，result publish metadata 增加 `generation_cost_snapshot`，冻结发布当时的
+task-scope cost estimate、budget status 和安全配置摘要；V4-83 后 snapshot schema
+version 升到 2，并冻结发布时 `price_table_version`。V4-82 后，Result Detail 专门
+展示这份冻结快照，包括 estimated cost、budget status、reported tokens、model price
+evidence、发布时预算阈值和价格表版本，不使用当前价格配置重算历史结果。
 
 ### 5. 审计和安全
 
