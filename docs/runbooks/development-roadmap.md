@@ -247,6 +247,8 @@ Flow:
     controls
 28. apply one review decision to multiple current-page review queue trials from
     the Reviews console and persist the batch operation as a single audit event
+29. apply one review decision to all trial reviews matching the current Reviews
+    filters, with expected-count protection before persistence
 
 Current sample ingestion behavior:
 
@@ -554,3 +556,13 @@ Planned milestones:
     cross-page selection until review queue bulk operations have a stronger
     selection model. Verification: `uv run ruff check .`, `uv run pytest -q`,
     and `npm --prefix web run verify`.
+12. V4-11: add filter-based batch review decisions. Current status:
+    implemented in `synthetic-data-platform`; PR #43 lets
+    `POST /reviews/trials/batch-decision` accept either explicit `items` or
+    `filters + expected_total`, reuses `/reviews/trials` filtering semantics,
+    requires at least one non-state filter for filter-based batches, and writes
+    selection metadata into the batch audit event. The Reviews page now exposes
+    `Batch matching filters` when the current query is narrowed and no more
+    than 500 trials match, then saves through the shared batch decision panel.
+    Verification: `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.
