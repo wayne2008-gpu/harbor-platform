@@ -1502,3 +1502,18 @@ Planned milestones:
     counts. Verification: `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "task pages expose filtering"`,
     `npm --prefix web run verify`, and `git diff --check`.
+89. V4-88: add server-side sample review-decision filters. Current status:
+    implemented in `synthetic-data-platform`; task and result dataset sample
+    list, summary, field-profile, and batch-review APIs now accept
+    `review_decision=approved|needs_review|rejected|blocked|unreviewed`. SQL
+    repositories persist a queryable `synthetic_samples.review_decision` column
+    with scoped indexes and lazily backfill legacy `_review` JSON records before
+    filtering. Task Detail and Result Detail expose the decision selector beside
+    existing sample filters, keep the URL deep-linkable, and show the selected
+    decision in the batch-review target summary. Verification:
+    `uv run ruff check src/synthetic_data_platform/db.py
+    src/synthetic_data_platform/repository.py src/synthetic_data_platform/app.py
+    tests/test_app.py tests/test_sql_repository.py`, focused sample review
+    pytest cases, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- console-smoke.spec.ts`, and
+    `git diff --check`.
