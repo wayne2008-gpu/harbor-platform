@@ -262,6 +262,9 @@ Flow:
     indexes instead of scanning `quality_flags_text`
 34. observe synthetic operation idempotency status through aggregate summary
     counts by operation, stale reservation, and expired reservation state
+35. record audit events for completed operation idempotency replays so duplicate
+    client requests keep their own request ID and actor trail without exposing
+    idempotency keys
 
 Current sample ingestion behavior:
 
@@ -625,3 +628,11 @@ Planned milestones:
     expose idempotency keys, request payloads, or Harbor execution parameters.
     Verification: `uv run ruff check .`, targeted API/SQL repository tests,
     `uv run pytest -q`, and `npm --prefix web run verify`.
+18. V4-17: audit completed operation idempotency replays. Current status:
+    implemented in `synthetic-data-platform`; PR #49 records audit events when
+    cancel, retry, or artifact retry reuses an idempotency key whose first
+    execution already completed. Replay audit events keep the current request ID
+    and actor, point at the returned task, include operation/source-task
+    metadata, and avoid writing idempotency keys or request payloads. Verification:
+    `uv run ruff check .`, targeted API tests, `uv run pytest -q`, and
+    `git diff --check`.
