@@ -31,31 +31,72 @@ frontend_live_check=${HARBOR_E2E_FRONTEND_LIVE_CHECK:-0}
 preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
 auth_header=${HARBOR_E2E_AUTH_HEADER:-}
 bearer_token=${HARBOR_E2E_BEARER_TOKEN:-}
+tenant_header_name=${HARBOR_E2E_TENANT_HEADER_NAME:-X-Tenant-ID}
+tenant_id=${HARBOR_E2E_TENANT_ID:-}
 synthetic_auth_header=${HARBOR_E2E_SYNTHETIC_AUTH_HEADER:-$auth_header}
 synthetic_bearer_token=${HARBOR_E2E_SYNTHETIC_BEARER_TOKEN:-$bearer_token}
+synthetic_tenant_header_name=${HARBOR_E2E_SYNTHETIC_TENANT_HEADER_NAME:-$tenant_header_name}
+synthetic_tenant_id=${HARBOR_E2E_SYNTHETIC_TENANT_ID:-$tenant_id}
 harbor_auth_header=${HARBOR_E2E_HARBOR_AUTH_HEADER:-$auth_header}
 harbor_bearer_token=${HARBOR_E2E_HARBOR_BEARER_TOKEN:-$bearer_token}
+harbor_tenant_header_name=${HARBOR_E2E_HARBOR_TENANT_HEADER_NAME:-$tenant_header_name}
+harbor_tenant_id=${HARBOR_E2E_HARBOR_TENANT_ID:-$tenant_id}
 web_auth_header=${HARBOR_E2E_WEB_AUTH_HEADER:-$auth_header}
 web_bearer_token=${HARBOR_E2E_WEB_BEARER_TOKEN:-$bearer_token}
+web_tenant_header_name=${HARBOR_E2E_WEB_TENANT_HEADER_NAME:-$tenant_header_name}
+web_tenant_id=${HARBOR_E2E_WEB_TENANT_ID:-$tenant_id}
+expect_web_auth_headers=${HARBOR_E2E_EXPECT_WEB_AUTH_HEADERS:-}
+if [ -z "$expect_web_auth_headers" ]; then
+  if [ -n "$web_auth_header" ] || [ -n "$web_bearer_token" ] || [ -n "$web_tenant_id" ]; then
+    expect_web_auth_headers=1
+  else
+    expect_web_auth_headers=0
+  fi
+fi
 synthetic_curl_args=()
 harbor_curl_args=()
 web_curl_args=()
 
-if [ -n "$synthetic_auth_header" ]; then
-  synthetic_curl_args=(-H "$synthetic_auth_header")
-elif [ -n "$synthetic_bearer_token" ]; then
-  synthetic_curl_args=(-H "Authorization: Bearer $synthetic_bearer_token")
-fi
-if [ -n "$harbor_auth_header" ]; then
-  harbor_curl_args=(-H "$harbor_auth_header")
-elif [ -n "$harbor_bearer_token" ]; then
-  harbor_curl_args=(-H "Authorization: Bearer $harbor_bearer_token")
-fi
-if [ -n "$web_auth_header" ]; then
-  web_curl_args=(-H "$web_auth_header")
-elif [ -n "$web_bearer_token" ]; then
-  web_curl_args=(-H "Authorization: Bearer $web_bearer_token")
-fi
+append_request_headers() {
+  local target_array=$1
+  local auth_header_value=$2
+  local bearer_token_value=$3
+  local tenant_header_name_value=$4
+  local tenant_id_value=$5
+  local -n args_ref="$target_array"
+
+  if [ -n "$auth_header_value" ]; then
+    args_ref+=(-H "$auth_header_value")
+  elif [ -n "$bearer_token_value" ]; then
+    args_ref+=(-H "Authorization: Bearer $bearer_token_value")
+  fi
+  if [ -n "$tenant_id_value" ]; then
+    if [ -z "$tenant_header_name_value" ]; then
+      echo "Tenant header name cannot be empty when tenant id is configured." >&2
+      exit 2
+    fi
+    args_ref+=(-H "$tenant_header_name_value: $tenant_id_value")
+  fi
+}
+
+append_request_headers \
+  synthetic_curl_args \
+  "$synthetic_auth_header" \
+  "$synthetic_bearer_token" \
+  "$synthetic_tenant_header_name" \
+  "$synthetic_tenant_id"
+append_request_headers \
+  harbor_curl_args \
+  "$harbor_auth_header" \
+  "$harbor_bearer_token" \
+  "$harbor_tenant_header_name" \
+  "$harbor_tenant_id"
+append_request_headers \
+  web_curl_args \
+  "$web_auth_header" \
+  "$web_bearer_token" \
+  "$web_tenant_header_name" \
+  "$web_tenant_id"
 
 archive_path=""
 jsonl_path=""
@@ -264,6 +305,9 @@ run_frontend_live_check() {
   SYNTHETIC_LIVE_BASE_URL="$frontend_url" \
     SYNTHETIC_LIVE_AUTH_HEADER="$web_auth_header" \
     SYNTHETIC_LIVE_BEARER_TOKEN="$web_bearer_token" \
+    SYNTHETIC_LIVE_TENANT_HEADER_NAME="$web_tenant_header_name" \
+    SYNTHETIC_LIVE_TENANT_ID="$web_tenant_id" \
+    SYNTHETIC_LIVE_EXPECT_AUTH_HEADERS="$expect_web_auth_headers" \
     SYNTHETIC_LIVE_DATASET_ID="$checked_dataset_id" \
     SYNTHETIC_LIVE_DATASET_NAME="$dataset_name" \
     SYNTHETIC_LIVE_TASK_ID="$checked_task_id" \

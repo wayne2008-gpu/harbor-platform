@@ -264,6 +264,10 @@ job ID; internal callers can query them through
 `POST /internal/audit-events/query`. Cancel/retry/artifact-retry idempotency
 records are persisted with tenant scope so replay behavior is isolated per
 tenant.
+The production E2E smoke can send bearer/custom auth and tenant headers to
+synthetic API, harbor API, and Web independently. When the frontend live check is
+enabled, it can also assert that browser `/api/` requests include the configured
+Web auth and tenant headers without printing token values.
 
 The Synthetic Settings API may expose aggregate auth readiness, such as whether
 auth is enabled, whether anonymous access is active, configured/missing token

@@ -110,6 +110,7 @@ SYNTHETIC_API_BASE=https://<synthetic-api> \
 HARBOR_API_BASE=https://<harbor-api> \
 SYNTHETIC_WEB_BASE=https://<synthetic-web> \
 HARBOR_E2E_BEARER_TOKEN='<token>' \
+HARBOR_E2E_TENANT_ID='<tenant-id>' \
 HARBOR_E2E_DATASET_DIR=/path/to/dataset \
 HARBOR_E2E_RUNTIME=tke \
 HARBOR_E2E_TASK_NAME=<task-name> \
@@ -122,6 +123,14 @@ HARBOR_E2E_TASK_NAME=<task-name> \
 HARBOR_E2E_AUTH_HEADER='Authorization: Bearer <token>' ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
+租户 header 默认名是 `X-Tenant-ID`。如网关或服务使用不同名称，可设置：
+
+```bash
+HARBOR_E2E_TENANT_HEADER_NAME='<tenant-header-name>' \
+HARBOR_E2E_TENANT_ID='<tenant-id>' \
+./scripts/synthetic-cos-tke-e2e.sh
+```
+
 如果 synthetic API、harbor API、Web 经过不同入口或不同认证，可分别设置：
 
 ```text
@@ -131,7 +140,19 @@ HARBOR_E2E_WEB_AUTH_HEADER
 HARBOR_E2E_SYNTHETIC_BEARER_TOKEN
 HARBOR_E2E_HARBOR_BEARER_TOKEN
 HARBOR_E2E_WEB_BEARER_TOKEN
+HARBOR_E2E_SYNTHETIC_TENANT_HEADER_NAME
+HARBOR_E2E_HARBOR_TENANT_HEADER_NAME
+HARBOR_E2E_WEB_TENANT_HEADER_NAME
+HARBOR_E2E_SYNTHETIC_TENANT_ID
+HARBOR_E2E_HARBOR_TENANT_ID
+HARBOR_E2E_WEB_TENANT_ID
 ```
+
+打开 `HARBOR_E2E_FRONTEND_LIVE_CHECK=1` 时，脚本会把 Web 侧 token 和 tenant
+配置传给 Playwright。只要设置了 `HARBOR_E2E_WEB_AUTH_HEADER`、
+`HARBOR_E2E_WEB_BEARER_TOKEN` 或 `HARBOR_E2E_WEB_TENANT_ID`，live check 默认
+会断言浏览器发出的 `/api/` 请求携带这些 header。也可以用
+`HARBOR_E2E_EXPECT_WEB_AUTH_HEADERS=0` 关闭该断言。
 
 如果 runner 还没启动，可以临时缩短等待时间快速检查服务和诊断输出：
 
