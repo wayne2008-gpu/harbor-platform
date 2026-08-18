@@ -725,3 +725,9 @@ Planned milestones:
     and split-entrance readiness, plus a copyable production auth smoke command
     with gateway URLs, bearer token, tenant header, publish requirement, and
     live Playwright header assertion.
+27. V4-26: expose Harbor API outbound auth readiness. Current status:
+    implemented in `synthetic-data-platform`; `/settings.harbor_api.auth` now
+    returns safe configured flags for outbound bearer token, tenant ID, and tenant
+    header, while Settings and Workbench show whether synthetic-data-platform
+    calls to `harbor-api` are anonymous, bearer-authenticated, or tenant-scoped
+    without exposing token values, tenant values, or env var names.
