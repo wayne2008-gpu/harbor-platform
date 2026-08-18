@@ -125,6 +125,10 @@ signals, with audit records tied to the source task and result dataset.
 The Results inventory also loads saved acceptance decisions for visible result
 datasets and shows the decision state next to export readiness, so operators can
 triage handoff state before opening detail pages.
+`GET /result-datasets` and `GET /result-datasets/summary` accept an
+`acceptance_state` filter for approved, needs-review, rejected, blocked, and
+unreviewed result datasets, and the summary response includes acceptance state
+counts over the same filtered inventory.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external
