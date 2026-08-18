@@ -990,6 +990,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续增强 Review queue summary，服务端返回 guidance decision/source 分布，前端摘要区展示 saved/current/suggested 与建议决策构成。
 本轮继续把 Review queue summary 带到 Workbench 首屏，全局 trial review 面板展示 open 队列的 guidance decision/source rollup。
 本轮继续把 Workbench next actions 接入 review guidance，按 blocked、needs review、rejected、approved guidance 生成可深链恢复的审核动作。
+本轮继续把 Result export handoff 带到 Workbench next actions，首页读取最近结果数据集的 export history，优先提示失败、运行中、缺失 export 或缺失下载链接的结果交付风险。
 
 目标：
 
@@ -1038,13 +1039,13 @@ worker claim 元数据可视化。
 
 - Workbench 从“卡片集合”收敛成运营首页。
 - 最近任务、失败任务、最新结果变成主要扫描内容。
-- 按阻塞、失败、活跃、待发布、最新结果和创建任务生成 next actions。
+- 按阻塞、失败、活跃、待发布、结果导出交付状态和创建任务生成 next actions。
 - readiness 只保留影响下一步操作的状态。
 
 验收：
 
 - 首屏能判断平台是否可运行、是否有失败任务、下一步应该做什么。
-- Next actions 能直达 failed queue、active tasks、publish candidates、latest result 或 task creation。
+- Next actions 能直达 failed queue、active tasks、publish candidates、result export history、latest result 或 task creation。
 - 移动端首屏优先展示状态和主动作。
 
 ### F6：Settings 收敛
