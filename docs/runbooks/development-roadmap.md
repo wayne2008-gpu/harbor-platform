@@ -189,6 +189,7 @@ GET /result-datasets/{id}/samples/summary
 POST /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports/{export_id}
+GET /result-datasets/{id}/exports/{export_id}/download
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
@@ -611,6 +612,15 @@ Implementation milestones:
     storage summary without leaking COS secrets. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+25. M57: download fixed export objects from export history. Current status:
+    implemented in `synthetic-data-platform`; export records now expose
+    `GET /result-datasets/{id}/exports/{export_id}/download`, COS-backed records
+    proxy the stored object by persisted `storage_key`, and `api_stream` records
+    keep a compatible record-level streaming fallback. Result detail history rows
+    use the record `download_url` so operators download the selected export
+    instead of always regenerating by format. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -917,3 +927,11 @@ Planned milestones:
     and COS configured flags without exposing secret values. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+43. V4-42: make export history downloads record-specific. Current status:
+    implemented in `synthetic-data-platform`; export responses now return a
+    record-level `download_url`, the new download endpoint streams the selected
+    COS object through the Synthetic API when `storage_type = "cos"`, and the
+    Result detail export history uses that URL for history-row downloads. The
+    legacy dataset-level JSONL/JSON download endpoint remains available for
+    ad-hoc regeneration. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
