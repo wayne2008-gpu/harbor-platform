@@ -108,6 +108,13 @@ Harbor `schema=openai_messages` trajectory artifact, normalizes messages into
 idempotently. `GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages`
 queries those rows by schema, role, search text, limit, and offset.
 
+Result dataset inventory observability is Synthetic-owned. `GET
+/result-datasets/summary` summarizes result dataset count, sample scale, source
+task/dataset coverage, sample-count buckets, source dataset buckets, and recent
+published results over the same filters as `GET /result-datasets`, so the
+Results console does not derive list-level readiness from a single paginated
+page.
+
 The Synthetic API returns `X-Request-ID` on all responses and includes
 `request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
 Critical business operations are persisted as `synthetic_audit_events`, including
