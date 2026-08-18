@@ -220,6 +220,8 @@ V4 前端：
   acceptance bucket 和 reviewed/unreviewed 计数，保证库存页筛选和汇总口径一致。
 - Results 支持按当前 URL 筛选范围批量保存 result dataset acceptance decision；
   后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
+- Workbench 读取最近 result dataset batch acceptance audit events，显示影响范围、
+  reviewer、decision 和 request ID，并能跳转到 Audit 精确过滤。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 

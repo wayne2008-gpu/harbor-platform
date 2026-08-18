@@ -175,9 +175,10 @@ The Synthetic API returns `X-Request-ID` on all responses and includes
 `request_id` in error bodies for HTTP, validation, Harbor proxy, and auth errors.
 Critical business operations are persisted as `synthetic_audit_events`, including
 dataset create/register/upload, synthetic task create/cancel/retry/artifact retry,
-sample ingest, result dataset publish/download, trial review decision updates,
-and artifact download access. These audit rows are owned by the synthetic
-platform and complement, rather than replace, control-plane `api_audit_events`.
+sample ingest, result dataset publish/download/export, trial review decision
+updates, result dataset acceptance decision updates, and artifact download
+access. These audit rows are owned by the synthetic platform and complement,
+rather than replace, control-plane `api_audit_events`.
 The synthetic platform exposes `GET /audit-events` and a first-class Audit
 console page so operators can troubleshoot by request ID, action, resource, task,
 result dataset, status, actor, and search filters.
@@ -185,6 +186,9 @@ It also exposes `GET /audit-events/summary` for aggregate-only audit
 observability over the same filters, returning total/succeeded/failed counts,
 status/action/resource-type buckets, and recent failed events without requiring
 the console to derive those values from one paginated page.
+The Workbench reads recent `result_dataset_review_decision.batch_upsert` audit
+events and links back to filtered Audit views, so batch acceptance activity is
+visible from the operational landing page.
 The Workbench also queries `GET /operations/idempotency/summary` and `GET
 /operations/idempotency` to show cancel/retry/artifact-retry reservation health,
 operation-level status, and recent reservation records. The record list returns
