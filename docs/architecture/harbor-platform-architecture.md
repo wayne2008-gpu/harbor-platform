@@ -183,7 +183,9 @@ contract, derived from the task job config plus current Harbor job/trial evidenc
 Generation cost config can optionally define summary/task budget thresholds in
 the same micro-unit as `estimated_cost_micros`, and can carry an operator-defined
 `price_table_version`; cost estimate responses expose the version and a derived
-`budget_status` for operator visibility in Workbench and Task Detail.
+`budget_status` for operator visibility in Workbench and Task Detail. The web
+console surfaces the current price table version alongside live Workbench and
+Task Detail cost estimates.
 When a result dataset is published, Synthetic also stores a
 `generation_cost_snapshot` in result metadata, freezing the publish-time
 task-scope estimate, price table version, and budget status with a safe config

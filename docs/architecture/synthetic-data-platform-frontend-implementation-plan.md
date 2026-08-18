@@ -639,7 +639,8 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   evidence、sample yield 和 configured cost estimate；V4-80 后 Workbench 和
   Task Detail 展示 configured budget status；V4-82 后 Result Detail 展示
   发布时冻结的 `generation_cost_snapshot`，用于结果交付成本审计；V4-83 后 snapshot
-  和 `cost_estimate` 携带 operator-defined `price_table_version`。Settings 展示只读安全配置、
+  和 `cost_estimate` 携带 operator-defined `price_table_version`；V4-84 后 Workbench
+  和 Task Detail 直接展示当前估算使用的 price table version。Settings 展示只读安全配置、
   Local E2E readiness、COS/TKE preflight、Full COS/TKE E2E 命令和 manual
   checkpoints，Playwright 覆盖 375/768/1024/1440/wide 响应式截图和无横向溢出。
 - 前端入口已改为 route-level lazy loading：Workbench、Datasets、Tasks/Trials、

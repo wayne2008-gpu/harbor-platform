@@ -287,6 +287,8 @@ estimate，用于单次生成任务排查。V4-80 后，`generation_cost` 可选
 `cost_estimate` 响应返回 `budget_status`，Workbench 和 Task Detail 可以直接显示
 disabled / not configured / within / near / exceeded 状态。V4-83 后，
 `generation_cost` 可选配置 `price_table_version`，并随 `cost_estimate` 响应返回。
+V4-84 后，Workbench 和 Task Detail 的实时 generation cost 区块直接展示当前
+`price_table_version`。
 V4-81 后，result publish metadata 增加 `generation_cost_snapshot`，冻结发布当时的
 task-scope cost estimate、budget status 和安全配置摘要；V4-83 后 snapshot schema
 version 升到 2，并冻结发布时 `price_table_version`。V4-82 后，Result Detail 专门
