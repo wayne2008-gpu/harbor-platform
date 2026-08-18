@@ -177,6 +177,7 @@ POST /synthetic-tasks/{id}/retry
 POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
 GET /result-datasets
+GET /result-datasets/summary
 GET /result-datasets/{id}
 GET /result-datasets/{id}/samples/summary
 GET /result-datasets/{id}/download?format=jsonl
@@ -272,6 +273,9 @@ Flow:
     manually
 38. summarize Synthetic API audit events through a repository-backed endpoint
     and surface aggregate status/action/resource views in the Audit console
+39. summarize result dataset inventory, sample scale, source dataset coverage,
+    and latest published results from a backend endpoint instead of deriving
+    list-level readiness from one paginated browser page
 
 Current sample ingestion behavior:
 
@@ -666,5 +670,13 @@ Planned milestones:
     failed events, and a URL-backed Audit summary panel with resource type
     filtering. The endpoint reuses audit list filters and avoids deriving
     aggregate state from one paginated browser page. Verification:
+    `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.
+22. V4-21: summarize result dataset inventory in the Results console. Current
+    status: implemented in `synthetic-data-platform`; PR #53 adds
+    `GET /result-datasets/summary`, repository-level aggregate snapshots,
+    result count, sample count, empty/single-sample result counts, source
+    task/dataset counts, sample-scale buckets, source dataset buckets, recent
+    result datasets, and a URL-backed Results summary panel. Verification:
     `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
