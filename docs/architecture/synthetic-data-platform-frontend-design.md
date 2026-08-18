@@ -1004,7 +1004,9 @@ deep link 能力，后续继续增强审核效率。
 
 ### F4：Result Dataset Review
 
-状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值配置、异常定位、字段 profile、export contract gates、source trajectory audit links、source trial 精确 deep link 回跳和 result review checklist。
+状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值配置、异常定位、字段 profile、
+export contract gates、source trajectory audit links、source trial 精确 deep link 回跳、result review checklist，以及 durable result export worker 交付模式和每条 export 的
+worker claim 元数据可视化。
 
 目标：
 
