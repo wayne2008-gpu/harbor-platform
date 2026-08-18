@@ -111,6 +111,9 @@ queries those rows by schema, role, search text, limit, and offset. `GET
 aggregate-only counts for the same schema/role/search surface, including role
 buckets, tool-call volume, tool-response volume, missing tool IDs, empty content,
 unknown roles, and error-signal rows without returning message content.
+`GET /reviews/trials` and `GET /reviews/summary` surface the indexed OpenAI
+message summary as trial-level review evidence, so Workbench triage can show
+message issue counts without opening every trial detail page.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external
