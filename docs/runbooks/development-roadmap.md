@@ -551,6 +551,11 @@ Implementation milestones:
     samples summary endpoint and passes search, server-side quality flag, and
     pagination query parameters through to `/synthetic-tasks/{id}/samples`, so
     pre-publish sample review matches the result dataset review workflow.
+17. M49: scope Reviews summary to the active review queue filters. Current
+    status: implemented in `synthetic-data-platform`; `GET /reviews/summary`
+    now accepts the same state, task, runtime, schema, quality flag, reviewer,
+    and search filters as `/reviews/trials`, and the Reviews page uses the
+    current URL query for summary metrics, batch target counts, and table rows.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -809,3 +814,8 @@ Planned milestones:
     status: implemented in `synthetic-data-platform`; Task detail now exposes
     sample quality rules, minimum reward checks, and quality issue filtering on
     task samples before publishing a result dataset.
+35. V4-34: make the review summary dashboard filter-scoped. Current status:
+    implemented in `synthetic-data-platform`; review summary totals,
+    open/reviewed counts, runtime/schema/quality buckets, and priority items
+    now summarize the same filtered queue the reviewer is operating on instead
+    of always showing global review inventory.
