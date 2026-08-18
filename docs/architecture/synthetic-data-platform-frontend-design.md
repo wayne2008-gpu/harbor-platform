@@ -772,7 +772,9 @@ Settings
 - Result dataset sample review：质量摘要、服务端 search/pagination、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值、异常样本过滤和行级异常标签。
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
 - Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view/hash 的源 trajectory 审核回跳，覆盖 Summary decision、Timeline、OpenAI Messages 和 schema diff 区域。
-- Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
+- Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值；Result
+  Detail 已接入 `GET /result-datasets/{id}/samples/field-profile`，按服务端
+  search/quality 过滤后的样本集汇总，而不是只统计当前分页。
 - Result dataset export history：COS 后台导出完成后走 record-level download；pending/running
   记录显示等待状态，failed 记录提供 `Retry export` 重新排队入口。
 - Playwright 响应式 smoke 覆盖多个 viewport。

@@ -228,6 +228,12 @@ V4 前端：
   `GET /result-datasets/summary` 支持 `source_trial_quality` 过滤，summary 返回 ready /
   needs-review / blocked / unavailable bucket；未物化快照的 result dataset 归入
   unavailable。
+- Task Detail 和 Result Detail 支持服务端样本字段 profile：`GET
+  /synthetic-tasks/{id}/samples/field-profile` 和 `GET
+  /result-datasets/{id}/samples/field-profile` 按同一组 sample `search/q` 与
+  `quality_flag` 过滤条件汇总 total/matching、字段数、完整/稀疏字段数、最低覆盖率、
+  每字段 present/missing、类型 bucket 和样例值，Result Detail 不再从当前分页样本推断
+  全量字段覆盖。
 - Results 支持按当前 URL 筛选范围批量保存 result dataset acceptance decision；
   后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
 - Workbench 读取最近 result dataset batch acceptance audit events，显示影响范围、
