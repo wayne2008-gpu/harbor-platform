@@ -270,6 +270,9 @@ auth is enabled, whether anonymous access is active, configured/missing token
 counts, scope coverage, tenant-scoped/global token counts, and tenant header
 name. It must not expose bearer token values, token environment variable names,
 tenant IDs, tenant environment variable names, or signed URLs.
+Workbench readiness should surface the same Synthetic API auth posture so the
+first screen shows whether the deployment is anonymous, scoped, or missing
+read/write token coverage before operators start new synthesis runs.
 
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 

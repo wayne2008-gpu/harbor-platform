@@ -293,6 +293,8 @@ Flow:
 42. surface Synthetic API auth readiness in Settings through aggregate token,
     scope, tenant, and anonymous-access flags without exposing bearer tokens or
     environment variable names
+43. surface Synthetic API auth readiness in Workbench summary and fallback
+    readiness so production exposure risks are visible from the first screen
 
 Current sample ingestion behavior:
 
@@ -704,3 +706,9 @@ Planned milestones:
     token counts, tenant header, and required method groups. The Settings page
     renders those aggregates without exposing bearer token values, token env
     names, or tenant env names.
+24. V4-23: surface Synthetic API auth readiness in Workbench. Current status:
+    implemented in `synthetic-data-platform`; `/workbench/summary` now includes
+    a `Synthetic API auth` readiness gate and the Workbench frontend fallback
+    derives the same gate from `/settings.auth`. Anonymous local mode is marked
+    as production review rather than an E2E blocker, while enabled auth with
+    incomplete token or read/write scope coverage is marked missing.
