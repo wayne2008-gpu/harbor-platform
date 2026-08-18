@@ -794,8 +794,8 @@ Settings
 - Trial 页面后续可继续增加更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
 - Workbench 已有配置化金额估算；后续可继续增加预算阈值、趋势和账单对账视图。
-- Task detail 后续可继续增加 cost breakdown；该项需要 trial/task 粒度成本归因和
-  价格版本快照。
+- Task Detail 已有单任务 generation cost breakdown；后续可继续增加价格版本快照、
+  预算阈值、趋势和账单对账视图。
 
 ## 下一轮前端开发排期
 
