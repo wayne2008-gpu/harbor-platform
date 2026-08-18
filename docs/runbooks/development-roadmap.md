@@ -566,6 +566,11 @@ Implementation milestones:
     supports `warn` and `block`, Settings and Task detail expose the active
     mode, and block mode rejects publish when the full task sample set contains
     flagged, missing reward, or low reward records.
+20. M52: surface publish quality gate readiness on Workbench. Current status:
+    implemented in `synthetic-data-platform`; `/workbench/summary` and the
+    Workbench frontend fallback now expose `Publish quality gate`, so operators
+    can confirm warn-only or block publish behavior from the main run-readiness
+    screen without exposing secrets.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -838,3 +843,7 @@ Planned milestones:
     status: implemented in `synthetic-data-platform`; warn mode keeps local
     publishing unblocked while surfacing risk, and block mode rejects result
     dataset publish for flagged, missing reward, or low reward sample sets.
+38. V4-37: expose publish quality gate status in Workbench readiness. Current
+    status: implemented in `synthetic-data-platform`; Workbench summary and
+    fallback readiness now show whether result dataset publish is warn-only or
+    block mode, keeping publish policy visible at the operator entry point.
