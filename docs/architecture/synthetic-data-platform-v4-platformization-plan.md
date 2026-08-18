@@ -279,7 +279,10 @@ generation metrics summary 从 durable task/result metadata 聚合运行、模�
 和 token usage。V4-78 后，Synthetic 配置增加 `generation_cost` 价格表，
 generation metrics response 增加 `cost_estimate`，按当前配置动态估算已匹配模型的
 金额，并把未匹配模型/token 显式返回。平台不内置真实 provider 价格；最终账单对账
-和任务/detail 粒度归因仍留给后续业务报表层。
+留给后续业务报表层。V4-79 后，Task Detail 的 `GET
+/synthetic-tasks/{id}/results` 也返回单任务 `generation_metrics`，按当前 Harbor
+job/trial evidence 展示 runtime、model、provider、token usage 和 configured cost
+estimate，用于单次生成任务排查。
 
 ### 5. 审计和安全
 

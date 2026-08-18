@@ -182,6 +182,7 @@ runtime 用 radio cards 表达 `docker`、`ags`、`tke`，并展示实际 `envir
 status header
 execution chain: Queued -> Input ready -> Runtime -> Artifacts -> Samples -> Published
 action queue: Sync / Cancel / Retry run / Retry artifacts / Ingest / Publish
+generation cost breakdown
 trial review queue
 artifacts
 samples publish readiness
@@ -194,6 +195,8 @@ raw Harbor job / diagnostics
 - failed 状态优先展示恢复入口。
 - succeeded 状态优先展示 ingest samples / publish。
 - published 状态优先展示 result dataset 链接。
+- generation cost breakdown 展示当前任务的 runtime/model/provider、trial/token
+  evidence、sample yield 和 configured cost estimate；账单对账不在 Task Detail 内做。
 - diagnostics 只解释问题，不抢主流程。
 
 #### Trial / Trajectory Review
@@ -747,6 +750,9 @@ Settings
   `generation_metrics` 展示 total/completed/failed task、sample yield、observed
   runtime、runtime/model/provider bucket、reported token usage 和 configured
   cost estimate。
+- Task detail generation cost breakdown：通过 `/synthetic-tasks/{id}/results`
+  返回的 `generation_metrics` 展示单任务 runtime/model/provider、trial/token
+  evidence、sample yield 和 configured cost estimate。
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Settings result export worker readiness：显示 COS export worker 是否启用、是否具备
   durable queue，以及 stale running export recovery 窗口，不暴露数据库或 COS secret。
