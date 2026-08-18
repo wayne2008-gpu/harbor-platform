@@ -13,6 +13,7 @@ TKE + TencentDB MySQL + TDMQ for RabbitMQ + COS + TCR。
 ```text
 synthetic-data-platform Web
   -> synthetic-data-platform API
+  -> synthetic-result-export-worker
   -> harbor-api
   -> TencentDB MySQL
   -> TDMQ for RabbitMQ
@@ -25,6 +26,8 @@ synthetic-data-platform Web
 部署关系：
 
 - `synthetic-data-platform` 是业务平台，负责 dataset、task、result dataset。
+- `synthetic-result-export-worker` 是 synthetic 平台的结果导出 worker，负责从
+  MySQL 认领 pending/stale COS result export 记录并上传 JSONL/JSON 到 COS。
 - `harbor-api` 是控制面，负责 job、trial、artifact、runner、lease、retry、cancel。
 - `harbor-runner` 和 `harbor-runtime` 在同一个 runner 镜像/Pod 内。
 - `agent-runtime` 由 Harbor provider 创建，TKE 场景下是目标 namespace 内的 Pod。
@@ -56,6 +59,9 @@ harbor-api Pod:
   /config/control-plane.toml
 
 synthetic-data-platform API Pod:
+  /config/platform.toml
+
+synthetic-result-export-worker Pod:
   /config/platform.toml
 
 harbor-runner Pod:
@@ -236,6 +242,7 @@ deploy/k8s/base/
 ```text
 harbor-api
 synthetic-data-platform
+synthetic-result-export-worker
 synthetic-data-platform-web
 harbor-runner
 ```
@@ -342,8 +349,9 @@ ServiceAccount 默认发现。
    `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --cluster`。
 7. 部署 `harbor-api`。
 8. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
-9. 部署 `synthetic-data-platform` API 和 Web。
-10. 检查 synthetic API `/health` 和 Web 首屏。
+9. 部署 `synthetic-data-platform` API、result export worker 和 Web。
+10. 检查 synthetic API `/health`、Settings 的 result export worker readiness
+    和 Web 首屏。
 11. 部署 `harbor-runner` Pods。
 12. 检查 `GET /runners?stale_after_sec=60`，确认 runner online，capabilities
    包含 `tke` 和 `cos-input`。
@@ -434,7 +442,7 @@ COS 回滚：
 | --- | --- | --- |
 | M33 | 生产配置模板 | 已完成：三个子项目各有不含真实 secret 的 `.example.toml` |
 | M34 | TKE namespace/RBAC manifests | 已完成：`deploy/k8s/base` 渲染通过，runner ServiceAccount 具备最小 Pod/exec/log 权限 |
-| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
+| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、synthetic result export worker、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
 | M36 | TencentDB migration gate | 已完成：启动自动 migration，`/ready` 校验 head version，失败会阻止服务就绪 |
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |

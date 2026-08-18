@@ -33,6 +33,23 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  name: synthetic-result-export-worker-pdb
+  namespace: harbor-platform
+  labels:
+    app.kubernetes.io/name: synthetic-data-platform
+    app.kubernetes.io/component: result-export-worker
+    app.kubernetes.io/part-of: harbor-platform
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: synthetic-data-platform
+      app.kubernetes.io/component: result-export-worker
+      app.kubernetes.io/part-of: harbor-platform
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
   name: synthetic-data-platform-web-pdb
   namespace: harbor-platform
   labels:

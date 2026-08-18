@@ -4,3 +4,16 @@ services:
       SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
     volumes:
       - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro
+
+  synthetic-result-export-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker-compose/Dockerfile.synthetic-data-platform
+    command: ["uv", "run", "--no-sync", "synthetic-result-export-worker"]
+    environment:
+      SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro
