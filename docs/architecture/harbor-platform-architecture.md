@@ -118,6 +118,10 @@ platform and complement, rather than replace, control-plane `api_audit_events`.
 The synthetic platform exposes `GET /audit-events` and a first-class Audit
 console page so operators can troubleshoot by request ID, action, resource, task,
 result dataset, status, actor, and search filters.
+The Workbench also queries `GET /operations/idempotency/summary` to show
+cancel/retry/artifact-retry reservation health as aggregate counts and
+operation-level status, without exposing idempotency keys, request payloads, or
+Harbor operation parameters.
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).

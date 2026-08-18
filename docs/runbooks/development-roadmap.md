@@ -267,6 +267,9 @@ Flow:
     idempotency keys
 36. record failed Synthetic API mutation requests as audit events without
     storing request payloads or idempotency keys
+37. surface operation idempotency health in the Workbench so operators can see
+    failed, stale, and expired reservation aggregates without querying APIs
+    manually
 
 Current sample ingestion behavior:
 
@@ -646,3 +649,11 @@ Planned milestones:
     code, and error type, but do not store request payloads or idempotency keys.
     Verification: `uv run ruff check .`, targeted auth/API/validation/Harbor
     tests, `uv run pytest -q`, and `git diff --check`.
+20. V4-19: surface operation idempotency observability in the Workbench. Current
+    status: implemented in `synthetic-data-platform`; PR #51 adds the frontend
+    wrapper for `GET /operations/idempotency/summary`, renders aggregate
+    total/in-progress/completed/failed/stale/expired reservation counts, and
+    shows an operation-level status table for cancel, retry, and artifact retry
+    health. The UI keeps the backend aggregate-only contract and does not
+    expose idempotency keys, request payloads, or Harbor operation parameters.
+    Verification: `npm --prefix web run verify`.
