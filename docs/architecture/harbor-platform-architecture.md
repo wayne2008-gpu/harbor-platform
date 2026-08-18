@@ -129,6 +129,10 @@ triage handoff state before opening detail pages.
 `acceptance_state` filter for approved, needs-review, rejected, blocked, and
 unreviewed result datasets, and the summary response includes acceptance state
 counts over the same filtered inventory.
+`POST /result-datasets/review-decisions/batch` applies one acceptance decision
+to explicit result dataset IDs or to a bounded Results filter selection guarded
+by `expected_total`, then records a batch audit event with the selected result
+dataset IDs, source task IDs, sample counts, reviewer, labels, and request ID.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external
