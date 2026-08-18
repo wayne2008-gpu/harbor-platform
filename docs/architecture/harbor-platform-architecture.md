@@ -175,6 +175,10 @@ Decisions are stored in sample `_review` metadata, negative decisions contribute
 `review_needs_review`, `review_rejected`, or `review_blocked` quality flags, and
 automatic quality signals remain intact so approval does not silently override
 missing content, missing reward, or low reward checks.
+Task and Result sample tables render saved sample review decisions separately
+from automatic anomaly badges, so operators can see the human decision, reviewer,
+and update time without letting `_review` metadata pollute dynamic sample field
+profiles or training payload columns.
 Generation usage observability is Synthetic-owned. `/workbench/summary` embeds a
 `generation_metrics` snapshot, and `GET /generation-metrics/summary` exposes the
 same rollup directly. The snapshot summarizes task/result counts, generated
