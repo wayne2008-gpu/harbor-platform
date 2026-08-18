@@ -160,10 +160,12 @@ log "Checking rendered manifest references"
 require_rendered_text "name: harbor-api"
 require_rendered_text "name: harbor-runner"
 require_rendered_text "name: synthetic-data-platform"
+require_rendered_text "name: synthetic-result-export-worker"
 require_rendered_text "name: synthetic-data-platform-web"
 require_rendered_text "name: harbor-api-pdb"
 require_rendered_text "name: harbor-runner-pdb"
 require_rendered_text "name: synthetic-data-platform-pdb"
+require_rendered_text "name: synthetic-result-export-worker-pdb"
 require_rendered_text "name: synthetic-data-platform-web-pdb"
 require_rendered_text "name: harbor-api-hpa"
 require_rendered_text "name: synthetic-data-platform-hpa"
@@ -273,6 +275,7 @@ if [[ "$CHECK_ROLLOUT" == "1" ]]; then
   log "Checking Deployment rollouts"
   kubectl -n "$PLATFORM_NS" rollout status deployment/harbor-api
   kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-data-platform
+  kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-result-export-worker
   kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-data-platform-web
   kubectl -n "$PLATFORM_NS" rollout status deployment/harbor-runner
 fi

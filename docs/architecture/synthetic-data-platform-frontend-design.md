@@ -745,6 +745,8 @@ Settings
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
 - Workbench runtime/provider load：按 `environment.type` 聚合 total、active、failed、completed 任务数。
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
+- Settings result export worker readiness：显示 COS export worker 是否启用、是否具备
+  durable queue，以及 stale running export recovery 窗口，不暴露数据库或 COS secret。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
 - Tasks/Results 列表搜索使用 deferred query value，减少快速输入时的列表请求抖动。
 - Trial 详情、trajectory provenance、summary/timeline/OpenAI messages/raw JSON tabs，且

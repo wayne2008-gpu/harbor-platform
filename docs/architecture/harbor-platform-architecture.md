@@ -128,11 +128,15 @@ in its own export history table. COS-backed exports can be created in background
 mode, moving records through `pending` / `running` / `completed` or `failed`
 without blocking the request that created the export. Failed or stale
 non-completed export records can be retried through the record-level retry API,
-which reuses the same export ID and requeues COS materialization. This is
-separate from Harbor artifact storage: the web console reads export metadata and
-record-level download entry points through the Synthetic API, and COS-backed
-export downloads are proxied by Synthetic API using server-side storage
-configuration. The browser never needs runner-local paths or COS credentials.
+which reuses the same export ID and requeues COS materialization. Production
+deployments can run `synthetic-result-export-worker` as a separate process:
+the API creates pending rows, worker instances atomically claim pending or stale
+running COS exports from MySQL, materialize JSONL/JSON from paged sample reads,
+upload the object, and update the same export record. This is separate from
+Harbor artifact storage: the web console reads export metadata and record-level
+download entry points through the Synthetic API, and COS-backed export downloads
+are proxied by Synthetic API using server-side storage configuration. The
+browser never needs runner-local paths or COS credentials.
 
 Synthetic task inventory observability is also Synthetic-owned. `GET
 /synthetic-tasks/summary` summarizes task count, active/completed/failed state,

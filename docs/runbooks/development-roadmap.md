@@ -652,6 +652,18 @@ Implementation milestones:
     detail shows `Waiting` for active exports and a `Retry export` action for
     failed export records. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+29. M61: add durable result export worker. Current status: implemented in
+    `synthetic-data-platform` and deployment assets; `result_export_worker`
+    config lets the API persist pending COS export rows without starting an
+    in-process FastAPI background task, `synthetic-result-export-worker`
+    atomically claims pending or stale running JSONL/JSON export records from
+    MySQL, runs COS materialization, and records worker metadata on the same
+    export row. Docker Compose upload overlay and K8s base manifests include a
+    dedicated worker process using the synthetic API image. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, `docker compose config`,
+    `kubectl kustomize deploy/k8s/base`, `bash -n deploy/k8s/scripts/tke-preflight.sh`,
+    and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -994,3 +1006,13 @@ Planned milestones:
     stale downloads for pending/running records and exposes `Retry export` for
     failed rows. Verification: `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+47. V4-46: make COS result export execution durable. Current status:
+    implemented in `synthetic-data-platform` and deployment assets; production
+    can enable `result_export_worker.enabled`, run
+    `synthetic-result-export-worker` as a separate process, and let workers
+    claim pending or stale running export rows from MySQL before uploading COS
+    objects. Settings exposes safe worker readiness, and Compose/K8s manifests
+    include a deployable worker entry. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`,
+    `docker compose config`, `kubectl kustomize deploy/k8s/base`,
+    `bash -n deploy/k8s/scripts/tke-preflight.sh`, and `git diff --check`.

@@ -58,6 +58,10 @@ Browser :5173
 3. `synthetic-data-platform/config/platform.local.toml`
    - `[dataset_storage] backend = "cos"`
    - COS bucket、region、prefix 指向输入 dataset 上传位置。
+   - `[result_export_storage] backend = "cos"` 时，默认可以继续使用 API
+     in-process background export；如果设置 `[result_export_worker] enabled = true`，
+     `compose.synthetic-upload.yml` 会同时启动 `synthetic-result-export-worker`
+     认领 pending/stale result export 记录。
 4. TKE 运行时配置已按 `harbor/readme-tke.md` 准备。
 5. 本机有 `curl`、`jq`、`tar`、`sha256sum`、`docker compose`、`uv`。
 
@@ -76,6 +80,7 @@ docker compose -f compose.dev.yml -f compose.synthetic-upload.yml up --build -d
 harbor-api:                 http://localhost:8080
 synthetic-data-platform API: http://localhost:8081
 synthetic-data-platform Web: http://localhost:5173
+synthetic result export worker: compose service synthetic-result-export-worker
 RabbitMQ management:         http://localhost:15672
 ```
 
