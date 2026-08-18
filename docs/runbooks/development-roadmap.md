@@ -736,6 +736,15 @@ Implementation milestones:
     `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
+40. M72: summarize result export readiness across filtered Results. Current
+    status: implemented in `synthetic-data-platform`; `GET /result-datasets/summary`
+    now includes export record, status, and per-result readiness counts, and the
+    Results summary panel shows export-ready metrics plus readiness/status
+    buckets for the current filters. Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_result_datasets_summary_reports_filtered_operational_counts -q`,
+    `uv run pytest -q`, `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1153,5 +1162,15 @@ Planned milestones:
     export history for visible result datasets and displays a compact export
     readiness badge so operators can scan downloadable handoff readiness before
     opening each detail page. Verification: `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+58. V4-57: summarize result export readiness across filtered Results. Current
+    status: implemented in `synthetic-data-platform`; result dataset summary
+    responses now include export status and readiness rollups, and the Results
+    summary UI renders export-ready metrics and buckets so operators can assess
+    downstream handoff readiness for the full filtered result set. Verification:
+    `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_result_datasets_summary_reports_filtered_operational_counts -q`,
+    `uv run pytest -q`, `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
