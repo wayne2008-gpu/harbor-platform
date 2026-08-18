@@ -153,6 +153,11 @@ Create `synthetic-data-platform/` after Harbor API is stable.
 Current first version:
 
 ```text
+POST /datasets/register
+POST /datasets/upload
+GET /datasets
+GET /datasets/summary
+GET /datasets/{id}
 POST /synthetic-tasks
 GET /synthetic-tasks/summary
 GET /synthetic-tasks/{id}
@@ -281,6 +286,10 @@ Flow:
     dataset readiness, runtime mix, dataset coverage, and recent updates from a
     backend endpoint instead of deriving task readiness from one paginated
     browser page
+41. summarize dataset inventory, COS/uploaded/external source mix, task-name
+    coverage, checksum/size coverage, and latest dataset updates from a backend
+    endpoint instead of deriving dataset readiness from one paginated browser
+    page
 
 Current sample ingestion behavior:
 

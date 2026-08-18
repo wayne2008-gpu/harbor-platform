@@ -108,6 +108,12 @@ Harbor `schema=openai_messages` trajectory artifact, normalizes messages into
 idempotently. `GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages`
 queries those rows by schema, role, search text, limit, and offset.
 
+Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
+summarizes dataset count, task-name coverage, COS/uploaded/registered/external
+source mix, checksum/size coverage, format buckets, task-name buckets, and recent
+dataset updates over the same filters as `GET /datasets`, so the Datasets
+console does not derive launch readiness from one paginated page.
+
 Result dataset inventory observability is Synthetic-owned. `GET
 /result-datasets/summary` summarizes result dataset count, sample scale, source
 task/dataset coverage, sample-count buckets, source dataset buckets, and recent
