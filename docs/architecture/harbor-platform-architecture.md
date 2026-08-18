@@ -116,7 +116,9 @@ message summary as trial-level review evidence, so Workbench triage can show
 message issue counts without opening every trial detail page. The task detail
 trajectory review queue also prefers the task-scoped `/reviews/trials` service
 view and falls back to local trial/artifact derivation while service evidence is
-unavailable.
+unavailable. Result dataset detail reuses task-scoped `/reviews/summary` to show
+source-trial review coverage, guidance, trajectory/OpenAI-message evidence, and
+priority review links before a published dataset is handed off for training.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external

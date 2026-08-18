@@ -1256,3 +1256,10 @@ Planned milestones:
     review queue, shows indexed message/issue chips, and keeps local
     trial/artifact-derived fallback when service evidence is loading,
     unavailable, or empty.
+66. V4-65: surface source-trial quality in Result Detail. Current status:
+    implemented in `synthetic-data-platform`; Result Detail now queries
+    task-scoped `/reviews/summary?state=all&task_id=...`, adds source-trial
+    review coverage to the result review checklist, and shows a source trial
+    quality panel with review state, guidance rollups, indexed OpenAI message
+    coverage, message issue counts, quality flags, and priority trial review
+    links before training handoff.
