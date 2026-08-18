@@ -196,7 +196,8 @@ raw Harbor job / diagnostics
 - succeeded 状态优先展示 ingest samples / publish。
 - published 状态优先展示 result dataset 链接。
 - generation cost breakdown 展示当前任务的 runtime/model/provider、trial/token
-  evidence、sample yield 和 configured cost estimate；账单对账不在 Task Detail 内做。
+  evidence、sample yield、configured cost estimate 和 budget status；账单对账不在
+  Task Detail 内做。
 - diagnostics 只解释问题，不抢主流程。
 
 #### Trial / Trajectory Review
@@ -749,10 +750,10 @@ Settings
 - Workbench generation usage metrics：通过 `/workbench/summary` 的
   `generation_metrics` 展示 total/completed/failed task、sample yield、observed
   runtime、runtime/model/provider bucket、reported token usage 和 configured
-  cost estimate。
+  cost estimate；V4-80 后同一区块展示 summary budget status。
 - Task detail generation cost breakdown：通过 `/synthetic-tasks/{id}/results`
   返回的 `generation_metrics` 展示单任务 runtime/model/provider、trial/token
-  evidence、sample yield 和 configured cost estimate。
+  evidence、sample yield、configured cost estimate 和 task budget status。
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Settings result export worker readiness：显示 COS export worker 是否启用、是否具备
   durable queue，以及 stale running export recovery 窗口，不暴露数据库或 COS secret。
@@ -793,9 +794,9 @@ Settings
 
 - Trial 页面后续可继续增加更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
-- Workbench 已有配置化金额估算；后续可继续增加预算阈值、趋势和账单对账视图。
-- Task Detail 已有单任务 generation cost breakdown；后续可继续增加价格版本快照、
-  预算阈值、趋势和账单对账视图。
+- Workbench 已有配置化金额估算和预算状态；后续可继续增加趋势和账单对账视图。
+- Workbench 和 Task Detail 已有配置化预算状态；后续可继续增加价格版本快照、
+  趋势和账单对账视图。
 
 ## 下一轮前端开发排期
 

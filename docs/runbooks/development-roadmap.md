@@ -1420,3 +1420,15 @@ Planned milestones:
     estimate data, not invoice-grade billing reconciliation or historical
     price-version accounting. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+81. V4-80: expose generation budget status. Current status: implemented in
+    `synthetic-data-platform`; `generation_cost` config now accepts optional
+    `summary_budget_micros`, `task_budget_micros`, and `budget_warning_ratio`
+    guardrails. Every `cost_estimate` response includes a `budget_status`
+    object with scope, configured limit, used/remaining micros, utilization
+    ratio, warning ratio, and disabled/not-configured/within/near/exceeded
+    state. Workbench displays summary budget status beside generation usage
+    metrics, and Task Detail displays task budget status beside the single-task
+    cost breakdown. This is an operator visibility guardrail only; it does not
+    block job submission or replace account-level billing reconciliation.
+    Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.

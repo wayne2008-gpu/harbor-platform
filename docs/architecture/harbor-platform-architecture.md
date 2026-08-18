@@ -180,6 +180,9 @@ their own billing contract, and unmatched model tokens remain visible instead of
 being silently treated as real zero-cost usage. Task detail result reads also
 return a live task-level `generation_metrics` object with the same cost estimate
 contract, derived from the task job config plus current Harbor job/trial evidence.
+Generation cost config can optionally define summary/task budget thresholds in
+the same micro-unit as `estimated_cost_micros`; cost estimate responses expose a
+derived `budget_status` for operator visibility in Workbench and Task Detail.
 This is still an estimate layer: final account-level billing reconciliation,
 historical price-version snapshots, and invoice-grade attribution remain later
 Synthetic business-reporting work.
