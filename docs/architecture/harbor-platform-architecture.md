@@ -165,16 +165,20 @@ Result sample field-profile observability is Synthetic-owned. `GET
 /result-datasets/{id}/samples/field-profile` and `GET
 /synthetic-tasks/{id}/samples/field-profile` summarize field coverage, missing
 counts, type buckets, and example values over the same server-side sample
-search/quality filters as the sample list and summary APIs, so Result Detail
+search, quality-flag, and review-decision filters as the sample list and summary
+APIs, so Result Detail
 does not derive full dataset field coverage from one paginated browser page.
 Sample review decisions are Synthetic-owned. `POST
 /synthetic-tasks/{id}/samples/review-decisions/batch` and `POST
 /result-datasets/{id}/samples/review-decisions/batch` apply one human decision
 to a bounded server-side sample filter selection guarded by `expected_total`.
-Decisions are stored in sample `_review` metadata, negative decisions contribute
-`review_needs_review`, `review_rejected`, or `review_blocked` quality flags, and
-automatic quality signals remain intact so approval does not silently override
-missing content, missing reward, or low reward checks.
+Sample list, summary, field-profile, and batch-review APIs accept
+`review_decision=approved|needs_review|rejected|blocked|unreviewed`, which can
+be combined with `quality_flag` and search filters. Decisions are stored in
+sample `_review` metadata, negative decisions contribute `review_needs_review`,
+`review_rejected`, or `review_blocked` quality flags, and automatic quality
+signals remain intact so approval does not silently override missing content,
+missing reward, or low reward checks.
 Task and Result sample tables render saved sample review decisions separately
 from automatic anomaly badges, so operators can see the human decision, reviewer,
 and update time without letting `_review` metadata pollute dynamic sample field
