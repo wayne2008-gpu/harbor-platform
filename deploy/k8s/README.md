@@ -45,6 +45,12 @@ kubectl -n harbor-platform create configmap harbor-tke-config \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
+The default TKE production template uses `auth_mode = "in_cluster"`, so the
+`harbor-runner` Pod authenticates to Kubernetes through its ServiceAccount and
+RBAC. Only create and mount a kubeconfig secret if you intentionally run the
+runner outside the target cluster, or if your `tke.toml` uses
+`auth_mode = "kubeconfig"`.
+
 The production TOML templates keep non-sensitive settings in ConfigMaps. COS
 credentials, MySQL URLs, RabbitMQ URLs, API tokens, and tenant IDs are
 referenced by environment variable name in TOML and must be provided through
@@ -83,13 +89,17 @@ kubectl -n harbor-platform create secret generic harbor-runner-secret \
   --from-literal=HARBOR_DATASET_COS_SECRET_KEY='<cos-secret-key>' \
   --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl -n harbor-platform create secret generic harbor-runner-kubeconfig \
-  --from-file=kubeconfig=/path/to/tke-kubeconfig \
-  --dry-run=client -o yaml | kubectl apply -f -
-
 kubectl -n harbor-platform create secret generic harbor-runner-agent-env \
   --from-literal=OPENAI_API_KEY='<api-key>' \
   --from-literal=OPENAI_BASE_URL='<base-url>' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Optional kubeconfig secret for `auth_mode = "kubeconfig"` deployments:
+
+```bash
+kubectl -n harbor-platform create secret generic harbor-runner-kubeconfig \
+  --from-file=kubeconfig=/path/to/tke-kubeconfig \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 

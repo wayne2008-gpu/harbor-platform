@@ -52,10 +52,6 @@ spec:
               mountPath: /config/tke.toml
               subPath: tke.toml
               readOnly: true
-            - name: runner-kubeconfig
-              mountPath: /config/kubeconfig
-              subPath: kubeconfig
-              readOnly: true
             - name: runner-jobs
               mountPath: /var/lib/harbor/jobs
       volumes:
@@ -65,8 +61,5 @@ spec:
         - name: tke-config
           configMap:
             name: harbor-tke-config
-        - name: runner-kubeconfig
-          secret:
-            secretName: harbor-runner-kubeconfig
         - name: runner-jobs
           emptyDir: {}
