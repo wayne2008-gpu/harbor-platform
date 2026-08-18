@@ -720,6 +720,14 @@ Implementation milestones:
     approval guidance with deep links into `/reviews/trials` using the matching
     `guidance_decision` filter. Verification:
     `npm --prefix web run verify` and `git diff --check`.
+38. M70: add result export handoff checks to Workbench next actions. Current
+    status: implemented in `synthetic-data-platform`; Workbench now queries
+    recent result dataset export history and prioritizes failed, active, missing,
+    or missing-link exports before generic result audit, linking operators to the
+    Result detail export history for download validation. Verification:
+    `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1124,3 +1132,11 @@ Planned milestones:
     linking operators directly to the filtered Reviews queue before they create
     additional synthesis work. Verification: `npm --prefix web run verify` and
     `git diff --check`.
+56. V4-55: add result export handoff checks to Workbench next actions. Current
+    status: implemented in `synthetic-data-platform`; the Workbench next action
+    queue now reads recent result dataset export records, highlights failed or
+    running exports, flags missing export records or missing download links, and
+    deep-links into the Result detail export history before downstream handoff.
+    Verification: `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
