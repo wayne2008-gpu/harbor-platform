@@ -1393,3 +1393,19 @@ Planned milestones:
     `uv run pytest tests/test_app.py::test_workbench_summary_returns_operational_rollup_without_secrets tests/test_sql_repository.py::test_sql_repository_returns_workbench_summary_snapshot -q`,
     `npm --prefix web run typecheck`, and `npm --prefix web run test:ui -- --grep
     "workbench summarizes readiness"`.
+79. V4-78: add configurable generation cost estimates. Current status:
+    implemented in `synthetic-data-platform`; platform config now supports
+    `[generation_cost]` plus `[[generation_cost.prices]]` model pricing rules.
+    `generation_metrics` responses include `cost_estimate`, computed dynamically
+    from durable result token usage and the current price table, with matched
+    tokens, unmatched tokens, unmatched models, and per-model cost evidence.
+    `/settings` exposes only the non-sensitive generation-cost summary
+    (`enabled`, `currency`, configured model count). Workbench now shows estimated
+    cost and costed model evidence beside runtime/model/provider/token usage.
+    The platform still ships no built-in provider prices; deployments must
+    configure prices from their own billing contract, and final billing
+    reconciliation/task-level attribution remains later work. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run typecheck`, `npm --prefix web run test:ui -- --grep
+    "workbench summarizes readiness"`, `npm --prefix web run verify`, and
+    `git diff --check`.

@@ -745,7 +745,8 @@ Settings
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
 - Workbench generation usage metrics：通过 `/workbench/summary` 的
   `generation_metrics` 展示 total/completed/failed task、sample yield、observed
-  runtime、runtime/model/provider bucket 和 reported token usage。
+  runtime、runtime/model/provider bucket、reported token usage 和 configured
+  cost estimate。
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Settings result export worker readiness：显示 COS export worker 是否启用、是否具备
   durable queue，以及 stale running export recovery 窗口，不暴露数据库或 COS secret。
@@ -786,10 +787,9 @@ Settings
 
 - Trial 页面后续可继续增加更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
-- Workbench 后续可继续增加金额成本摘要；当前已有 token/runtime/provider usage
-  指标，下一步需要模型价格配置和成本分摊规则。
-- Task detail 后续可继续增加 cost breakdown；该项需要 trial/task 粒度的价格配置和
-  成本归因规则。
+- Workbench 已有配置化金额估算；后续可继续增加预算阈值、趋势和账单对账视图。
+- Task detail 后续可继续增加 cost breakdown；该项需要 trial/task 粒度成本归因和
+  价格版本快照。
 
 ## 下一轮前端开发排期
 
