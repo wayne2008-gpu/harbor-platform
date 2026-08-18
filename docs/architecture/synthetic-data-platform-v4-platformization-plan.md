@@ -215,6 +215,8 @@ V4 前端：
 - Results 列表会加载当前页每个 result dataset 的已保存 acceptance decision，
   在库存页直接展示 Approved、Needs review、Rejected、Blocked 或 Not saved，
   便于先按库存扫描，再进入详情页处理具体审核。
+- Result dataset API 支持 `acceptance_state` 过滤，summary 返回对应
+  acceptance bucket 和 reviewed/unreviewed 计数，保证库存页筛选和汇总口径一致。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 

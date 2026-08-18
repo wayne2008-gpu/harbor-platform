@@ -1276,3 +1276,10 @@ Planned milestones:
     Acceptance state, including reviewer ownership, beside export readiness so
     operators can scan approved, unreviewed, rejected, and blocked result
     datasets without opening each detail page.
+69. V4-68: filter and summarize result dataset acceptance states. Current
+    status: implemented in `synthetic-data-platform`; `GET /result-datasets`
+    and `GET /result-datasets/summary` now accept `acceptance_state` for
+    approved, needs-review, rejected, blocked, and unreviewed result datasets.
+    The summary response includes acceptance-state counts, and the Results
+    console exposes the same filter and bucket summary so inventory triage and
+    paginated rows use the same handoff state definition.
