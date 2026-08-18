@@ -677,6 +677,13 @@ Implementation milestones:
     post-training handoff signals, then lets reviewers apply the suggestion to
     the controlled form before explicitly saving. Verification:
     `npm --prefix web run verify` and `git diff --check`.
+32. M64: add queue-level trial review decision guidance. Current status:
+    implemented in `synthetic-data-platform`; the global `/reviews/trials`
+    queue now shows saved/current/suggested decision guidance per trial,
+    derives unreviewed suggestions from quality flags, trajectory/OpenAI
+    message readiness, artifact count, and reward signals, and passes the
+    suggestion labels plus decision into quick review metadata. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1042,4 +1049,10 @@ Planned milestones:
     trajectory quality and post-training handoff checks, and an explicit
     `Apply suggestion` action pre-fills decision, labels, and rationale without
     saving on behalf of the reviewer. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
+50. V4-49: make the global review queue easier to triage. Current status:
+    implemented in `synthetic-data-platform`; `/reviews/trials` now adds a
+    decision guidance column that distinguishes saved/current decisions from
+    unreviewed suggestions, explains the strongest queue evidence, and preloads
+    quick-review labels/metadata from the same guidance signal. Verification:
     `npm --prefix web run verify` and `git diff --check`.

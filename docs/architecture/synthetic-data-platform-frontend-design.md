@@ -763,6 +763,7 @@ Settings
 - Trial Summary review issues：汇总 Timeline anomalies、OpenAI message anomalies 和 schema mapping gaps，并提供 tab 快捷跳转。
 - Trajectory anomaly review：Timeline / OpenAI Messages 支持异常摘要、anomaly-only 过滤和行级异常标签。
 - OpenAI message thread review：检测重复 tool call id、缺 tool response、orphan tool response、重复 tool response，并进入 anomaly-only 过滤。
+- Global trial review guidance：`/reviews/trials` 队列按 saved/current/suggested 区分人工结论和系统建议，基于 quality flags、trajectory/OpenAI messages、artifact 和 reward 信号给出可扫描的 quick decision guidance。
 - Trajectory 明细折叠：tool call / observation 可折叠并保留隐藏数量提示。
 - Result dataset 列表、source task/source dataset 筛选和回跳、详情、source dataset 直达、JSONL/JSON 下载。
 - Result dataset lineage flow：input dataset -> synthetic task -> Harbor run -> result dataset。
@@ -983,6 +984,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续增强 Trial quality gates，按 reward、verifier、exception 和轨迹 schema readiness 前置展示 trial 进入后训练数据集审核的质量门，并增加 `verifier_min_score` URL 阈值配置。
 本轮继续增强 Summary step text diff，检查 ATIF/default timeline step 文本是否进入 OpenAI messages，并将 step text gap 纳入 Summary decision、post-training handoff 和 audit checklist。
 本轮继续增强 Manual review suggestion，基于 trajectory review 和 post-training handoff 信号生成建议 decision、labels 和 rationale，审核员可一键填入但仍需显式保存。
+本轮继续增强 Review queue guidance，在全局 `/reviews/trials` 表格中展示 saved/current/suggested decision，未审核 trial 可直接看到阻塞或通过建议，并把建议 labels/metadata 带入 quick decision。
 
 目标：
 
