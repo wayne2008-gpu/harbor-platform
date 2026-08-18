@@ -257,6 +257,8 @@ Flow:
     contracts and SQL sample-row aggregation, with legacy JSON fallback
 32. expire stale synthetic operation idempotency reservations through a
     configurable TTL so `in_progress` records cannot block retry forever
+33. query sample quality flags through structured `sample_id + flag` rows and
+    indexes instead of scanning `quality_flags_text`
 
 Current sample ingestion behavior:
 
@@ -603,3 +605,12 @@ Planned milestones:
     of reusing a key with an unknown side-effect outcome. Verification:
     `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
+16. V4-15: add structured sample quality flag indexes. Current status:
+    implemented in `synthetic-data-platform`; PR #47 added
+    `synthetic_sample_quality_flags`, writes `sample_id + flag` rows during
+    sample ingestion, changes SQL `quality_flag` filtering to indexed `EXISTS`
+    conditions, and lazily backfills matching legacy sample rows on first
+    scoped flag query. SQL regression tests cover flag row persistence, legacy
+    backfill, index creation, and SQLite query-plan use of the `flag + sample_id`
+    covering index. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    and `npm --prefix web run verify`.

@@ -43,7 +43,7 @@
 
 - `GET /synthetic-tasks/{id}/samples` 和 `GET /result-datasets/{id}/samples` 已优先读取
   SQL-backed sample rows，并保留 `samples_json` 兼容 fallback；后续大规模场景还需要
-  进一步补索引策略、查询性能验证和批量审核能力。
+  进一步补查询性能验证和批量审核能力。
 - Synthetic operation idempotency 已具备并发 reservation 语义和 TTL 清理；后续还需要补
   观测指标和用户级审计关联。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
