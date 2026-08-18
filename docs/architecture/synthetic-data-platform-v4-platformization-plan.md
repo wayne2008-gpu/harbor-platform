@@ -45,7 +45,8 @@
   SQL-backed sample rows，并保留 `samples_json` 兼容 fallback；后续大规模场景还需要
   进一步补查询性能验证和批量审核能力。
 - Synthetic operation idempotency 已具备并发 reservation 语义、TTL 清理、aggregate
-  summary API 和 completed replay 审计关联；后续还需要补更完整的失败请求审计。
+  summary API、completed replay 审计关联和失败 mutation 请求审计；后续需要在前端
+  暴露更清晰的运维视图。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
   artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
 - 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。
