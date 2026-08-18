@@ -1442,3 +1442,13 @@ Planned milestones:
     explicit price table versioning and invoice-grade billing reconciliation
     remain future business-reporting work. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+83. V4-82: show publish-time generation cost snapshot in Result Detail. Current
+    status: implemented in `synthetic-data-platform`; Result Detail now reads
+    `metadata.generation_cost_snapshot` and displays the frozen estimated cost,
+    budget status, reported token coverage, model cost evidence, and publish-time
+    budget thresholds. Older result datasets without the snapshot keep a safe
+    empty state, and historical result cost views are not recalculated from later
+    price-table or budget-threshold changes. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "m11 core path uploads a dataset"`,
+    `npm --prefix web run verify`, and `git diff --check`.
