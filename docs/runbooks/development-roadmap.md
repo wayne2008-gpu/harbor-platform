@@ -1310,3 +1310,11 @@ Planned milestones:
     deep-links to Results filters. Verification: `npm --prefix web run
     typecheck`, `npm --prefix web run test:ui -- --grep "workbench summarizes
     readiness"`, `npm --prefix web run verify`, and `git diff --check`.
+73. V4-72: summarize result detail post-training handoff readiness. Current
+    status: implemented in `synthetic-data-platform`; Result Detail now shows a
+    single post-training handoff summary over human acceptance, export download
+    readiness, automated result checks, and source-trial quality. Each gate
+    links to the owning section, and the summary updates as result acceptance is
+    saved or result exports complete/fail. Verification: `npm --prefix web run
+    typecheck`, `npm --prefix web run test:ui -- --grep "result downloads expose
+    recovery paths"`, `npm --prefix web run verify`, and `git diff --check`.
