@@ -167,8 +167,11 @@ summaries, and timestamps without exposing idempotency keys, request payloads, o
 Harbor operation parameters.
 The Audit console exposes the same reservation records behind
 `/audit?view=operations` with deep-linkable operation, status, task, search, and
-pagination controls, keeping idempotency debugging under the governance section
-instead of adding Harbor runner internals to primary navigation.
+pagination controls. Its summary panel calls `GET
+/operations/idempotency/summary` with the same operation/status/task/search
+filters as the record list, so filtered triage counts and paginated rows describe
+the same reservation set while keeping idempotency debugging under the governance
+section instead of adding Harbor runner internals to primary navigation.
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
