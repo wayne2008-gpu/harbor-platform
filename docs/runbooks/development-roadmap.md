@@ -1270,3 +1270,9 @@ Planned milestones:
     audit event linkage. Result Detail now shows a Result acceptance decision
     panel, derives a suggested decision from the automatic handoff state, and
     saves/reloads the human acceptance record.
+68. V4-67: surface result dataset acceptance decisions in inventory. Current
+    status: implemented in `synthetic-data-platform`; Results now loads the
+    saved review decision for each visible result dataset and shows a compact
+    Acceptance state, including reviewer ownership, beside export readiness so
+    operators can scan approved, unreviewed, rejected, and blocked result
+    datasets without opening each detail page.

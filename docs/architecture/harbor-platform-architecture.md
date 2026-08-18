@@ -122,6 +122,9 @@ priority review links before a published dataset is handed off for training.
 `GET/PUT /result-datasets/{id}/review-decision` stores the human acceptance
 decision for a published result dataset separately from automatic quality
 signals, with audit records tied to the source task and result dataset.
+The Results inventory also loads saved acceptance decisions for visible result
+datasets and shows the decision state next to export readiness, so operators can
+triage handoff state before opening detail pages.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external

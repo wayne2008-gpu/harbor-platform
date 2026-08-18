@@ -212,6 +212,9 @@ V4 前端：
 - Result Detail 支持保存 result dataset 级别的人工 acceptance decision，
   将 `approved` / `needs_review` / `rejected` / `blocked` 与 reviewer、
   rationale、labels 和 metadata 持久化，并写入 audit event。
+- Results 列表会加载当前页每个 result dataset 的已保存 acceptance decision，
+  在库存页直接展示 Approved、Needs review、Rejected、Blocked 或 Not saved，
+  便于先按库存扫描，再进入详情页处理具体审核。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 
