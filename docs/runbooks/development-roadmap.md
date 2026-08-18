@@ -163,6 +163,7 @@ GET /synthetic-tasks/summary
 GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
 GET /synthetic-tasks/{id}/samples/summary
+GET /synthetic-tasks/{id}/samples/field-profile
 GET /synthetic-tasks/{id}/results
 GET /synthetic-tasks/{id}/events
 GET /synthetic-tasks/{id}/logs
@@ -191,6 +192,7 @@ GET /result-datasets/{id}/review-decision
 PUT /result-datasets/{id}/review-decision
 POST /result-datasets/review-decisions/batch
 GET /result-datasets/{id}/samples/summary
+GET /result-datasets/{id}/samples/field-profile
 POST /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports/{export_id}
@@ -1362,3 +1364,17 @@ Planned milestones:
     `npm --prefix web run typecheck`, `npm --prefix web run test:ui -- --grep
     "list pages preserve query filters|workbench summarizes readiness"`,
     `npm --prefix web run verify`, and `git diff --check`.
+77. V4-76: summarize sample field profiles through backend endpoints. Current
+    status: implemented in `synthetic-data-platform`; task and result dataset
+    sample review now expose `GET /synthetic-tasks/{id}/samples/field-profile`
+    and `GET /result-datasets/{id}/samples/field-profile`, using the same
+    server-side `search/q` and `quality_flag` filters as the sample list and
+    summary APIs. The response reports total rows, matched rows, field count,
+    complete/sparse field counts, lowest coverage, per-field present/missing
+    counts, type buckets, and example values. Result Detail now uses the result
+    field-profile API, so field coverage is no longer inferred from one
+    paginated browser page when reviewing a published dataset for training
+    handoff. Verification: `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_sample_summary_reports_dataset_wide_quality_counts tests/test_sql_repository.py::test_sql_repository_summarizes_sample_quality_from_rows -q`,
+    `npm --prefix web run typecheck`, and `npm --prefix web run test:ui -- --grep
+    "result downloads expose recovery paths|m11 core path"`.

@@ -159,9 +159,14 @@ Results console does not derive list-level readiness from a single paginated
 page. The same result inventory APIs also expose `handoff_readiness`, combining
 sample presence, export/download readiness, and saved acceptance decisions into
 Ready / Needs review / Blocked / Checking queues for batch result triage.
-Source-trial quality is visible on current Results rows through a separate
-batch query, but it is not yet part of the global `GET /result-datasets` or
-`GET /result-datasets/summary` filter surface.
+Source-trial quality is a separate materialized inventory dimension available
+through `source_trial_quality` filters once snapshots exist.
+Result sample field-profile observability is Synthetic-owned. `GET
+/result-datasets/{id}/samples/field-profile` and `GET
+/synthetic-tasks/{id}/samples/field-profile` summarize field coverage, missing
+counts, type buckets, and example values over the same server-side sample
+search/quality filters as the sample list and summary APIs, so Result Detail
+does not derive full dataset field coverage from one paginated browser page.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed

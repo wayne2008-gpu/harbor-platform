@@ -481,7 +481,8 @@ Summary | Timeline | OpenAI Messages | Raw JSON
 
 - result metrics。
 - samples review：quality summary、search、anomaly-only、pagination。
-- field coverage 和 field profile。
+- field coverage 和 field profile：Result Detail 使用后端
+  `/result-datasets/{id}/samples/field-profile` 汇总服务端匹配样本集。
 - lineage：input dataset -> synthetic task -> Harbor run -> result dataset。
 - download：JSONL 优先，JSON 保留完整 metadata。
 - source trial 分组回跳到 trajectory audit。
@@ -626,8 +627,8 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   count、sample anomaly、reward coverage、source lineage、trajectory audit、
   export contract 汇总为 Ready / Needs review / Blocked / Checking，并提供
   samples、trajectory audit、downloads 三个审核落点；Playwright 覆盖结果交付决策、
-  lineage、source trial 回跳、artifact 下载入口、samples review、field profile
-  和 JSONL/JSON download feedback。
+  lineage、source trial 回跳、artifact 下载入口、samples review、后端 field
+  profile 和 JSONL/JSON download feedback。
 - FE-5 已完成：Workbench 首屏覆盖 Platform API、Harbor API、Dataset COS、
   COS credentials、Datasets readiness，并保留 next actions、failure causes、
   runtime/provider load、recent runs、latest results；Settings 展示只读安全配置、
