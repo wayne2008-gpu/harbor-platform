@@ -518,6 +518,12 @@ Implementation milestones:
     storage/COS, and control-plane auth readiness without exposing database
     URLs, RabbitMQ URLs, COS secrets, bearer tokens, tenant values, or env var
     names.
+11. M43: surface remote Harbor control-plane readiness on the synthetic
+    Workbench first screen. Current status: implemented in
+    `synthetic-data-platform`; Workbench queries `GET /settings/harbor-api`
+    when Harbor API is configured and adds a `Harbor control-plane` run
+    readiness gate for database migration, dispatch, artifact storage/COS, and
+    control-plane auth.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -749,3 +755,8 @@ Planned milestones:
     proxies the harbor-api safe settings summary, and Settings shows remote
     database migration, RabbitMQ/RocketMQ dispatch, artifact storage/COS, and
     control-plane auth gates without duplicating or leaking low-level secrets.
+29. V4-28: expose Harbor control-plane readiness in Workbench. Current status:
+    implemented in `synthetic-data-platform`; Workbench now queries
+    `GET /settings/harbor-api` and adds a first-screen `Harbor control-plane`
+    run readiness gate, marking request failures or missing remote DB/dispatch/
+    artifact storage/auth gates as actionable blockers.
