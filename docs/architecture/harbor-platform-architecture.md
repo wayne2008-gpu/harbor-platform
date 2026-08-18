@@ -265,6 +265,12 @@ job ID; internal callers can query them through
 records are persisted with tenant scope so replay behavior is isolated per
 tenant.
 
+The Synthetic Settings API may expose aggregate auth readiness, such as whether
+auth is enabled, whether anonymous access is active, configured/missing token
+counts, scope coverage, tenant-scoped/global token counts, and tenant header
+name. It must not expose bearer token values, token environment variable names,
+tenant IDs, tenant environment variable names, or signed URLs.
+
 Trajectory files, trial results, logs, task artifacts, and runner manifests are all treated as artifact records. `kind = "trajectory"` is reserved for agent trajectory JSON files. The artifact `kind` describes the business category, while `metadata.schema` describes the concrete file schema, such as `atif` or `openai_messages`.
 
 Artifact identity is intentionally split:

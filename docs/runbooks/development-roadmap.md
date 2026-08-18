@@ -290,6 +290,9 @@ Flow:
     coverage, checksum/size coverage, and latest dataset updates from a backend
     endpoint instead of deriving dataset readiness from one paginated browser
     page
+42. surface Synthetic API auth readiness in Settings through aggregate token,
+    scope, tenant, and anonymous-access flags without exposing bearer tokens or
+    environment variable names
 
 Current sample ingestion behavior:
 
@@ -694,3 +697,10 @@ Planned milestones:
     result datasets, and a URL-backed Results summary panel. Verification:
     `uv run ruff check .`, `uv run pytest -q`, and
     `npm --prefix web run verify`.
+23. V4-22: surface Synthetic API auth readiness in Settings. Current status:
+    implemented in `synthetic-data-platform`; `GET /settings` now returns a
+    safe `auth` summary with enabled/anonymous mode, configured and missing
+    token counts, read/write/internal scope coverage, tenant-scoped/global
+    token counts, tenant header, and required method groups. The Settings page
+    renders those aggregates without exposing bearer token values, token env
+    names, or tenant env names.
