@@ -125,8 +125,10 @@ can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed
 objects with `storage_uri`, size, checksum, and safe storage metadata persisted
 in its own export history table. This is separate from Harbor artifact storage:
-the web console reads export metadata and download entry points through the
-Synthetic API and never needs runner-local paths or COS credentials.
+the web console reads export metadata and record-level download entry points
+through the Synthetic API, and COS-backed export downloads are proxied by
+Synthetic API using server-side storage configuration. The browser never needs
+runner-local paths or COS credentials.
 
 Synthetic task inventory observability is also Synthetic-owned. `GET
 /synthetic-tasks/summary` summarizes task count, active/completed/failed state,
