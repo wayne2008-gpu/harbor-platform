@@ -1202,3 +1202,10 @@ Planned milestones:
     payloads. The Workbench operation idempotency panel now shows latest
     reservation refs, task/response links, state, error summaries, and update
     times beside the existing aggregate health view.
+61. V4-60: make operation idempotency reservations drillable from Audit.
+    Current status: implemented in `synthetic-data-platform`; `/audit` now keeps
+    Audit events as the default view and adds `/audit?view=operations` for
+    operation reservation triage. The operations view has deep-linkable task,
+    operation, status, search, page-size, and pagination controls, plus a summary
+    table grouped by cancel/retry/artifact-retry. Workbench links now open this
+    focused reservation view.

@@ -165,6 +165,10 @@ operation-level status, and recent reservation records. The record list returns
 short reservation references, task/operation/status, response task links, error
 summaries, and timestamps without exposing idempotency keys, request payloads, or
 Harbor operation parameters.
+The Audit console exposes the same reservation records behind
+`/audit?view=operations` with deep-linkable operation, status, task, search, and
+pagination controls, keeping idempotency debugging under the governance section
+instead of adding Harbor runner internals to primary navigation.
 
 Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
