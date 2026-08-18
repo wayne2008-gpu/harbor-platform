@@ -282,7 +282,10 @@ generation metrics response 增加 `cost_estimate`，按当前配置动态估算
 留给后续业务报表层。V4-79 后，Task Detail 的 `GET
 /synthetic-tasks/{id}/results` 也返回单任务 `generation_metrics`，按当前 Harbor
 job/trial evidence 展示 runtime、model、provider、token usage 和 configured cost
-estimate，用于单次生成任务排查。
+estimate，用于单次生成任务排查。V4-80 后，`generation_cost` 可选配置
+`summary_budget_micros`、`task_budget_micros` 和 `budget_warning_ratio`，
+`cost_estimate` 响应返回 `budget_status`，Workbench 和 Task Detail 可以直接显示
+disabled / not configured / within / near / exceeded 状态。
 
 ### 5. 审计和安全
 

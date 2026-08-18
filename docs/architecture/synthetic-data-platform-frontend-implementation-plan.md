@@ -560,7 +560,7 @@ Playwright
 | Workbench | settings、datasets、synthetic tasks、result datasets、task results |
 | Datasets | list/register/upload/get dataset、关联 tasks/results |
 | Task Builder | list datasets、create synthetic task |
-| Task Detail | get task results、generation cost breakdown、sync、cancel、retry、artifact retry、ingest、publish |
+| Task Detail | get task results、generation cost breakdown、budget status、sync、cancel、retry、artifact retry、ingest、publish |
 | Trial Review | get trial trajectory、artifact download |
 | Results | list/get/download result dataset |
 | Settings | safe settings summary |
@@ -636,7 +636,8 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   runtime/model/provider bucket 和 reported token usage；V4-78 后同一区块展示
   configured cost estimate 和 costed model evidence；V4-79 后 Task Detail 展示
   单任务 generation cost breakdown，包括 runtime/model/provider、trial/token
-  evidence、sample yield 和 configured cost estimate。Settings 展示只读安全配置、
+  evidence、sample yield 和 configured cost estimate；V4-80 后 Workbench 和
+  Task Detail 展示 configured budget status。Settings 展示只读安全配置、
   Local E2E readiness、COS/TKE preflight、Full COS/TKE E2E 命令和 manual
   checkpoints，Playwright 覆盖 375/768/1024/1440/wide 响应式截图和无横向溢出。
 - 前端入口已改为 route-level lazy loading：Workbench、Datasets、Tasks/Trials、
