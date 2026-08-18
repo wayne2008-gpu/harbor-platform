@@ -255,6 +255,8 @@ Flow:
     metrics are not derived from only the current browser page
 31. compute task/result sample quality summaries through repository-level
     contracts and SQL sample-row aggregation, with legacy JSON fallback
+32. expire stale synthetic operation idempotency reservations through a
+    configurable TTL so `in_progress` records cannot block retry forever
 
 Current sample ingestion behavior:
 
@@ -592,3 +594,12 @@ Planned milestones:
     exist, while preserving the legacy JSON snapshot fallback for older task
     and result dataset records. Verification: `uv run ruff check .`,
     `uv run pytest -q`, and `npm --prefix web run verify`.
+15. V4-14: expire stale operation idempotency reservations. Current status:
+    implemented in `synthetic-data-platform`; PR #46 added
+    `operation_idempotency_reservation_ttl_seconds` with a 3600-second default,
+    repository-level stale reservation expiry for InMemory and SQL stores, and
+    cancel/retry/artifact-retry claim-time cleanup. Expired `in_progress`
+    records become `failed`, so clients must use a new idempotency key instead
+    of reusing a key with an unknown side-effect outcome. Verification:
+    `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.

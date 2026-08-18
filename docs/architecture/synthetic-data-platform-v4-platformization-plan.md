@@ -43,9 +43,9 @@
 
 - `GET /synthetic-tasks/{id}/samples` 和 `GET /result-datasets/{id}/samples` 已优先读取
   SQL-backed sample rows，并保留 `samples_json` 兼容 fallback；后续大规模场景还需要
-  进一步补质量规则聚合、索引策略和批量审核能力。
-- Synthetic operation idempotency 已具备并发 reservation 语义；后续还需要补
-  reservation 过期清理、观测指标和用户级审计关联。
+  进一步补索引策略、查询性能验证和批量审核能力。
+- Synthetic operation idempotency 已具备并发 reservation 语义和 TTL 清理；后续还需要补
+  观测指标和用户级审计关联。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
   artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
 - 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。
@@ -334,6 +334,10 @@ V4 增强：
   不再调用 Harbor；完成后重复请求返回首次结果；失败记录为 `failed` 并要求客户端使用新
   idempotency key 重试。兼容实现先把 reservation 状态写入现有
   `metadata_json` 保留键。
+- V4-3 后续硬化已完成：`operation_idempotency_reservation_ttl_seconds` 默认
+  3600 秒，cancel / retry / artifact retry claim 前会把过旧的 `in_progress`
+  reservation 标为 `failed`，避免 stale reservation 永久阻塞，同时要求客户端换新
+  idempotency key 才能重新发起副作用。
 - V4-4 已完成第一版：Reviews 进入一级导航；`GET /reviews/trials` 增加
   `runtime`、`schema`、`quality_flag`、`reviewer` 过滤；queue item 增加
   `runtime` 和派生 `quality_flags`，前端筛选全部写入 URL 并可恢复，quick decision
