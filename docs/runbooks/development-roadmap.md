@@ -664,6 +664,13 @@ Implementation milestones:
     `npm --prefix web run verify`, `docker compose config`,
     `kubectl kustomize deploy/k8s/base`, `bash -n deploy/k8s/scripts/tke-preflight.sh`,
     and `git diff --check`.
+30. M62: surface durable result export delivery in the Result UI. Current
+    status: implemented in `synthetic-data-platform`; Result detail now shows
+    whether export records are delivered by the durable worker queue,
+    in-process background export, or inline API stream, and export history rows
+    expose worker execution metadata such as worker ID and claim count when
+    present. Verification: `npm --prefix web run verify` and
+    `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1016,3 +1023,10 @@ Planned milestones:
     `uv run pytest -q`, `npm --prefix web run verify`,
     `docker compose config`, `kubectl kustomize deploy/k8s/base`,
     `bash -n deploy/k8s/scripts/tke-preflight.sh`, and `git diff --check`.
+48. V4-47: make durable result export delivery visible in the frontend. Current
+    status: implemented in `synthetic-data-platform`; the Result detail export
+    history panel shows the active delivery mode, worker queue readiness,
+    worker polling/stale recovery timing, and per-export execution metadata so
+    operators can tell whether a handoff file is waiting for
+    `synthetic-result-export-worker` or has already been claimed. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
