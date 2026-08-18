@@ -505,6 +505,12 @@ Implementation milestones:
    `api_audit_events` and queryable through `POST /internal/audit-events/query`.
    Remaining security scope: full user/session auth, fine-grained RBAC, and
    end-user audit correlation.
+9. M41: expose safe control-plane settings summary for production readiness.
+   Current status: implemented in `harbor-control-plane`; authenticated
+   `GET /settings` returns database migration readiness, RabbitMQ/RocketMQ
+   dispatch configuration status, artifact storage/COS configured flags, and
+   control-plane auth scope coverage without exposing database URLs, RabbitMQ
+   URLs, COS secrets, bearer tokens, tenant values, or env var names.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
