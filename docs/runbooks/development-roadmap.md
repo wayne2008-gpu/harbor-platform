@@ -546,6 +546,11 @@ Implementation milestones:
     `/operations/idempotency/summary`, so operators can confirm run readiness,
     backend rollups, and idempotency reservation observability from one
     diagnostics panel without exposing idempotency keys or request payloads.
+16. M48: add task sample quality filtering before publish. Current status:
+    implemented in `synthetic-data-platform`; Task detail now uses the task
+    samples summary endpoint and passes search, server-side quality flag, and
+    pagination query parameters through to `/synthetic-tasks/{id}/samples`, so
+    pre-publish sample review matches the result dataset review workflow.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -800,3 +805,7 @@ Planned milestones:
     status: implemented in `synthetic-data-platform`; Workbench readiness
     diagnostics now include the operation idempotency summary request as
     observed evidence alongside readiness and dataset checks.
+34. V4-33: align task sample review with result dataset sample review. Current
+    status: implemented in `synthetic-data-platform`; Task detail now exposes
+    sample quality rules, minimum reward checks, and quality issue filtering on
+    task samples before publishing a result dataset.
