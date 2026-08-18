@@ -267,7 +267,7 @@ GET /generation-metrics/summary
 - recent failures by phase。
 - result acceptance backlog。
 - generation metrics：task/result/sample yield、observed runtime、runtime/model/provider
-  bucket、reported token usage。
+  bucket、reported token usage、configured cost estimate。
 - latest result datasets。
 
 当前第一版实现：app 层调用 repository summary snapshot；SQL repository 使用
@@ -276,7 +276,10 @@ publish candidates，runtime provider rollup 读取精简 task state/runtime 字
 V4-77 后，result publish 会把 source task job config 和 Harbor trial-result usage
 字段沉淀为 result metadata 下的 `generation_metrics`；Workbench summary 和独立
 generation metrics summary 从 durable task/result metadata 聚合运行、模型、provider
-和 token usage。当前不做金额换算，模型价格表和成本分摊仍留给后续业务报表层。
+和 token usage。V4-78 后，Synthetic 配置增加 `generation_cost` 价格表，
+generation metrics response 增加 `cost_estimate`，按当前配置动态估算已匹配模型的
+金额，并把未匹配模型/token 显式返回。平台不内置真实 provider 价格；最终账单对账
+和任务/detail 粒度归因仍留给后续业务报表层。
 
 ### 5. 审计和安全
 

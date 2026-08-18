@@ -173,9 +173,13 @@ same rollup directly. The snapshot summarizes task/result counts, generated
 sample yield, observed terminal-task runtime, runtime/model/provider buckets, and
 reported token usage from durable result metadata. Result publish stores a
 `generation_metrics` metadata snapshot from the source task job config and Harbor
-trial-result usage fields when they are present. This is not monetary billing:
-provider/model price tables and final cost allocation remain a later Synthetic
-business-reporting layer.
+trial-result usage fields when they are present. Synthetic can also compute an
+estimated `cost_estimate` from configured `generation_cost` model prices. No
+provider prices are built into the platform; deployments must provide prices from
+their own billing contract, and unmatched model tokens remain visible instead of
+being silently treated as real zero-cost usage. This is still an estimate layer:
+final account-level billing reconciliation and task/detail-level cost attribution
+remain later Synthetic business-reporting work.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed
