@@ -186,6 +186,9 @@ GET /result-datasets
 GET /result-datasets/summary
 GET /result-datasets/{id}
 GET /result-datasets/{id}/samples/summary
+POST /result-datasets/{id}/exports
+GET /result-datasets/{id}/exports
+GET /result-datasets/{id}/exports/{export_id}
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
@@ -298,6 +301,8 @@ Flow:
 44. stream result dataset JSONL/JSON downloads from paged sample queries so large
     post-training datasets do not require loading the full sample snapshot before
     the response starts
+45. record result dataset export history as first-class API resources so later
+    COS-backed asynchronous exports can reuse a stable storage contract
 
 Current sample ingestion behavior:
 
@@ -581,6 +586,14 @@ Implementation milestones:
     reducing API memory pressure for large published datasets. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+22. M54: add result dataset export history API baseline. Current status:
+    implemented in `synthetic-data-platform`; `synthetic_result_dataset_exports`
+    stores export records, `POST/GET /result-datasets/{id}/exports` and
+    `GET /result-datasets/{id}/exports/{export_id}` expose completed
+    `api_stream` JSONL/JSON exports, and Audit can filter
+    `result_dataset.export.create` events. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -862,5 +875,13 @@ Planned milestones:
     loading the full published sample snapshot for metadata lookup and stream
     JSONL/JSON output from paginated sample reads, keeping the existing export
     contract stable for downstream dataset handoff. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
+40. V4-39: make result dataset exports queryable resources. Current status:
+    implemented in `synthetic-data-platform`; result dataset exports now have
+    persisted IDs, status, format, filename, content type, sample count,
+    storage type, storage URI, metadata, and audit events. The current
+    `api_stream` records point to the existing streaming download endpoint while
+    preserving a storage contract for future COS export objects. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
