@@ -625,11 +625,23 @@ Implementation milestones:
     `npm --prefix web run verify`, and `git diff --check`.
 26. M58: add record-level result export download to COS/TKE smoke acceptance.
     Current status: implemented in the super repo; `synthetic-cos-tke-e2e.sh`
-    now creates a JSONL result dataset export after publish, optionally requires
-    `storage_type = "cos"` through `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS`, follows
-    the returned record `download_url`, and verifies the downloaded JSONL object
-    is non-empty. Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
+    now creates a background JSONL result dataset export after publish, polls
+    the export record until it completes, optionally requires `storage_type =
+    "cos"` through `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS`, follows the returned
+    record `download_url`, and verifies the downloaded JSONL object is
+    non-empty. Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
     and `git diff --check`.
+27. M59: add background result export execution. Current status: implemented in
+    `synthetic-data-platform`; `POST /result-datasets/{id}/exports` accepts
+    `mode = "background"`, creates a `pending` export record, runs COS
+    materialization/upload in a FastAPI background task, updates status through
+    `running` to `completed` or `failed`, and exposes completed record
+    downloads through the existing export download endpoint. Result detail uses
+    background mode automatically when result export storage is configured as
+    COS and polls active export records. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`,
+    `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`, and
+    `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -946,9 +958,21 @@ Planned milestones:
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
 44. V4-43: cover record-specific exports in the local COS/TKE acceptance script.
     Current status: implemented in the super repo; the full smoke script now
-    validates the handoff path from published result dataset to export record,
-    export object storage type, record-level download URL, and non-empty JSONL
-    bytes. `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS` defaults to the publish
-    requirement so production-like runs fail if result exports fall back to
-    `api_stream`. Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
+    validates the handoff path from published result dataset to background
+    export record, completed export status, export object storage type,
+    record-level download URL, and non-empty JSONL bytes.
+    `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS` defaults to the publish requirement
+    so production-like runs fail if result exports fall back to `api_stream`.
+    Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
     and `git diff --check`.
+45. V4-44: make result export creation non-blocking for COS delivery. Current
+    status: implemented in `synthetic-data-platform`; API clients can request
+    `mode = "background"`, export history exposes pending, running, completed,
+    or failed state, COS upload completion records object metadata and download
+    URL, and the Result detail page queues background exports when COS result
+    export storage is configured. This remains an in-process background
+    execution baseline before a future durable export worker. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`,
+    `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`, and
+    `git diff --check`.

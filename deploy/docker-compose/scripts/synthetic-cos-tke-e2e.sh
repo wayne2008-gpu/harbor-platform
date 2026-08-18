@@ -555,12 +555,27 @@ jq -e --arg id "$result_dataset_id" \
 export_json=$(
   post_json \
     "$synthetic_api/result-datasets/$result_dataset_id/exports" \
-    '{"format":"jsonl","metadata":{"source":"synthetic-cos-tke-e2e"}}'
+    '{"format":"jsonl","mode":"background","metadata":{"source":"synthetic-cos-tke-e2e"}}'
 )
 export_id=$(jq -r '.id // empty' <<<"$export_json")
+assert_non_empty "result export id" "$export_id"
+export_deadline=$((SECONDS + metadata_timeout_sec))
+while [ "$SECONDS" -lt "$export_deadline" ]; do
+  export_status=$(jq -r '.status // empty' <<<"$export_json")
+  echo "$(date -Is) result_export_id=$export_id status=$export_status"
+  if [ "$export_status" = "completed" ] || [ "$export_status" = "failed" ]; then
+    break
+  fi
+  sleep "$interval_sec"
+  export_json=$(fetch_json "$synthetic_api/result-datasets/$result_dataset_id/exports/$export_id")
+done
+export_status=$(jq -r '.status // empty' <<<"$export_json")
+if [ "$export_status" != "completed" ]; then
+  echo "Expected result export $export_id to complete, got $export_status" >&2
+  exit 1
+fi
 export_storage_type=$(jq -r '.storage_type // empty' <<<"$export_json")
 export_download_url=$(jq -r '.download_url // empty' <<<"$export_json")
-assert_non_empty "result export id" "$export_id"
 assert_non_empty "result export download_url" "$export_download_url"
 if [ "$require_result_export_cos" -ne 0 ] && [ "$export_storage_type" != "cos" ]; then
   echo "Expected COS result export storage, got $export_storage_type" >&2
