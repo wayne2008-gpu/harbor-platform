@@ -1295,3 +1295,10 @@ Planned milestones:
     needs-review, rejected, and blocked handoff states, then refreshes result
     inventory, acceptance badges, summary buckets, audit data, and Workbench
     readiness after save.
+71. V4-70: surface result acceptance batch audits. Current status:
+    implemented in `synthetic-data-platform`; Workbench now queries recent
+    `result_dataset_review_decision.batch_upsert` audit events, summarizes
+    latest reviewer, decision, affected result dataset count, request ID, and
+    selected result dataset links, then deep-links to Audit with the same action
+    or request ID filter. The Audit action/resource selectors now include result
+    dataset acceptance decision and batch decision event types.
