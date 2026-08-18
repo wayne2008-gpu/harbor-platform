@@ -218,6 +218,10 @@ V4 前端：
   便于先按库存扫描，再进入详情页处理具体审核。
 - Result dataset API 支持 `acceptance_state` 过滤，summary 返回对应
   acceptance bucket 和 reviewed/unreviewed 计数，保证库存页筛选和汇总口径一致。
+- Result dataset API 支持 `handoff_readiness` 过滤，summary 返回 Ready /
+  Needs review / Blocked / Checking bucket。库存级口径基于 durable result 字段：
+  sample_count、export/download readiness 和 saved acceptance decision；source-trial
+  quality 仍在 Result Detail 作为最终交付确认门。
 - Results 支持按当前 URL 筛选范围批量保存 result dataset acceptance decision；
   后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
 - Workbench 读取最近 result dataset batch acceptance audit events，显示影响范围、

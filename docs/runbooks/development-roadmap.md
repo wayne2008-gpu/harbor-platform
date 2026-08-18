@@ -1318,3 +1318,16 @@ Planned milestones:
     saved or result exports complete/fail. Verification: `npm --prefix web run
     typecheck`, `npm --prefix web run test:ui -- --grep "result downloads expose
     recovery paths"`, `npm --prefix web run verify`, and `git diff --check`.
+74. V4-73: filter result inventory by handoff readiness. Current status:
+    implemented in `synthetic-data-platform`; `GET /result-datasets` and
+    `GET /result-datasets/summary` accept `handoff_readiness` filters for ready,
+    needs-review, blocked, and checking queues. The summary response includes
+    handoff readiness counts and buckets, while the Results console exposes a
+    URL-backed handoff selector, inventory badge, summary bucket, and batch
+    acceptance scope that follows the same filter. Inventory-level handoff
+    readiness is derived from result sample count, export/download readiness,
+    and saved acceptance decisions; source-trial quality remains a Result Detail
+    final confirmation gate. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.

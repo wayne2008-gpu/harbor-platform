@@ -148,7 +148,9 @@ Result dataset inventory observability is Synthetic-owned. `GET
 task/dataset coverage, sample-count buckets, source dataset buckets, and recent
 published results over the same filters as `GET /result-datasets`, so the
 Results console does not derive list-level readiness from a single paginated
-page.
+page. The same result inventory APIs also expose `handoff_readiness`, combining
+sample presence, export/download readiness, and saved acceptance decisions into
+Ready / Needs review / Blocked / Checking queues for batch result triage.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed
