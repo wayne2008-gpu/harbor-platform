@@ -133,6 +133,9 @@ counts over the same filtered inventory.
 to explicit result dataset IDs or to a bounded Results filter selection guarded
 by `expected_total`, then records a batch audit event with the selected result
 dataset IDs, source task IDs, sample counts, reviewer, labels, and request ID.
+Result dataset detail shows a post-training handoff summary that combines human
+acceptance, export/download readiness, automatic delivery checks, and source
+trial quality into one operator-facing decision before downstream training use.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external

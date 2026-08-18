@@ -224,6 +224,9 @@ V4 前端：
   reviewer、decision 和 request ID，并能跳转到 Audit 精确过滤。
 - Workbench 读取 result dataset summary，把未保存、待复核、阻断/拒绝的 result
   acceptance backlog 提升为首页运营入口，并跳转到对应 Results 筛选。
+- Result Detail 新增 post-training handoff summary，把 human acceptance、
+  export download readiness、automated delivery checks 和 source-trial quality
+  汇总成单个 Ready/Needs review/Blocked/Checking 结论。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 
