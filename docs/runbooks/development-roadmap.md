@@ -524,6 +524,11 @@ Implementation milestones:
     when Harbor API is configured and adds a `Harbor control-plane` run
     readiness gate for database migration, dispatch, artifact storage/COS, and
     control-plane auth.
+12. M44: include remote Harbor readiness in local COS/TKE E2E acceptance.
+    Current status: implemented in `synthetic-data-platform`; Settings Local
+    E2E validation now blocks the full COS/TKE run until harbor-api `/settings`
+    confirms remote database migration, dispatch, artifact storage/COS, and
+    control-plane auth readiness.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -760,3 +765,8 @@ Planned milestones:
     `GET /settings/harbor-api` and adds a first-screen `Harbor control-plane`
     run readiness gate, marking request failures or missing remote DB/dispatch/
     artifact storage/auth gates as actionable blockers.
+30. V4-29: gate local COS/TKE E2E on Harbor control-plane readiness. Current
+    status: implemented in `synthetic-data-platform`; Settings Local E2E
+    validation includes the remote `Harbor control-plane` gate and keeps the
+    full-run acceptance blocked until harbor-api settings are reachable and
+    required DB/dispatch/artifact storage/auth gates are ready.
