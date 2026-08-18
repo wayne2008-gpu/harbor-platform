@@ -1543,3 +1543,12 @@ Planned milestones:
     `/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`, runtime
     `tke`, task `go-http-tracing`, `HARBOR_E2E_REQUIRE_PUBLISH=1`, and
     `HARBOR_E2E_FRONTEND_LIVE_CHECK=1`.
+92. V4-91: close the V4 verification record. Current status: implemented in
+    the super repo; the V4 platformization plan now reflects the current
+    verification baseline: Synthetic API `uv run ruff check .` passes,
+    Synthetic API `uv run pytest -q` reports `150 passed`, frontend
+    `npm run verify` reports `25 passed`, and the 2026-08-19 local COS/TKE
+    smoke proves dataset upload, TKE execution, COS artifacts, OpenAI messages
+    trajectory, sample ingest, result publish, full COS result export,
+    approved-only direct download, approved-only COS result export, and live
+    frontend traversal.

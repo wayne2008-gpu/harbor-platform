@@ -422,16 +422,6 @@ V4 增强：
   recent tasks、latest results、publish candidates，并新增 SQL repository 回归测试；
   InMemory repository 保持同等语义。
 
-已验证：
-
-```text
-cd synthetic-data-platform
-uv run ruff check .
-uv run pytest -q
-```
-
-结果：`85 passed`。
-
 Synthetic API：
 
 ```bash
@@ -440,6 +430,8 @@ uv run ruff check .
 uv run pytest -q
 ```
 
+结果：`ruff` 通过，`150 passed`。
+
 Frontend：
 
 ```bash
@@ -447,7 +439,7 @@ cd synthetic-data-platform/web
 npm run verify
 ```
 
-结果：`22 passed`。
+结果：`25 passed`。
 
 本地 COS + TKE：
 
@@ -456,21 +448,31 @@ cd deploy/docker-compose
 HARBOR_E2E_DATASET_DIR=/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags \
 HARBOR_E2E_RUNTIME=tke \
 HARBOR_E2E_TASK_NAME=go-http-tracing \
-HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
+HARBOR_E2E_REQUIRE_TRAJECTORY=1 \
+HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY=1 \
 HARBOR_E2E_REQUIRE_PUBLISH=1 \
+HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
 HARBOR_E2E_TIMEOUT_SEC=1800 \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
+结果：2026-08-19 本地通过。该 smoke 覆盖 dataset 上传 COS、TKE
+agent-runtime 执行、COS artifact、OpenAI messages trajectory、samples ingest、
+result dataset publish、full COS result export、approved-only direct download、
+approved-only COS result export 和前端 live test。
+
 ## 完成判定
 
-V4 完成时必须能证明：
+当前 V4 完成判定已满足：
 
-- 浏览器主链路端到端可用。
+- 浏览器主链路端到端可用，并由 `npm run verify` 和 live COS/TKE Playwright
+  覆盖。
 - 样本查询后端分页是真分页，不是前端或 API 层全量加载后切片。
-- 同 key 并发 retry 不会创建重复 synthetic task。
+- 同 key 并发 retry 不会创建重复 synthetic task，reservation TTL 和并发
+  409/first-result replay 已覆盖。
 - Review queue 是一级生产入口，审核状态可保存、可搜索、可深链。
-- Workbench 不依赖全量 task/result 列表才能展示关键摘要。
+- Workbench 不依赖全量 task/result 列表才能展示关键摘要，已切到 repository
+  summary snapshot。
 - 关键写动作和下载动作有 request ID 和 audit evidence。
 - result dataset 交付支持 approved-only 样本口径，并由本地 COS + TKE
   E2E gate 验证 direct download、COS export record 和 `sample_selection`。
