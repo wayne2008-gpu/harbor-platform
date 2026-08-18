@@ -184,6 +184,7 @@ GET /result-datasets/{id}/download?format=json
 GET /settings
 GET /runtime-capabilities
 GET /audit-events
+GET /operations/idempotency/summary
 ```
 
 Synthetic API governance baseline:
@@ -259,6 +260,8 @@ Flow:
     configurable TTL so `in_progress` records cannot block retry forever
 33. query sample quality flags through structured `sample_id + flag` rows and
     indexes instead of scanning `quality_flags_text`
+34. observe synthetic operation idempotency status through aggregate summary
+    counts by operation, stale reservation, and expired reservation state
 
 Current sample ingestion behavior:
 
@@ -614,3 +617,11 @@ Planned milestones:
     backfill, index creation, and SQLite query-plan use of the `flag + sample_id`
     covering index. Verification: `uv run ruff check .`, `uv run pytest -q`,
     and `npm --prefix web run verify`.
+17. V4-16: expose operation idempotency observability summary. Current status:
+    implemented in `synthetic-data-platform`; PR #48 added
+    `GET /operations/idempotency/summary`, repository-level aggregate snapshots,
+    operation/status buckets, TTL-derived `stale_in_progress` counts, and
+    expired reservation counts. The response is aggregate-only and does not
+    expose idempotency keys, request payloads, or Harbor execution parameters.
+    Verification: `uv run ruff check .`, targeted API/SQL repository tests,
+    `uv run pytest -q`, and `npm --prefix web run verify`.
