@@ -204,6 +204,9 @@ V4 前端：
 - 任务详情页的 trajectory review queue 优先读取 task-scoped
   `/reviews/trials` service evidence；接口加载中、返回空或失败时保留本地
   trial/artifact fallback。
+- Result Detail 复用 task-scoped `/reviews/summary` 汇总 source trial
+  review coverage、guidance、OpenAI message indexing 和 priority review links，
+  把上游轨迹审核状态纳入 result dataset handoff 判断。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 
