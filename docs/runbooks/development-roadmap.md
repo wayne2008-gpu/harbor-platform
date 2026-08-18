@@ -602,6 +602,15 @@ Implementation milestones:
     history states, render format/status/file/sample/storage columns, and
     trigger downloads from history rows. Verification:
     `npm --prefix web run verify` and `git diff --check`.
+24. M56: upload result dataset exports to object storage. Current status:
+    implemented in `synthetic-data-platform`; `result_export_storage` can use
+    `api_stream` or COS, `POST /result-datasets/{id}/exports` now writes JSONL
+    or JSON export files, uploads them when COS is configured, and persists
+    `storage_type`, `storage_uri`, `size_bytes`, `checksum_sha256`, and safe
+    storage metadata in export history. Settings exposes the result export
+    storage summary without leaking COS secrets. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -899,3 +908,12 @@ Planned milestones:
     feedback, table history, and history-row download actions. Playwright covers
     the empty state, create flow, rendered record, and download entry point.
     Verification: `npm --prefix web run verify` and `git diff --check`.
+42. V4-41: back result dataset export records with COS objects. Current status:
+    implemented in `synthetic-data-platform`; the export API now materializes
+    JSONL/JSON content from paged sample reads, uploads the generated file to
+    COS under a result-dataset/export namespace when configured, records object
+    URI, storage key, size, checksum, and ETag metadata, and keeps `api_stream`
+    as the zero-config fallback. Settings shows result export storage readiness
+    and COS configured flags without exposing secret values. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
