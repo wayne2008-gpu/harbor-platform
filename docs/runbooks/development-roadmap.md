@@ -534,6 +534,12 @@ Implementation milestones:
     Workbench map non-ready platform, Harbor, COS, runner/TKE, and dataset gates
     to next checks, safe config reference names, page actions, and runbook paths
     without exposing secret values.
+14. M46: surface observed readiness query evidence for operators. Current
+    status: implemented in `synthetic-data-platform`; Settings and Workbench
+    diagnostics now show the browser-observed request status, source endpoint,
+    and last checked time for readiness inputs such as synthetic settings,
+    Harbor settings, runtime capabilities, Workbench summary, and dataset list
+    fetches, without exposing secret values.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -779,3 +785,8 @@ Planned milestones:
     implemented in `synthetic-data-platform`; a shared front-end diagnostics
     panel turns non-ready gates into next checks, config refs, page actions, and
     runbook paths while staying secret-safe.
+32. V4-31: add observed readiness evidence to diagnostics. Current status:
+    implemented in `synthetic-data-platform`; the shared diagnostics panel can
+    render TanStack Query evidence so operators can see whether the key
+    readiness fetches passed, failed, are still checking, or have not run in the
+    current browser session.
