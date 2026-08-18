@@ -192,6 +192,8 @@ expires_at nullable
 GET /reviews/trials?state=&task_id=&runtime=&schema=&quality_flag=&reviewer=&search=&limit=&offset=
 POST /reviews/trials/batch-decision
 GET /reviews/summary
+GET /result-datasets/{id}/review-decision
+PUT /result-datasets/{id}/review-decision
 ```
 
 V4 前端：
@@ -207,6 +209,9 @@ V4 前端：
 - Result Detail 复用 task-scoped `/reviews/summary` 汇总 source trial
   review coverage、guidance、OpenAI message indexing 和 priority review links，
   把上游轨迹审核状态纳入 result dataset handoff 判断。
+- Result Detail 支持保存 result dataset 级别的人工 acceptance decision，
+  将 `approved` / `needs_review` / `rejected` / `blocked` 与 reviewer、
+  rationale、labels 和 metadata 持久化，并写入 audit event。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 
