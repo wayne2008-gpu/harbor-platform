@@ -700,6 +700,14 @@ Implementation milestones:
     blocks, rejections, and review-needed trials before applying batch
     decisions. Verification: `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+35. M67: summarize review guidance distribution. Current status: implemented
+    in `synthetic-data-platform`; `GET /reviews/summary` now returns
+    `guidance_decision_counts` and `guidance_source_counts` for the current
+    filtered review queue, and the Reviews frontend shows those rollups in the
+    summary strip so operators can see saved/current/suggested guidance mix
+    before narrowing or batch-reviewing trials. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1085,3 +1093,10 @@ Planned milestones:
     filter labels for saved/current/suggested guidance. Verification:
     `uv run ruff check .`, `uv run pytest -q`, `npm --prefix web run verify`,
     and `git diff --check`.
+53. V4-52: expose guidance rollups in the review summary. Current status:
+    implemented in `synthetic-data-platform`; review summaries now return
+    filtered guidance decision/source buckets, and `/reviews/trials` renders the
+    buckets beside state/runtime/schema/quality counts so reviewers can judge
+    queue composition without deriving counts from the current page. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
