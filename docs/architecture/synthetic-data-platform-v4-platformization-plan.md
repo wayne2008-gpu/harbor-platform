@@ -190,11 +190,6 @@ expires_at nullable
 
 ```text
 GET /reviews/trials?state=&task_id=&runtime=&schema=&quality_flag=&reviewer=&search=&limit=&offset=
-```
-
-后续建议增强：
-
-```text
 POST /reviews/trials/batch-decision
 GET /reviews/summary
 ```
@@ -203,6 +198,9 @@ V4 前端：
 
 - `Reviews` 一级导航已完成。
 - 队列支持 state、task、runtime、schema readiness、quality flag、reviewer 过滤。
+- 队列项带出已索引 OpenAI message summary；error signal、empty content、
+  missing tool call id、unknown role 会进入 trial quality flag 和 Workbench
+  triage 计数。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 

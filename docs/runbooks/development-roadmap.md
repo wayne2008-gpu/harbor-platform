@@ -262,11 +262,14 @@ Flow:
 27. consume structured OpenAI message rows in the Trial Detail frontend with
     explicit index sync, server-side role/search pagination, and URL-restorable
     controls
-28. apply one review decision to multiple current-page review queue trials from
+28. surface indexed OpenAI message summaries in the global review queue and
+    Workbench triage, including error signals, empty content, missing tool call
+    IDs, and unknown roles
+29. apply one review decision to multiple current-page review queue trials from
     the Reviews console and persist the batch operation as a single audit event
-29. apply one review decision to all trial reviews matching the current Reviews
+30. apply one review decision to all trial reviews matching the current Reviews
     filters, with expected-count protection before persistence
-30. read task/result sample quality summaries from backend endpoints so quality
+31. read task/result sample quality summaries from backend endpoints so quality
     metrics are not derived from only the current browser page
 31. compute task/result sample quality summaries through repository-level
     contracts and SQL sample-row aggregation, with legacy JSON fallback
@@ -1237,3 +1240,12 @@ Planned milestones:
     `uv run pytest -q`,
     `npm --prefix web run test:ui -- -g "OpenAI message review flags|m11 core path|task pages expose filtering"`,
     `npm --prefix web run verify`, and `git diff --check`.
+64. V4-63: surface indexed OpenAI message summaries in review triage. Current
+    status: implemented in `synthetic-data-platform`; `GET /reviews/trials`
+    queue items now include `openai_message_summary` when OpenAI messages have
+    been synced into the Synthetic-owned index, and `GET /reviews/summary`
+    aggregates indexed message count, anomaly trial count, error signals, empty
+    content, missing tool call IDs, and unknown roles. Message anomalies are also
+    promoted to `quality_flags`, so review filters and suggested guidance can
+    route synced OpenAI message issues to manual review. Workbench now shows
+    indexed message coverage and issue counts in the global trial review queue.
