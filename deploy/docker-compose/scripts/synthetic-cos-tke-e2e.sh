@@ -102,7 +102,10 @@ append_request_headers \
 archive_path=""
 jsonl_path=""
 json_path=""
+approved_jsonl_path=""
+approved_json_path=""
 export_download_path=""
+approved_export_download_path=""
 artifact_download_path=""
 
 cleanup() {
@@ -115,8 +118,17 @@ cleanup() {
   if [ -n "$json_path" ]; then
     rm -f "$json_path"
   fi
+  if [ -n "$approved_jsonl_path" ]; then
+    rm -f "$approved_jsonl_path"
+  fi
+  if [ -n "$approved_json_path" ]; then
+    rm -f "$approved_json_path"
+  fi
   if [ -n "$export_download_path" ]; then
     rm -f "$export_download_path"
+  fi
+  if [ -n "$approved_export_download_path" ]; then
+    rm -f "$approved_export_download_path"
   fi
   if [ -n "$artifact_download_path" ]; then
     rm -f "$artifact_download_path"
@@ -185,6 +197,44 @@ assert_count_at_least() {
     echo "Expected $label >= $minimum, got $count" >&2
     exit 1
   fi
+}
+
+assert_count_equals() {
+  local label=$1
+  local count=$2
+  local expected=$3
+  if [ "$count" -ne "$expected" ]; then
+    echo "Expected $label == $expected, got $count" >&2
+    exit 1
+  fi
+}
+
+jsonl_record_count() {
+  jq -R -s 'split("\n") | map(select(length > 0)) | length' "$1"
+}
+
+wait_for_result_export_completion() {
+  local result_dataset_id=$1
+  local export_id=$2
+  local current_json=$3
+  local export_deadline export_status
+
+  export_deadline=$((SECONDS + metadata_timeout_sec))
+  while [ "$SECONDS" -lt "$export_deadline" ]; do
+    export_status=$(jq -r '.status // empty' <<<"$current_json")
+    echo "$(date -Is) result_export_id=$export_id status=$export_status" >&2
+    if [ "$export_status" = "completed" ] || [ "$export_status" = "failed" ]; then
+      break
+    fi
+    sleep "$interval_sec"
+    current_json=$(fetch_json "$synthetic_api/result-datasets/$result_dataset_id/exports/$export_id")
+  done
+  export_status=$(jq -r '.status // empty' <<<"$current_json")
+  if [ "$export_status" != "completed" ]; then
+    echo "Expected result export $export_id to complete, got $export_status" >&2
+    exit 1
+  fi
+  printf '%s\n' "$current_json"
 }
 
 wait_for_runners() {
@@ -542,7 +592,7 @@ assert_count_at_least "result dataset sample count" "$sample_count" 1
 jsonl_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result.XXXXXX.jsonl")
 curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=jsonl" \
   -o "$jsonl_path"
-jsonl_lines=$(wc -l <"$jsonl_path" | tr -d ' ')
+jsonl_lines=$(jsonl_record_count "$jsonl_path")
 assert_count_at_least "JSONL line count" "$jsonl_lines" 1
 
 json_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result.XXXXXX.json")
@@ -559,34 +609,170 @@ export_json=$(
 )
 export_id=$(jq -r '.id // empty' <<<"$export_json")
 assert_non_empty "result export id" "$export_id"
-export_deadline=$((SECONDS + metadata_timeout_sec))
-while [ "$SECONDS" -lt "$export_deadline" ]; do
-  export_status=$(jq -r '.status // empty' <<<"$export_json")
-  echo "$(date -Is) result_export_id=$export_id status=$export_status"
-  if [ "$export_status" = "completed" ] || [ "$export_status" = "failed" ]; then
-    break
-  fi
-  sleep "$interval_sec"
-  export_json=$(fetch_json "$synthetic_api/result-datasets/$result_dataset_id/exports/$export_id")
-done
-export_status=$(jq -r '.status // empty' <<<"$export_json")
-if [ "$export_status" != "completed" ]; then
-  echo "Expected result export $export_id to complete, got $export_status" >&2
-  exit 1
-fi
+export_json=$(wait_for_result_export_completion "$result_dataset_id" "$export_id" "$export_json")
 export_storage_type=$(jq -r '.storage_type // empty' <<<"$export_json")
+export_storage_uri=$(jq -r '.storage_uri // empty' <<<"$export_json")
+export_sample_count=$(jq -r '.sample_count // 0' <<<"$export_json")
+export_source_count=$(jq -r '.metadata.sample_selection.source_sample_count // -1' <<<"$export_json")
+export_matching_count=$(jq -r '.metadata.sample_selection.matching_sample_count // -1' <<<"$export_json")
+export_selection_mode=$(jq -r '.metadata.sample_selection.mode // empty' <<<"$export_json")
 export_download_url=$(jq -r '.download_url // empty' <<<"$export_json")
 assert_non_empty "result export download_url" "$export_download_url"
+assert_count_equals "result export sample count" "$export_sample_count" "$sample_count"
+assert_count_equals "result export source sample count" "$export_source_count" "$sample_count"
+assert_count_equals "result export matching sample count" "$export_matching_count" "$sample_count"
+if [ "$export_selection_mode" != "all" ]; then
+  echo "Expected full result export sample_selection.mode=all, got $export_selection_mode" >&2
+  exit 1
+fi
 if [ "$require_result_export_cos" -ne 0 ] && [ "$export_storage_type" != "cos" ]; then
   echo "Expected COS result export storage, got $export_storage_type" >&2
+  exit 1
+fi
+if [ "$require_result_export_cos" -ne 0 ] && [[ "$export_storage_uri" != cos://* ]]; then
+  echo "Expected COS result export storage_uri, got $export_storage_uri" >&2
   exit 1
 fi
 export_download_endpoint=$(synthetic_api_url_from_download_url "$export_download_url")
 export_download_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result-export.XXXXXX.jsonl")
 curl_url "$export_download_endpoint" -o "$export_download_path"
-export_jsonl_lines=$(wc -l <"$export_download_path" | tr -d ' ')
-assert_count_at_least "result export JSONL line count" "$export_jsonl_lines" 1
-echo "Verified result export record download: $export_id ($export_storage_type)."
+export_jsonl_lines=$(jsonl_record_count "$export_download_path")
+assert_count_equals "result export JSONL line count" "$export_jsonl_lines" "$sample_count"
+echo "Verified full result export record download: $export_id ($export_storage_type)."
+
+if [ "$sample_count" -gt 5000 ]; then
+  echo "Approved-only E2E sample review supports up to 5000 samples, got $sample_count" >&2
+  exit 1
+fi
+
+review_payload=$(
+  jq -n \
+    --argjson expected_total "$sample_count" \
+    '{
+      filters: {review_decision: "unreviewed"},
+      expected_total: $expected_total,
+      decision: "approved",
+      reviewer: "synthetic-cos-tke-e2e",
+      rationale: "Approved for scoped COS/TKE E2E export.",
+      labels: ["e2e-approved"],
+      metadata: {source: "synthetic-cos-tke-e2e", scope: "approved_samples"}
+    }'
+)
+sample_review_json=$(
+  post_json \
+    "$synthetic_api/result-datasets/$result_dataset_id/samples/review-decisions/batch" \
+    "$review_payload"
+)
+review_matching=$(jq -r '.matching // 0' <<<"$sample_review_json")
+review_updated=$(jq -r '.updated_count // 0' <<<"$sample_review_json")
+assert_count_equals "approved sample review matching count" "$review_matching" "$sample_count"
+assert_count_equals "approved sample review updated count" "$review_updated" "$sample_count"
+
+approved_summary_json=$(
+  fetch_json "$synthetic_api/result-datasets/$result_dataset_id/samples/summary?review_decision=approved"
+)
+approved_count=$(jq -r '.matching // 0' <<<"$approved_summary_json")
+approved_total=$(jq -r '.total // 0' <<<"$approved_summary_json")
+assert_count_equals "approved sample count" "$approved_count" "$sample_count"
+assert_count_equals "approved sample total count" "$approved_total" "$sample_count"
+
+unreviewed_summary_json=$(
+  fetch_json "$synthetic_api/result-datasets/$result_dataset_id/samples/summary?review_decision=unreviewed"
+)
+unreviewed_count=$(jq -r '.matching // 0' <<<"$unreviewed_summary_json")
+assert_count_equals "unreviewed sample count after approval" "$unreviewed_count" 0
+echo "Approved result dataset samples for scoped export: $approved_count/$sample_count."
+
+approved_jsonl_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-approved-result.XXXXXX.jsonl")
+curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=jsonl&review_decision=approved" \
+  -o "$approved_jsonl_path"
+approved_jsonl_lines=$(jsonl_record_count "$approved_jsonl_path")
+assert_count_equals "approved JSONL line count" "$approved_jsonl_lines" "$approved_count"
+
+approved_json_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-approved-result.XXXXXX.json")
+curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=json&review_decision=approved" \
+  -o "$approved_json_path"
+jq -e \
+  --arg id "$result_dataset_id" \
+  --argjson approved "$approved_count" \
+  --argjson source "$sample_count" \
+  '.id == $id
+    and .sample_count == $approved
+    and .source_sample_count == $source
+    and .sample_selection.mode == "filters"
+    and .sample_selection.filters.review_decision == "approved"
+    and (.samples | length) == $approved' \
+  "$approved_json_path" >/dev/null
+echo "Verified approved-only direct result downloads."
+
+approved_export_payload=$(
+  jq -n \
+    '{
+      format: "jsonl",
+      mode: "background",
+      metadata: {source: "synthetic-cos-tke-e2e", scope: "approved_samples"},
+      filters: {review_decision: "approved"}
+    }'
+)
+approved_export_json=$(
+  post_json \
+    "$synthetic_api/result-datasets/$result_dataset_id/exports" \
+    "$approved_export_payload"
+)
+approved_export_id=$(jq -r '.id // empty' <<<"$approved_export_json")
+assert_non_empty "approved result export id" "$approved_export_id"
+approved_export_json=$(
+  wait_for_result_export_completion \
+    "$result_dataset_id" \
+    "$approved_export_id" \
+    "$approved_export_json"
+)
+approved_export_storage_type=$(jq -r '.storage_type // empty' <<<"$approved_export_json")
+approved_export_storage_uri=$(jq -r '.storage_uri // empty' <<<"$approved_export_json")
+approved_export_sample_count=$(jq -r '.sample_count // 0' <<<"$approved_export_json")
+approved_export_source_count=$(
+  jq -r '.metadata.sample_selection.source_sample_count // -1' <<<"$approved_export_json"
+)
+approved_export_matching_count=$(
+  jq -r '.metadata.sample_selection.matching_sample_count // -1' <<<"$approved_export_json"
+)
+approved_export_filter=$(
+  jq -r '.metadata.sample_selection.filters.review_decision // empty' <<<"$approved_export_json"
+)
+approved_export_filename=$(jq -r '.filename // empty' <<<"$approved_export_json")
+approved_export_download_url=$(jq -r '.download_url // empty' <<<"$approved_export_json")
+assert_non_empty "approved result export download_url" "$approved_export_download_url"
+assert_count_equals "approved result export sample count" "$approved_export_sample_count" "$approved_count"
+assert_count_equals "approved result export source sample count" "$approved_export_source_count" "$sample_count"
+assert_count_equals "approved result export matching sample count" "$approved_export_matching_count" "$approved_count"
+if [ "$approved_export_filter" != "approved" ]; then
+  echo "Expected approved export filter review_decision=approved, got $approved_export_filter" >&2
+  exit 1
+fi
+if [[ "$approved_export_filename" != *-approved.jsonl ]]; then
+  echo "Expected approved export filename to end with -approved.jsonl, got $approved_export_filename" >&2
+  exit 1
+fi
+if [ "$require_result_export_cos" -ne 0 ] && [ "$approved_export_storage_type" != "cos" ]; then
+  echo "Expected approved COS result export storage, got $approved_export_storage_type" >&2
+  exit 1
+fi
+if [ "$require_result_export_cos" -ne 0 ] && [[ "$approved_export_storage_uri" != cos://* ]]; then
+  echo "Expected approved COS result export storage_uri, got $approved_export_storage_uri" >&2
+  exit 1
+fi
+approved_export_download_endpoint=$(
+  synthetic_api_url_from_download_url "$approved_export_download_url"
+)
+approved_export_download_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-approved-result-export.XXXXXX.jsonl")
+curl_url "$approved_export_download_endpoint" -o "$approved_export_download_path"
+approved_export_jsonl_lines=$(jsonl_record_count "$approved_export_download_path")
+assert_count_equals \
+  "approved result export JSONL line count" \
+  "$approved_export_jsonl_lines" \
+  "$approved_count"
+echo \
+  "Verified approved-only result export record download: $approved_export_id ($approved_export_storage_type)."
 
 run_frontend_live_check "$dataset_id" "$task_id" "$trial_id" "$result_dataset_id"
 
