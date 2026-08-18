@@ -136,6 +136,11 @@ dataset IDs, source task IDs, sample counts, reviewer, labels, and request ID.
 Result dataset detail shows a post-training handoff summary that combines human
 acceptance, export/download readiness, automatic delivery checks, and source
 trial quality into one operator-facing decision before downstream training use.
+The Results inventory can also batch-query source-trial quality for the visible
+result datasets through the Synthetic API and render a compact badge linking to
+the source-trial section in Result Detail. This inventory signal is page-scoped
+and reuses existing trial review evidence; full inventory filtering or summary
+by source-trial quality still requires materialized SQL-backed review evidence.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external
@@ -151,6 +156,9 @@ Results console does not derive list-level readiness from a single paginated
 page. The same result inventory APIs also expose `handoff_readiness`, combining
 sample presence, export/download readiness, and saved acceptance decisions into
 Ready / Needs review / Blocked / Checking queues for batch result triage.
+Source-trial quality is visible on current Results rows through a separate
+batch query, but it is not yet part of the global `GET /result-datasets` or
+`GET /result-datasets/summary` filter surface.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed
