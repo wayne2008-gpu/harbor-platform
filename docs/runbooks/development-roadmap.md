@@ -684,6 +684,13 @@ Implementation milestones:
     message readiness, artifact count, and reward signals, and passes the
     suggestion labels plus decision into quick review metadata. Verification:
     `npm --prefix web run verify` and `git diff --check`.
+33. M65: promote trial review decision guidance into the API contract. Current
+    status: implemented in `synthetic-data-platform`; `GET /reviews/trials` and
+    `/reviews/summary.priority_items` now include `decision_guidance` with
+    saved/current/suggested source, decision, title, detail, labels, and tone.
+    The Reviews frontend prefers the service field while keeping the previous
+    local fallback for older responses. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1056,3 +1063,9 @@ Planned milestones:
     unreviewed suggestions, explains the strongest queue evidence, and preloads
     quick-review labels/metadata from the same guidance signal. Verification:
     `npm --prefix web run verify` and `git diff --check`.
+51. V4-50: move review guidance from frontend-only heuristics into the service
+    contract. Current status: implemented in `synthetic-data-platform`; trial
+    review queue responses now carry `decision_guidance`, summary priority items
+    reuse the same contract, and the UI reads service guidance first with a
+    compatibility fallback. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
