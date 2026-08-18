@@ -511,6 +511,13 @@ Implementation milestones:
    dispatch configuration status, artifact storage/COS configured flags, and
    control-plane auth scope coverage without exposing database URLs, RabbitMQ
    URLs, COS secrets, bearer tokens, tenant values, or env var names.
+10. M42: surface Harbor control-plane readiness in the synthetic console.
+    Current status: implemented in `synthetic-data-platform`; synthetic exposes
+    `GET /settings/harbor-api` as a safe proxy to harbor-api `GET /settings`,
+    and Settings renders database migration, dispatch backend, artifact
+    storage/COS, and control-plane auth readiness without exposing database
+    URLs, RabbitMQ URLs, COS secrets, bearer tokens, tenant values, or env var
+    names.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -737,3 +744,8 @@ Planned milestones:
     header, while Settings and Workbench show whether synthetic-data-platform
     calls to `harbor-api` are anonymous, bearer-authenticated, or tenant-scoped
     without exposing token values, tenant values, or env var names.
+28. V4-27: expose Harbor control-plane readiness in Settings. Current status:
+    implemented in `synthetic-data-platform`; `GET /settings/harbor-api`
+    proxies the harbor-api safe settings summary, and Settings shows remote
+    database migration, RabbitMQ/RocketMQ dispatch, artifact storage/COS, and
+    control-plane auth gates without duplicating or leaking low-level secrets.
