@@ -32,7 +32,8 @@
 - Synthetic task 创建，支持 dataset `input_datasets` 透传到 Harbor。
 - TKE/AGS/Docker runtime capability 展示和 task builder 选择。
 - Task detail 的 execution stage、cancel、retry、artifact retry、ingest、publish。
-- Trial trajectory 的 ATIF/default、OpenAI messages schema、人工审核结论保存。
+- Trial trajectory 的 ATIF/default、OpenAI messages schema、结构化消息 summary、
+  人工审核结论保存。
 - 全局 trial review queue，已支持 state、task、runtime、schema、quality flag、
   reviewer、search 和 pagination。
 - Result dataset 发布、samples 搜索/分页、JSONL/JSON 下载、source trial 回跳。
@@ -49,6 +50,10 @@
   Workbench 已展示最近 reservation 明细，Audit 已提供可筛选下钻视图；summary API
   已支持 task/operation/status/search 过滤，使 Audit 下钻视图的汇总指标和明细列表
   对齐，且不暴露原始 idempotency key 或请求 payload。
+- OpenAI messages trajectory 已具备结构化行查询和 aggregate-only summary API；
+  Trial Detail 的 Messages tab 优先使用后端 summary 展示全量匹配消息、role bucket、
+  tool-call/tool-response、空内容、缺 tool_call_id 和 error-signal 指标，避免用当前页
+  数据低估整条轨迹。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
   artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
 - 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。

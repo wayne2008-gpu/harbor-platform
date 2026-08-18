@@ -106,7 +106,11 @@ OpenAI message trajectory review has a Synthetic-owned structured index.
 Harbor `schema=openai_messages` trajectory artifact, normalizes messages into
 `synthetic_trajectory_messages`, and replaces the task/trial/schema rows
 idempotently. `GET /synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages`
-queries those rows by schema, role, search text, limit, and offset.
+queries those rows by schema, role, search text, limit, and offset. `GET
+/synthetic-tasks/{id}/trials/{trial_id}/trajectory/messages/summary` returns
+aggregate-only counts for the same schema/role/search surface, including role
+buckets, tool-call volume, tool-response volume, missing tool IDs, empty content,
+unknown roles, and error-signal rows without returning message content.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external
