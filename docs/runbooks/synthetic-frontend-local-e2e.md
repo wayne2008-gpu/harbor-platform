@@ -22,6 +22,8 @@ Browser :5173
 - 当 agent 产出 trajectory 时，查看 Trajectory 和 OpenAI messages。
 - 执行 samples ingest。
 - 当样本源存在时 publish result dataset，并下载 JSONL / JSON。
+- 验证 full result export 和 approved-only result export 都可上传 COS 并下载。
+- 前端 live test 会同步 OpenAI message index，再检查 indexed message review UI。
 
 ## 代码和配置目录
 
@@ -361,6 +363,32 @@ Playwright live test。
 - artifact download、sample ingest、result publish、JSONL / JSON download 均通过。
 - 脚本内自动运行 `npm run test:live`，Playwright `1 passed`。
 - result dataset `b98b7d1b248d470ba750bf9181460e5b` 可在前端 Result Detail 打开。
+
+2026-08-19 V4-90 smoke 已使用
+`/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`、runtime `tke`、
+task `go-http-tracing` 再次跑通完整脚本，并新增 approved-only handoff gate：
+
+- dataset `f745443ff8ce4983bc299fe60f3b16f5` 上传到 COS。
+- synthetic task `60b1e61f069b468688dc0ec6e1d4d397` 成功并进入 result publish。
+- Harbor job `a70160e9a0ac434c94c25bd24c9a670f` 进入 `succeeded`。
+- 1 个 trial，155 个 COS artifacts，2 个 trajectory artifacts，1 个 OpenAI
+  messages trajectory。
+- full result export `440fe4ed383d40d88a2b1d4659028941` 为 COS-backed，并通过
+  record-level download。
+- result dataset samples 被批量标记为 `approved`，approved count 为 `1/1`。
+- approved-only direct JSONL / JSON download 均按 `review_decision=approved`
+  返回 1 条样本。
+- approved-only result export `2898e3687dfa415da91020d138be3397` 为
+  COS-backed，`sample_selection.filters.review_decision = approved`，并通过
+  record-level download。
+- 脚本内自动运行 `npm run test:live`，Playwright `1 passed`，其中 Trial 页会点击
+  `Sync index` 并验证 indexed OpenAI messages。
+- 前端复核入口：
+  - Dataset: `http://localhost:5173/datasets/f745443ff8ce4983bc299fe60f3b16f5`
+  - Task: `http://localhost:5173/tasks/60b1e61f069b468688dc0ec6e1d4d397`
+  - Trial:
+    `http://localhost:5173/tasks/60b1e61f069b468688dc0ec6e1d4d397/trials/00409b6c-b45a-4b60-a1c1-4ef92a5cf741`
+  - Result: `http://localhost:5173/results/fda6fc22527141f7a9bc805d2977571b`
 
 ## 前端手工验收
 

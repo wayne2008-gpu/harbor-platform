@@ -1537,6 +1537,9 @@ Planned milestones:
     COS export record download. The gate asserts export `sample_selection`,
     source/matching sample counts, `-approved.jsonl` filename suffix, and COS
     storage URI whenever COS result export is required. Verification:
-    `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh` and
-    `git diff --check`; live COS/TKE execution remains the next environment
-    smoke step.
+    `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`,
+    `git diff --check`, and live `synthetic-cos-tke-e2e.sh` passed locally on
+    2026-08-19 with dataset
+    `/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`, runtime
+    `tke`, task `go-http-tracing`, `HARBOR_E2E_REQUIRE_PUBLISH=1`, and
+    `HARBOR_E2E_FRONTEND_LIVE_CHECK=1`.
