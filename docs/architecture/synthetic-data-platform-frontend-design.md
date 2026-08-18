@@ -741,7 +741,7 @@ Settings
 - Task detail trajectory review queue：按异常、缺 trajectory、缺 OpenAI messages、ready 状态排序 trial，展示 Needs review / OpenAI messages / Ready 摘要，并提供首个问题和单 trial 轨迹审核入口。
 - Workbench operations status：根据 readiness、failed runs、active runs、result datasets 给出下一步主动作。
 - Workbench operational priorities：失败任务、活跃运行、输入 dataset、结果 sample 的可点击优先级入口。
-- Workbench next actions：按阻塞、失败、活跃、待发布、最新结果和创建任务生成首屏动作队列。
+- Workbench next actions：按阻塞、失败、活跃、待发布、结果导出交付状态和创建任务生成首屏动作队列。
 - Workbench failure cause summary：失败任务按 input materialization、artifact persistence、trial/runtime 等最强信号聚合。
 - Workbench runtime/provider load：按 `environment.type` 聚合 total、active、failed、completed 任务数。
 - Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
@@ -991,6 +991,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续把 Review queue summary 带到 Workbench 首屏，全局 trial review 面板展示 open 队列的 guidance decision/source rollup。
 本轮继续把 Workbench next actions 接入 review guidance，按 blocked、needs review、rejected、approved guidance 生成可深链恢复的审核动作。
 本轮继续把 Result export handoff 带到 Workbench next actions，首页读取最近结果数据集的 export history，优先提示失败、运行中、缺失 export 或缺失下载链接的结果交付风险。
+本轮继续把 Result export readiness 带到 Results 列表，当前页结果数据集直接展示 Checking、Failed、Running、No export、No link、Ready 状态，并链接到下载区。
 
 目标：
 
