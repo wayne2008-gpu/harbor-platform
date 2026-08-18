@@ -154,6 +154,7 @@ Current first version:
 
 ```text
 POST /synthetic-tasks
+GET /synthetic-tasks/summary
 GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
 GET /synthetic-tasks/{id}/samples/summary
@@ -276,6 +277,10 @@ Flow:
 39. summarize result dataset inventory, sample scale, source dataset coverage,
     and latest published results from a backend endpoint instead of deriving
     list-level readiness from one paginated browser page
+40. summarize synthetic task inventory, active/completed/failed state, result
+    dataset readiness, runtime mix, dataset coverage, and recent updates from a
+    backend endpoint instead of deriving task readiness from one paginated
+    browser page
 
 Current sample ingestion behavior:
 
