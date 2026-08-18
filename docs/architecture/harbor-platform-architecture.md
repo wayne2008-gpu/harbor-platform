@@ -183,6 +183,11 @@ contract, derived from the task job config plus current Harbor job/trial evidenc
 Generation cost config can optionally define summary/task budget thresholds in
 the same micro-unit as `estimated_cost_micros`; cost estimate responses expose a
 derived `budget_status` for operator visibility in Workbench and Task Detail.
+When a result dataset is published, Synthetic also stores a
+`generation_cost_snapshot` in result metadata, freezing the publish-time
+task-scope estimate and budget status with a safe config summary. Dynamic
+Workbench estimates can change with current configuration; published result
+metadata remains a handoff audit snapshot.
 This is still an estimate layer: final account-level billing reconciliation,
 historical price-version snapshots, and invoice-grade attribution remain later
 Synthetic business-reporting work.

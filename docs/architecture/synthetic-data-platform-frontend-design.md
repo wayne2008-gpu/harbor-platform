@@ -787,6 +787,9 @@ Settings
   search/quality 过滤后的样本集汇总，而不是只统计当前分页。
 - Result dataset export history：COS 后台导出完成后走 record-level download；pending/running
   记录显示等待状态，failed 记录提供 `Retry export` 重新排队入口。
+- Result dataset metadata：publish 时冻结 `generation_cost_snapshot`，记录发布当时的
+  task-scope cost estimate、budget status 和安全配置摘要；UI 后续可在 Result Detail
+  专门展示该交付审计信息。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 - Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
 
@@ -795,8 +798,8 @@ Settings
 - Trial 页面后续可继续增加更细粒度 verifier 专项规则配置和更完整的文本对齐策略；`verifier_min_score` 和 Step text diff 基础规则已具备。
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
 - Workbench 已有配置化金额估算和预算状态；后续可继续增加趋势和账单对账视图。
-- Workbench 和 Task Detail 已有配置化预算状态；后续可继续增加价格版本快照、
-  趋势和账单对账视图。
+- Task Detail 已有单任务成本和预算状态，result metadata 已冻结发布时成本
+  snapshot；后续可继续增加价格表版本管理和账单对账视图。
 
 ## 下一轮前端开发排期
 

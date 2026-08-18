@@ -1432,3 +1432,13 @@ Planned milestones:
     block job submission or replace account-level billing reconciliation.
     Verification: `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+82. V4-81: freeze generation cost snapshot on result publish. Current status:
+    implemented in `synthetic-data-platform`; result dataset publish metadata now
+    includes `generation_cost_snapshot`, freezing the publish-time task-scope
+    `cost_estimate`, `budget_status`, and safe generation-cost config summary
+    beside the existing durable `generation_metrics` usage snapshot. This keeps
+    result handoff metadata auditable even if the current price table or budget
+    thresholds change later. Price values are not copied into result metadata;
+    explicit price table versioning and invoice-grade billing reconciliation
+    remain future business-reporting work. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
