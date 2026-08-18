@@ -180,8 +180,8 @@ HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
 ```
 
 如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish、
-JSONL / JSON 下载，以及 result export history 的记录级下载，使用 super repo
-内置 smoke dataset：
+JSONL / JSON 下载，以及 result export history 的 background 创建和记录级下载，
+使用 super repo 内置 smoke dataset：
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
@@ -277,6 +277,8 @@ HARBOR_E2E_REQUIRE_PUBLISH=1 ./scripts/synthetic-cos-tke-e2e.sh
 默认跟随 `HARBOR_E2E_REQUIRE_PUBLISH`；如果只想验证记录级下载接口而不要求
 export storage 一定是 COS，可以显式设置
 `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS=0`。
+脚本会用 `mode = "background"` 创建 JSONL export record，轮询到
+`completed` 后再跟随该记录的 `download_url` 下载固定导出对象。
 
 ### COS I/O Gate
 
