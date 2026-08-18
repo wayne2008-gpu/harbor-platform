@@ -1439,8 +1439,8 @@ Planned milestones:
     beside the existing durable `generation_metrics` usage snapshot. This keeps
     result handoff metadata auditable even if the current price table or budget
     thresholds change later. Price values are not copied into result metadata;
-    explicit price table versioning and invoice-grade billing reconciliation
-    remain future business-reporting work. Verification: `uv run ruff check .`,
+    full price-rule history and invoice-grade billing reconciliation remain
+    future business-reporting work. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
 83. V4-82: show publish-time generation cost snapshot in Result Detail. Current
     status: implemented in `synthetic-data-platform`; Result Detail now reads
@@ -1450,5 +1450,17 @@ Planned milestones:
     empty state, and historical result cost views are not recalculated from later
     price-table or budget-threshold changes. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "m11 core path uploads a dataset"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+84. V4-83: add generation cost price table versioning. Current status:
+    implemented in `synthetic-data-platform`; `[generation_cost]` now accepts an
+    optional `price_table_version`, `/settings` exposes it in the safe config
+    summary, every `cost_estimate` response includes it, and new result publish
+    snapshots use `snapshot_version=2` to freeze the publish-time price table
+    version beside budget and model-cost evidence. Result Detail displays the
+    frozen version from `metadata.generation_cost_snapshot`, while older
+    snapshots remain readable through the existing empty/fallback behavior.
+    Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "m11 core path uploads a dataset"`,
     `npm --prefix web run verify`, and `git diff --check`.
