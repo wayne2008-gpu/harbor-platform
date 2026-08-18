@@ -270,6 +270,8 @@ Flow:
 37. surface operation idempotency health in the Workbench so operators can see
     failed, stale, and expired reservation aggregates without querying APIs
     manually
+38. summarize Synthetic API audit events through a repository-backed endpoint
+    and surface aggregate status/action/resource views in the Audit console
 
 Current sample ingestion behavior:
 
@@ -657,3 +659,12 @@ Planned milestones:
     health. The UI keeps the backend aggregate-only contract and does not
     expose idempotency keys, request payloads, or Harbor operation parameters.
     Verification: `npm --prefix web run verify`.
+21. V4-20: summarize audit events in the Audit console. Current status:
+    implemented in `synthetic-data-platform`; PR #52 adds
+    `GET /audit-events/summary`, repository-level aggregate snapshots,
+    total/succeeded/failed counts, status/action/resource-type buckets, recent
+    failed events, and a URL-backed Audit summary panel with resource type
+    filtering. The endpoint reuses audit list filters and avoids deriving
+    aggregate state from one paginated browser page. Verification:
+    `uv run ruff check .`, `uv run pytest -q`, and
+    `npm --prefix web run verify`.

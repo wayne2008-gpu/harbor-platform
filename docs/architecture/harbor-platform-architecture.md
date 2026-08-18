@@ -118,6 +118,10 @@ platform and complement, rather than replace, control-plane `api_audit_events`.
 The synthetic platform exposes `GET /audit-events` and a first-class Audit
 console page so operators can troubleshoot by request ID, action, resource, task,
 result dataset, status, actor, and search filters.
+It also exposes `GET /audit-events/summary` for aggregate-only audit
+observability over the same filters, returning total/succeeded/failed counts,
+status/action/resource-type buckets, and recent failed events without requiring
+the console to derive those values from one paginated page.
 The Workbench also queries `GET /operations/idempotency/summary` to show
 cancel/retry/artifact-retry reservation health as aggregate counts and
 operation-level status, without exposing idempotency keys, request payloads, or
