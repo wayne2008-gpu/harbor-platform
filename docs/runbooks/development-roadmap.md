@@ -303,6 +303,8 @@ Flow:
     the response starts
 45. record result dataset export history as first-class API resources so later
     COS-backed asynchronous exports can reuse a stable storage contract
+46. create and review result dataset export records from the Result detail page,
+    including empty/loading/error states and history-row download actions
 
 Current sample ingestion behavior:
 
@@ -594,6 +596,12 @@ Implementation milestones:
     `result_dataset.export.create` events. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+23. M55: surface result dataset export history in the Result detail workflow.
+    Current status: implemented in `synthetic-data-platform`; the Downloads
+    section can create JSONL/JSON export records, show loading/empty/error
+    history states, render format/status/file/sample/storage columns, and
+    trigger downloads from history rows. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -885,3 +893,9 @@ Planned milestones:
     preserving a storage contract for future COS export objects. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+41. V4-40: connect result dataset export history to the Result detail UI.
+    Current status: implemented in `synthetic-data-platform`; Result detail now
+    exposes an export history panel with JSONL/JSON record creation, live status
+    feedback, table history, and history-row download actions. Playwright covers
+    the empty state, create flow, rendered record, and download entry point.
+    Verification: `npm --prefix web run verify` and `git diff --check`.
