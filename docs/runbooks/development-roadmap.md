@@ -190,6 +190,7 @@ POST /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports/{export_id}
 GET /result-datasets/{id}/exports/{export_id}/download
+POST /result-datasets/{id}/exports/{export_id}/retry
 GET /result-datasets/{id}/download?format=jsonl
 GET /result-datasets/{id}/download?format=json
 GET /settings
@@ -642,6 +643,15 @@ Implementation milestones:
     `uv run pytest -q`, `npm --prefix web run verify`,
     `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`, and
     `git diff --check`.
+28. M60: retry failed or stale result export records. Current status:
+    implemented in `synthetic-data-platform`; record-level
+    `POST /result-datasets/{id}/exports/{export_id}/retry` requeues any
+    non-completed JSONL/JSON export through background COS materialization,
+    preserves the export ID, records retry metadata and previous failure
+    details, and writes a `result_dataset.export.retry` audit event. Result
+    detail shows `Waiting` for active exports and a `Retry export` action for
+    failed export records. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -976,3 +986,11 @@ Planned milestones:
     `npm --prefix web run verify`,
     `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`, and
     `git diff --check`.
+46. V4-45: make failed result export records recoverable. Current status:
+    implemented in `synthetic-data-platform`; failed or stale non-completed
+    JSONL/JSON export records can be requeued with the record-level retry
+    endpoint, keeping the export ID stable for audit/history while rerunning
+    COS object materialization. The Result detail history table avoids offering
+    stale downloads for pending/running records and exposes `Retry export` for
+    failed rows. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
