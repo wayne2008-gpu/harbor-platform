@@ -1209,3 +1209,16 @@ Planned milestones:
     operation, status, search, page-size, and pagination controls, plus a summary
     table grouped by cancel/retry/artifact-retry. Workbench links now open this
     focused reservation view.
+62. V4-61: scope operation idempotency summary to reservation filters. Current
+    status: implemented in `synthetic-data-platform`; `GET
+    /operations/idempotency/summary` now accepts task, operation, status, and
+    search filters matching `GET /operations/idempotency`, and
+    `/audit?view=operations` passes its active filters into both calls so the
+    aggregate health cards, grouped operation table, and paginated reservation
+    rows describe the same queue. Raw idempotency keys and request payloads stay
+    excluded from summary/list search surfaces. Verification:
+    `uv run ruff check .`,
+    `uv run pytest tests/test_app.py::test_operation_idempotency_summary_reports_counts_without_keys tests/test_sql_repository.py::test_sql_repository_summarizes_operation_idempotency -q`,
+    `uv run pytest -q`,
+    `npm --prefix web run test:ui -- -g "audit operation reservations|workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
