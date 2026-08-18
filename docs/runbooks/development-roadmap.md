@@ -719,3 +719,9 @@ Planned milestones:
     auth headers or bearer tokens plus tenant headers, observe browser `/api/`
     requests, and assert the configured headers are present without printing
     secrets.
+26. V4-25: expose production auth smoke gates in Settings. Current status:
+    implemented in `synthetic-data-platform`; the Settings Local E2E validation
+    panel now shows token source, tenant header, Web `/api` header assertion,
+    and split-entrance readiness, plus a copyable production auth smoke command
+    with gateway URLs, bearer token, tenant header, publish requirement, and
+    live Playwright header assertion.
