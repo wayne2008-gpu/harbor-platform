@@ -529,6 +529,11 @@ Implementation milestones:
     E2E validation now blocks the full COS/TKE run until harbor-api `/settings`
     confirms remote database migration, dispatch, artifact storage/COS, and
     control-plane auth readiness.
+13. M45: add action-oriented readiness diagnostics for platform operators.
+    Current status: implemented in `synthetic-data-platform`; Settings and
+    Workbench map non-ready platform, Harbor, COS, runner/TKE, and dataset gates
+    to next checks, safe config reference names, page actions, and runbook paths
+    without exposing secret values.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -770,3 +775,7 @@ Planned milestones:
     validation includes the remote `Harbor control-plane` gate and keeps the
     full-run acceptance blocked until harbor-api settings are reachable and
     required DB/dispatch/artifact storage/auth gates are ready.
+31. V4-30: add readiness diagnostics to Settings and Workbench. Current status:
+    implemented in `synthetic-data-platform`; a shared front-end diagnostics
+    panel turns non-ready gates into next checks, config refs, page actions, and
+    runbook paths while staying secret-safe.
