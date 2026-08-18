@@ -194,6 +194,7 @@ POST /reviews/trials/batch-decision
 GET /reviews/summary
 GET /result-datasets/{id}/review-decision
 PUT /result-datasets/{id}/review-decision
+POST /result-datasets/review-decisions/batch
 ```
 
 V4 前端：
@@ -217,6 +218,8 @@ V4 前端：
   便于先按库存扫描，再进入详情页处理具体审核。
 - Result dataset API 支持 `acceptance_state` 过滤，summary 返回对应
   acceptance bucket 和 reviewed/unreviewed 计数，保证库存页筛选和汇总口径一致。
+- Results 支持按当前 URL 筛选范围批量保存 result dataset acceptance decision；
+  后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 

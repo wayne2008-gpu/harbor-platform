@@ -186,6 +186,9 @@ POST /synthetic-tasks/{id}/publish
 GET /result-datasets
 GET /result-datasets/summary
 GET /result-datasets/{id}
+GET /result-datasets/{id}/review-decision
+PUT /result-datasets/{id}/review-decision
+POST /result-datasets/review-decisions/batch
 GET /result-datasets/{id}/samples/summary
 POST /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports
@@ -1283,3 +1286,12 @@ Planned milestones:
     The summary response includes acceptance-state counts, and the Results
     console exposes the same filter and bucket summary so inventory triage and
     paginated rows use the same handoff state definition.
+70. V4-69: batch result dataset acceptance decisions. Current status:
+    implemented in `synthetic-data-platform`; `POST
+    /result-datasets/review-decisions/batch` can persist one human acceptance
+    decision across either explicit result dataset IDs or a bounded current
+    filter selection with `expected_total` drift protection. The Results
+    console now exposes a filtered batch decision panel for approved,
+    needs-review, rejected, and blocked handoff states, then refreshes result
+    inventory, acceptance badges, summary buckets, audit data, and Workbench
+    readiness after save.
