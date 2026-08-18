@@ -728,6 +728,14 @@ Implementation milestones:
     `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "workbench summarizes readiness"`,
     `npm --prefix web run verify`, and `git diff --check`.
+39. M71: show result export readiness in the Results list. Current status:
+    implemented in `synthetic-data-platform`; Results now queries export history
+    for the visible result datasets and renders a compact readiness badge for
+    checking, failed, running, missing-export, missing-link, and ready states,
+    linking each row to the Result detail download section. Verification:
+    `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1139,4 +1147,11 @@ Planned milestones:
     deep-links into the Result detail export history before downstream handoff.
     Verification: `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+57. V4-56: show result export readiness in the Results list. Current status:
+    implemented in `synthetic-data-platform`; the Results table now fetches
+    export history for visible result datasets and displays a compact export
+    readiness badge so operators can scan downloadable handoff readiness before
+    opening each detail page. Verification: `npm --prefix web run build`,
+    `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
