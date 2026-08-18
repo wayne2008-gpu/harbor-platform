@@ -1476,3 +1476,29 @@ Planned milestones:
     `uv run pytest -q`, `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "workbench summarizes readiness|m11 core path uploads a dataset"`,
     `npm --prefix web run verify`, and `git diff --check`.
+86. V4-85: add sample-level batch review decisions. Current status:
+    implemented in `synthetic-data-platform`; task and result dataset sample
+    review APIs accept `filters + expected_total` and persist one human
+    decision into sample `_review` metadata for the bounded server-side
+    selection. Negative decisions add review quality flags while approval keeps
+    automatic quality signals intact. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "task pages expose filtering"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+87. V4-86: expose task sample batch review in the Task Detail workflow. Current
+    status: implemented in `synthetic-data-platform`; Task Detail now shows the
+    reusable Batch sample review panel after samples are ingested, sends
+    task-scoped review decisions to
+    `POST /synthetic-tasks/{id}/samples/review-decisions/batch`, and refreshes
+    task/result sample caches after save. Verification:
+    `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "task pages expose filtering"`,
+    `npm --prefix web run verify`, and `git diff --check`.
+88. V4-87: surface saved sample review decisions in sample tables. Current
+    status: implemented in `synthetic-data-platform`; Task and Result sample
+    tables now render a dedicated Decision column from sample `_review`
+    metadata, showing decision state, reviewer, update time, rationale, and
+    labels without adding `_review` to dynamic payload columns or field profile
+    counts. Verification: `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "task pages expose filtering"`,
+    `npm --prefix web run verify`, and `git diff --check`.
