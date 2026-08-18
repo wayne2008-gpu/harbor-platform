@@ -801,8 +801,9 @@ Settings
 - Result dataset 页面后续可继续增强抽样策略和更完整可配置质量规则；trajectory diff 回跳已具备基础深链能力。
 - Workbench 已有配置化金额估算和预算状态；后续可继续增加趋势和账单对账视图。
 - Task Detail 已有单任务成本和预算状态，result metadata 已冻结发布时成本
-  snapshot，Result Detail 已展示这份发布快照和价格表版本；后续可继续增加完整价格规则
-  历史和账单对账视图。
+  snapshot，Result Detail 已展示这份发布快照和价格表版本；V4-84 后 Workbench 和
+  Task Detail 也直接展示当前实时估算使用的价格表版本。后续可继续增加完整价格规则历史
+  和账单对账视图。
 
 ## 下一轮前端开发排期
 

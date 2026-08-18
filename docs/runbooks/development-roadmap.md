@@ -1464,3 +1464,13 @@ Planned milestones:
     `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "m11 core path uploads a dataset"`,
     `npm --prefix web run verify`, and `git diff --check`.
+85. V4-84: surface price table version in live generation cost UI. Current
+    status: implemented in `synthetic-data-platform`; Workbench generation
+    metrics now show the current configured `price_table_version`, and Task
+    Detail shows the same version beside the task-level generation cost
+    breakdown. Result Detail continues to show the frozen publish snapshot
+    version from result metadata, keeping live estimates and handoff snapshots
+    visibly distinguishable. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run typecheck`,
+    `npm --prefix web run test:ui -- --grep "workbench summarizes readiness|m11 core path uploads a dataset"`,
+    `npm --prefix web run verify`, and `git diff --check`.
