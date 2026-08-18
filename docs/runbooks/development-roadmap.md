@@ -1517,3 +1517,15 @@ Planned milestones:
     pytest cases, `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- console-smoke.spec.ts`, and
     `git diff --check`.
+90. V4-89: make result dataset downloads and export records sample-scope aware.
+    Current status: implemented in `synthetic-data-platform`; direct result
+    dataset downloads and result dataset export creation now accept the same
+    sample filters used by browser review, including
+    `review_decision=approved|needs_review|rejected|blocked|unreviewed`. Export
+    records persist a reserved `sample_selection` metadata block with filters,
+    source sample count, and matching sample count so COS/background workers can
+    reproduce the requested scope and fail safely if the matching selection
+    changes before upload. Result Detail exposes a Sample scope selector for
+    downloads and new export records, and export history shows each record's
+    scope. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
