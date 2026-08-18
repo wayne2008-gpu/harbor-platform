@@ -714,6 +714,12 @@ Implementation milestones:
     for open/manual/OpenAI metrics, and shows guidance decision/source rollups
     with a visible-item fallback if the summary request is unavailable.
     Verification: `npm --prefix web run verify` and `git diff --check`.
+37. M69: turn review guidance into a Workbench next action. Current status:
+    implemented in `synthetic-data-platform`; Workbench next actions now use
+    the open review summary to prioritize blocked, needs-review, rejected, and
+    approval guidance with deep links into `/reviews/trials` using the matching
+    `guidance_decision` filter. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1111,4 +1117,10 @@ Planned milestones:
     `GET /reviews/summary?state=open` alongside the visible queue slice and
     surfaces full-queue guidance decision/source composition in the global trial
     review panel. Verification: `npm --prefix web run verify` and
+    `git diff --check`.
+55. V4-54: make review guidance actionable from Workbench. Current status:
+    implemented in `synthetic-data-platform`; the Workbench next action queue
+    now turns open review guidance distribution into a concrete review action,
+    linking operators directly to the filtered Reviews queue before they create
+    additional synthesis work. Verification: `npm --prefix web run verify` and
     `git diff --check`.
