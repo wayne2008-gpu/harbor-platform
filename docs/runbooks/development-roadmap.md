@@ -671,6 +671,12 @@ Implementation milestones:
     expose worker execution metadata such as worker ID and claim count when
     present. Verification: `npm --prefix web run verify` and
     `git diff --check`.
+31. M63: add manual trial review suggestions. Current status: implemented in
+    `synthetic-data-platform`; Trial Summary now derives a suggested manual
+    review decision, labels, and rationale from trajectory review and
+    post-training handoff signals, then lets reviewers apply the suggestion to
+    the controlled form before explicitly saving. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1029,4 +1035,11 @@ Planned milestones:
     worker polling/stale recovery timing, and per-export execution metadata so
     operators can tell whether a handoff file is waiting for
     `synthetic-result-export-worker` or has already been claimed. Verification:
+    `npm --prefix web run verify` and `git diff --check`.
+49. V4-48: make trajectory review decisions easier to operationalize. Current
+    status: implemented in `synthetic-data-platform`; the Trial Summary manual
+    review form now shows an automatic suggestion derived from existing
+    trajectory quality and post-training handoff checks, and an explicit
+    `Apply suggestion` action pre-fills decision, labels, and rationale without
+    saving on behalf of the reviewer. Verification:
     `npm --prefix web run verify` and `git diff --check`.

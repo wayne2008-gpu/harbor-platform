@@ -982,6 +982,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续增强 Summary message diff，按 role/turn 对比 system/developer/user/assistant 自然语言消息内容。
 本轮继续增强 Trial quality gates，按 reward、verifier、exception 和轨迹 schema readiness 前置展示 trial 进入后训练数据集审核的质量门，并增加 `verifier_min_score` URL 阈值配置。
 本轮继续增强 Summary step text diff，检查 ATIF/default timeline step 文本是否进入 OpenAI messages，并将 step text gap 纳入 Summary decision、post-training handoff 和 audit checklist。
+本轮继续增强 Manual review suggestion，基于 trajectory review 和 post-training handoff 信号生成建议 decision、labels 和 rationale，审核员可一键填入但仍需显式保存。
 
 目标：
 
