@@ -183,6 +183,12 @@ Task and Result sample tables render saved sample review decisions separately
 from automatic anomaly badges, so operators can see the human decision, reviewer,
 and update time without letting `_review` metadata pollute dynamic sample field
 profiles or training payload columns.
+Result dataset downloads and export records are sample-scope aware. Direct
+downloads and export creation can use the same sample filters as review,
+including approved-only selection for training handoff. Export records persist a
+reserved `sample_selection` metadata block with filters, source sample count,
+and matching sample count so API stream downloads and COS/background exports can
+reproduce the requested scope and detect selection drift before upload.
 Generation usage observability is Synthetic-owned. `/workbench/summary` embeds a
 `generation_metrics` snapshot, and `GET /generation-metrics/summary` exposes the
 same rollup directly. The snapshot summarizes task/result counts, generated
