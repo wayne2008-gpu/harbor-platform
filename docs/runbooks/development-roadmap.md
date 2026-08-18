@@ -561,6 +561,11 @@ Implementation milestones:
     the existing publish rule unchanged, but Sample publish readiness now reads
     the unfiltered task sample summary and shows flagged, missing reward, and
     low reward counts for the complete set of samples that would be published.
+19. M51: add configurable publish quality gate enforcement. Current status:
+    implemented in `synthetic-data-platform`; `publish_quality_gate_mode`
+    supports `warn` and `block`, Settings and Task detail expose the active
+    mode, and block mode rejects publish when the full task sample set contains
+    flagged, missing reward, or low reward records.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -829,3 +834,7 @@ Planned milestones:
     succeeded runtime and ingested samples, while Task detail now warns when the
     publish candidate set contains flagged samples, missing reward values, or
     low reward values even if the sample review table is currently filtered.
+37. V4-36: enforce configurable result dataset publish quality gates. Current
+    status: implemented in `synthetic-data-platform`; warn mode keeps local
+    publishing unblocked while surfacing risk, and block mode rejects result
+    dataset publish for flagged, missing reward, or low reward sample sets.
