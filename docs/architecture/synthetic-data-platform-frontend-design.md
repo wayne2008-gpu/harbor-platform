@@ -986,6 +986,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续增强 Manual review suggestion，基于 trajectory review 和 post-training handoff 信号生成建议 decision、labels 和 rationale，审核员可一键填入但仍需显式保存。
 本轮继续增强 Review queue guidance，在全局 `/reviews/trials` 表格中展示 saved/current/suggested decision，未审核 trial 可直接看到阻塞或通过建议，并把建议 labels/metadata 带入 quick decision。
 本轮继续将 Review queue guidance 下沉到 Synthetic API contract，`decision_guidance` 由服务端返回，前端优先使用服务端判断并保留本地 fallback。
+本轮继续让 Review queue guidance 可操作化，`/reviews/trials` 增加 guidance decision/source URL 筛选，并把同一筛选范围用于 summary 和批量审核决策。
 
 目标：
 
