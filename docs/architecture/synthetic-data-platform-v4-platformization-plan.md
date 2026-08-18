@@ -222,6 +222,8 @@ V4 前端：
   后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
 - Workbench 读取最近 result dataset batch acceptance audit events，显示影响范围、
   reviewer、decision 和 request ID，并能跳转到 Audit 精确过滤。
+- Workbench 读取 result dataset summary，把未保存、待复核、阻断/拒绝的 result
+  acceptance backlog 提升为首页运营入口，并跳转到对应 Results 筛选。
 - 快捷键或批量操作只做低风险动作，危险/不可逆动作必须二次确认。
 - 每个 decision 保留 reviewer、rationale、labels、updated_at 和 source task/trial link。
 
@@ -241,6 +243,7 @@ GET /workbench/summary
 - active/failed/publish-ready/review-open/result-ready counts。
 - prioritized next actions。
 - recent failures by phase。
+- result acceptance backlog。
 - latest result datasets。
 
 当前第一版实现：app 层调用 repository summary snapshot；SQL repository 使用
