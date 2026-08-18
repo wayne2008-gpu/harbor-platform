@@ -113,7 +113,10 @@ buckets, tool-call volume, tool-response volume, missing tool IDs, empty content
 unknown roles, and error-signal rows without returning message content.
 `GET /reviews/trials` and `GET /reviews/summary` surface the indexed OpenAI
 message summary as trial-level review evidence, so Workbench triage can show
-message issue counts without opening every trial detail page.
+message issue counts without opening every trial detail page. The task detail
+trajectory review queue also prefers the task-scoped `/reviews/trials` service
+view and falls back to local trial/artifact derivation while service evidence is
+unavailable.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external

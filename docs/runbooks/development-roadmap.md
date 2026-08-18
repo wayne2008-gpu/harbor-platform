@@ -1249,3 +1249,10 @@ Planned milestones:
     promoted to `quality_flags`, so review filters and suggested guidance can
     route synced OpenAI message issues to manual review. Workbench now shows
     indexed message coverage and issue counts in the global trial review queue.
+65. V4-64: use service review evidence in Task Detail trajectory review queue.
+    Current status: implemented in `synthetic-data-platform`; Task Detail now
+    queries task-scoped `/reviews/trials?state=all&task_id=...`, maps service
+    guidance and indexed OpenAI message summary into the existing trajectory
+    review queue, shows indexed message/issue chips, and keeps local
+    trial/artifact-derived fallback when service evidence is loading,
+    unavailable, or empty.
