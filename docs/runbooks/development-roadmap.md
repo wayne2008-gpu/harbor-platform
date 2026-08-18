@@ -556,6 +556,11 @@ Implementation milestones:
     now accepts the same state, task, runtime, schema, quality flag, reviewer,
     and search filters as `/reviews/trials`, and the Reviews page uses the
     current URL query for summary metrics, batch target counts, and table rows.
+18. M50: surface sample quality risk before publishing result datasets.
+    Current status: implemented in `synthetic-data-platform`; Task detail keeps
+    the existing publish rule unchanged, but Sample publish readiness now reads
+    the unfiltered task sample summary and shows flagged, missing reward, and
+    low reward counts for the complete set of samples that would be published.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -819,3 +824,8 @@ Planned milestones:
     open/reviewed counts, runtime/schema/quality buckets, and priority items
     now summarize the same filtered queue the reviewer is operating on instead
     of always showing global review inventory.
+36. V4-35: make publish readiness expose sample quality risk. Current status:
+    implemented in `synthetic-data-platform`; publishing still requires a
+    succeeded runtime and ingested samples, while Task detail now warns when the
+    publish candidate set contains flagged samples, missing reward values, or
+    low reward values even if the sample review table is currently filtered.
