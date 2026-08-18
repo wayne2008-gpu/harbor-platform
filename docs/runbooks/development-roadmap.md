@@ -185,6 +185,7 @@ POST /synthetic-tasks/{id}/artifacts/retry
 POST /synthetic-tasks/{id}/publish
 GET /result-datasets
 GET /result-datasets/summary
+POST /result-datasets/source-trial-quality/query
 GET /result-datasets/{id}
 GET /result-datasets/{id}/review-decision
 PUT /result-datasets/{id}/review-decision
@@ -1331,3 +1332,17 @@ Planned milestones:
     `uv run pytest -q`, `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
+75. V4-74: surface current-page source-trial quality in the Results inventory.
+    Current status: implemented in `synthetic-data-platform`; `POST
+    /result-datasets/source-trial-quality/query` accepts up to 50 result dataset
+    IDs, deduplicates the request, summarizes existing source task trial review
+    evidence, and returns Ready / Needs review / Blocked status, blocking signal
+    counts, OpenAI message issue counts, guidance buckets, and priority review
+    items for each visible result dataset. The Results table now displays a
+    Source trials badge for current rows and links directly to Result Detail's
+    source-trial quality section. This remains a page-scoped inventory signal;
+    global result filtering or summaries by source-trial quality still require
+    materialized SQL-backed review evidence. Verification: `uv run ruff check
+    .`, `uv run pytest -q`, `npm --prefix web run typecheck`, `npm --prefix
+    web run test:ui -- --grep "list pages preserve query filters"`, `npm
+    --prefix web run verify`, and `git diff --check`.
