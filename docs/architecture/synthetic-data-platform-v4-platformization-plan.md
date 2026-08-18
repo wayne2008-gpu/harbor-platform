@@ -46,7 +46,8 @@
   进一步补查询性能验证和批量审核能力。
 - Synthetic operation idempotency 已具备并发 reservation 语义、TTL 清理、aggregate
   summary API、明细列表 API、completed replay 审计关联和失败 mutation 请求审计；
-  Workbench 已展示最近 reservation 明细，且不暴露原始 idempotency key 或请求 payload。
+  Workbench 已展示最近 reservation 明细，Audit 已提供可筛选下钻视图，且不暴露原始
+  idempotency key 或请求 payload。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
   artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
 - 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。
