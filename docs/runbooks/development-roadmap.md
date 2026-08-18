@@ -265,6 +265,8 @@ Flow:
 35. record audit events for completed operation idempotency replays so duplicate
     client requests keep their own request ID and actor trail without exposing
     idempotency keys
+36. record failed Synthetic API mutation requests as audit events without
+    storing request payloads or idempotency keys
 
 Current sample ingestion behavior:
 
@@ -636,3 +638,11 @@ Planned milestones:
     metadata, and avoid writing idempotency keys or request payloads. Verification:
     `uv run ruff check .`, targeted API tests, `uv run pytest -q`, and
     `git diff --check`.
+19. V4-18: audit failed mutation requests. Current status: implemented in
+    `synthetic-data-platform`; PR #50 records `synthetic_api.request_failed`
+    audit events for failed `POST`, `PUT`, `PATCH`, and `DELETE` requests,
+    covering HTTPException, HarborApiError, RequestValidationError, and auth
+    401/403 failures. Events preserve request ID, actor, resource IDs, status
+    code, and error type, but do not store request payloads or idempotency keys.
+    Verification: `uv run ruff check .`, targeted auth/API/validation/Harbor
+    tests, `uv run pytest -q`, and `git diff --check`.
