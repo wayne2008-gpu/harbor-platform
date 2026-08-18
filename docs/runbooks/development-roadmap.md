@@ -196,6 +196,7 @@ GET /result-datasets/{id}/download?format=json
 GET /settings
 GET /runtime-capabilities
 GET /audit-events
+GET /operations/idempotency
 GET /operations/idempotency/summary
 ```
 
@@ -1194,3 +1195,10 @@ Planned milestones:
     `uv run pytest -q`, `npm --prefix web run build`,
     `npm --prefix web run test:ui -- -g "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
+60. V4-59: expose operation idempotency reservation details. Current status:
+    implemented in `synthetic-data-platform`; `GET /operations/idempotency`
+    returns filterable, paginated reservation records for task, operation,
+    status, and search queries, while omitting raw idempotency keys and request
+    payloads. The Workbench operation idempotency panel now shows latest
+    reservation refs, task/response links, state, error summaries, and update
+    times beside the existing aggregate health view.
