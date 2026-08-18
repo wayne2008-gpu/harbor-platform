@@ -177,7 +177,6 @@ require_rendered_text "name: harbor-tke-config"
 require_rendered_text "name: harbor-api-secret"
 require_rendered_text "name: synthetic-data-platform-secret"
 require_rendered_text "name: harbor-runner-secret"
-require_rendered_text "harbor-runner-kubeconfig"
 
 if grep -nE 'CHANGE_ME|change-me|replace-me' "$RENDERED_MANIFEST" >"$TEMP_PLACEHOLDERS"; then
   if [[ "$ALLOW_PLACEHOLDERS" == "1" ]]; then
@@ -252,8 +251,13 @@ for key in \
   require_secret_key "$PLATFORM_NS" "harbor-runner-secret" "$key"
 done
 
-require_secret_key "$PLATFORM_NS" "harbor-runner-kubeconfig" "kubeconfig"
 require_secret_key "$AGENT_NS" "tcr-pull-secret" ".dockerconfigjson"
+
+if kubectl -n "$PLATFORM_NS" get secret harbor-runner-kubeconfig >/dev/null 2>&1; then
+  ok "optional Secret $PLATFORM_NS/harbor-runner-kubeconfig exists"
+else
+  ok "optional Secret $PLATFORM_NS/harbor-runner-kubeconfig is not configured"
+fi
 
 if kubectl -n "$PLATFORM_NS" get secret harbor-runner-agent-env >/dev/null 2>&1; then
   ok "optional Secret $PLATFORM_NS/harbor-runner-agent-env exists"

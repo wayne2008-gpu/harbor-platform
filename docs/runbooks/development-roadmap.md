@@ -1552,3 +1552,13 @@ Planned milestones:
     trajectory, sample ingest, result publish, full COS result export,
     approved-only direct download, approved-only COS result export, and live
     frontend traversal.
+93. V4-92: make TKE runner in-cluster Kubernetes auth explicit. Current
+    status: implemented in `harbor` and the super repo deployment manifests;
+    Harbor TKE config now supports `auth_mode = "auto" | "kubeconfig" |
+    "in_cluster"`, production TKE config defaults to Pod ServiceAccount auth,
+    and kubeconfig remains available for local or out-of-cluster runners. The
+    Kubernetes runner Deployment no longer mounts a kubeconfig Secret by
+    default, and TKE preflight treats that Secret as optional. Verification:
+    Harbor targeted environment tests report `150 passed`, targeted Harbor
+    ruff check passes, and Kubernetes static preflight passes with placeholder
+    images explicitly allowed.

@@ -267,9 +267,10 @@ kubectl auth can-i get pods/log \
   -n harbor-agent-runtime
 ```
 
-TKE provider 当前通过 Kubernetes API 工作。线上第一版可以继续把 kubeconfig
-挂载为 `/config/kubeconfig` 并在 `tke.toml` 中引用。后续可优化为 in-cluster
-ServiceAccount 默认发现。
+TKE provider 当前通过 Kubernetes API 工作。线上默认使用
+`auth_mode = "in_cluster"`，runner Pod 通过自身 ServiceAccount 访问 agent-runtime
+namespace。只有 runner 部署在目标集群外，或需要临时调试 kubeconfig 身份时，才额外
+挂载 `/config/kubeconfig` 并在 `tke.toml` 中改成 `auth_mode = "kubeconfig"`。
 
 ## 组件配置要点
 
@@ -316,12 +317,14 @@ ServiceAccount 默认发现。
 
 必须包含：
 
-- kubeconfig 路径或后续 ServiceAccount 发现配置。
-- TKE context。
+- `auth_mode = "in_cluster"`，使用 runner Pod ServiceAccount。
 - agent-runtime namespace。
 - 默认 service account。
 - image pull secret。
 - 可选 node selector、tolerations、pod override。
+
+如果使用集群外 runner，再改为 `auth_mode = "kubeconfig"` 并补 kubeconfig 路径和
+TKE context。
 
 模型 API key 不写入 `tke.toml`。它们仍通过 Harbor agent env 传入。
 
@@ -336,8 +339,8 @@ ServiceAccount 默认发现。
    - `synthetic-data-platform-config` -> `/config/platform.toml`
    - `harbor-runner-config` -> `/config/runner.toml`
    - `harbor-tke-config` -> `/config/tke.toml`
-   - `harbor-runner-kubeconfig` -> `/config/kubeconfig`
    - `harbor-runner-agent-env` -> optional model env secret
+   - `harbor-runner-kubeconfig` -> optional，仅 `auth_mode = "kubeconfig"` 使用
 4. 复制 `deploy/k8s/overlays/production` 到环境专属位置，替换镜像 registry/tag、
    `ingressClassName`、域名和 TLS secret。给 Ingress controller 所在 namespace
    打上 `harbor.openai.com/ingress-access=true` label，否则 production overlay
@@ -439,7 +442,7 @@ COS 回滚：
   persistence 已按 tenant 隔离；control-plane API 调用会写入
   `api_audit_events`，并可通过 `POST /internal/audit-events/query` 查询。
   对终端用户开放前仍需补完整登录、细粒度 RBAC 和 end-user audit correlation。
-- TKE provider 当前主要使用 kubeconfig 配置，in-cluster ServiceAccount 默认发现是后续优化。
+- TKE provider 线上默认使用 in-cluster ServiceAccount；kubeconfig 仅作为集群外 runner 或调试模式。
 - Compose 脚本是本地验证工具；线上可以复用流程，不应直接依赖本地端口假设。
 
 ## Phase 10 开发拆分
