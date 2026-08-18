@@ -708,6 +708,12 @@ Implementation milestones:
     before narrowing or batch-reviewing trials. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+36. M68: surface review guidance rollups on Workbench. Current status:
+    implemented in `synthetic-data-platform`; the Workbench global trial review
+    panel now queries the filtered open review summary, uses summary counts
+    for open/manual/OpenAI metrics, and shows guidance decision/source rollups
+    with a visible-item fallback if the summary request is unavailable.
+    Verification: `npm --prefix web run verify` and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1100,3 +1106,9 @@ Planned milestones:
     queue composition without deriving counts from the current page. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+54. V4-53: bring guidance rollups to the Workbench entry point. Current status:
+    implemented in `synthetic-data-platform`; Workbench now fetches
+    `GET /reviews/summary?state=open` alongside the visible queue slice and
+    surfaces full-queue guidance decision/source composition in the global trial
+    review panel. Verification: `npm --prefix web run verify` and
+    `git diff --check`.
