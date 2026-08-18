@@ -770,6 +770,8 @@ Settings
 - Result dataset source review：source trials 支持 state 筛选，source artifacts 支持 kind/search 筛选。
 - Result dataset trajectory audit links：按 source trial 汇总 trial-result、trajectory、OpenAI messages、sample source artifact 状态，并提供带目标 view/hash 的源 trajectory 审核回跳，覆盖 Summary decision、Timeline、OpenAI Messages 和 schema diff 区域。
 - Result dataset field profile：按字段展示覆盖率、缺失数、类型和样例值。
+- Result dataset export history：COS 后台导出完成后走 record-level download；pending/running
+  记录显示等待状态，failed 记录提供 `Retry export` 重新排队入口。
 - Playwright 响应式 smoke 覆盖多个 viewport。
 - Playwright 前端质量门覆盖导航焦点、长列表、长文本、loading、error、empty state 和页面级横向溢出检查。
 
