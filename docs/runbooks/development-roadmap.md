@@ -485,7 +485,9 @@ Implementation milestones:
 7. M39: parameterize production E2E smoke for URLs, auth, runtime, dataset, and
    timeout. Current status: `synthetic-cos-tke-e2e.sh` supports production
    synthetic API, harbor API, Web base URLs, runtime, dataset path, timeout,
-   unified auth header/bearer token, and per-service auth overrides.
+   unified auth header/bearer token, tenant header, and per-service auth/tenant
+   overrides. Frontend live smoke can assert that Web `/api/` requests carry the
+   configured auth and tenant headers.
 8. M40: replace TOML secrets with env/K8s Secret references and add tenant/auth
    scope before broad exposure. Current status: COS credential env references
    are implemented for runner artifact upload, runner input materialization,
@@ -712,3 +714,8 @@ Planned milestones:
     derives the same gate from `/settings.auth`. Anonymous local mode is marked
     as production review rather than an E2E blocker, while enabled auth with
     incomplete token or read/write scope coverage is marked missing.
+25. V4-24: verify live frontend auth headers. Current status: implemented in
+    `synthetic-data-platform`; the Playwright live workflow can inject explicit
+    auth headers or bearer tokens plus tenant headers, observe browser `/api/`
+    requests, and assert the configured headers are present without printing
+    secrets.
