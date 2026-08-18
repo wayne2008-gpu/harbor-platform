@@ -992,6 +992,7 @@ deep link 能力，后续继续增强审核效率。
 本轮继续把 Workbench next actions 接入 review guidance，按 blocked、needs review、rejected、approved guidance 生成可深链恢复的审核动作。
 本轮继续把 Result export handoff 带到 Workbench next actions，首页读取最近结果数据集的 export history，优先提示失败、运行中、缺失 export 或缺失下载链接的结果交付风险。
 本轮继续把 Result export readiness 带到 Results 列表，当前页结果数据集直接展示 Checking、Failed、Running、No export、No link、Ready 状态，并链接到下载区。
+本轮继续把 Result export readiness 汇总下沉到 `/result-datasets/summary`，Results 摘要区展示当前筛选范围的 export-ready 指标、readiness buckets 和 status buckets。
 
 目标：
 
@@ -1015,8 +1016,8 @@ deep link 能力，后续继续增强审核效率。
 ### F4：Result Dataset Review
 
 状态：基础版已完成，已增加样本审核服务端分页/搜索、URL 深链恢复、多维质量规则矩阵、`sample_min_reward` reward 阈值配置、异常定位、字段 profile、
-export contract gates、source trajectory audit links、source trial 精确 deep link 回跳、result review checklist，以及 durable result export worker 交付模式和每条 export 的
-worker claim 元数据可视化。
+export contract gates、source trajectory audit links、source trial 精确 deep link 回跳、result review checklist、durable result export worker 交付模式、每条 export 的
+worker claim 元数据可视化，以及 Results 列表/摘要层的 export readiness。
 
 目标：
 
@@ -1030,6 +1031,7 @@ worker claim 元数据可视化。
 - 从 result dataset 能跳回 source task/trial/artifact。
 - JSONL/JSON 下载入口可用，错误有恢复提示。
 - Export contract 能判断 JSONL、Full JSON、source trials、source artifacts 是否 ready。
+- Results 列表和 summary 能判断 result export 是否 ready、failed、running、missing export 或缺少下载链接。
 - 能在 result dataset 中直接定位缺 content、缺 reward、低 reward、空字符串、稀疏样本。
 
 ### F5：Workbench 收敛
