@@ -295,6 +295,9 @@ Flow:
     environment variable names
 43. surface Synthetic API auth readiness in Workbench summary and fallback
     readiness so production exposure risks are visible from the first screen
+44. stream result dataset JSONL/JSON downloads from paged sample queries so large
+    post-training datasets do not require loading the full sample snapshot before
+    the response starts
 
 Current sample ingestion behavior:
 
@@ -571,6 +574,13 @@ Implementation milestones:
     Workbench frontend fallback now expose `Publish quality gate`, so operators
     can confirm warn-only or block publish behavior from the main run-readiness
     screen without exposing secrets.
+21. M53: stream result dataset downloads for large post-training handoff.
+    Current status: implemented in `synthetic-data-platform`; result dataset
+    download now reads metadata without the stored sample JSON snapshot and
+    emits JSONL/JSON from paged sample queries, preserving download formats while
+    reducing API memory pressure for large published datasets. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -847,3 +857,10 @@ Planned milestones:
     status: implemented in `synthetic-data-platform`; Workbench summary and
     fallback readiness now show whether result dataset publish is warn-only or
     block mode, keeping publish policy visible at the operator entry point.
+39. V4-38: stream result dataset downloads from repository sample pages. Current
+    status: implemented in `synthetic-data-platform`; download endpoints avoid
+    loading the full published sample snapshot for metadata lookup and stream
+    JSONL/JSON output from paginated sample reads, keeping the existing export
+    contract stable for downstream dataset handoff. Verification:
+    `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
