@@ -159,9 +159,11 @@ It also exposes `GET /audit-events/summary` for aggregate-only audit
 observability over the same filters, returning total/succeeded/failed counts,
 status/action/resource-type buckets, and recent failed events without requiring
 the console to derive those values from one paginated page.
-The Workbench also queries `GET /operations/idempotency/summary` to show
-cancel/retry/artifact-retry reservation health as aggregate counts and
-operation-level status, without exposing idempotency keys, request payloads, or
+The Workbench also queries `GET /operations/idempotency/summary` and `GET
+/operations/idempotency` to show cancel/retry/artifact-retry reservation health,
+operation-level status, and recent reservation records. The record list returns
+short reservation references, task/operation/status, response task links, error
+summaries, and timestamps without exposing idempotency keys, request payloads, or
 Harbor operation parameters.
 
 Frontend information architecture and UI/UX rules are documented in
