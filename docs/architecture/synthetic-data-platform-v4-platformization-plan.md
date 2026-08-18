@@ -221,18 +221,21 @@ V4 前端：
 - Result dataset API 支持 `handoff_readiness` 过滤，summary 返回 Ready /
   Needs review / Blocked / Checking bucket。库存级口径基于 durable result 字段：
   sample_count、export/download readiness 和 saved acceptance decision；source-trial
-  quality 仍在 Result Detail 作为最终交付确认门。
-- Results 列表通过 `POST /result-datasets/source-trial-quality/query` 批量查询当前页
-  result dataset 的 source-trial quality，展示 Ready / Needs review / Blocked badge，
-  并跳转到 Result Detail 的 source-trial quality section。该能力只覆盖当前页可见行；
-  全局 source-trial quality 筛选和 summary 需要后续把 trial review evidence 物化到
-  SQL 查询模型。
+  quality 作为独立库存维度筛选和汇总。
+- Results 列表通过 `POST /result-datasets/source-trial-quality/query` 批量查询并物化
+  source-trial quality，展示 Ready / Needs review / Blocked badge，并跳转到 Result
+  Detail 的 source-trial quality section。`GET /result-datasets` 和
+  `GET /result-datasets/summary` 支持 `source_trial_quality` 过滤，summary 返回 ready /
+  needs-review / blocked / unavailable bucket；未物化快照的 result dataset 归入
+  unavailable。
 - Results 支持按当前 URL 筛选范围批量保存 result dataset acceptance decision；
   后端用 `expected_total` 防止保存时选择集漂移，并写入 batch audit event。
 - Workbench 读取最近 result dataset batch acceptance audit events，显示影响范围、
   reviewer、decision 和 request ID，并能跳转到 Audit 精确过滤。
 - Workbench 读取 result dataset summary，把未保存、待复核、阻断/拒绝的 result
   acceptance backlog 提升为首页运营入口，并跳转到对应 Results 筛选。
+- Workbench 同步读取 source-trial quality summary，把 blocked、unavailable 和
+  needs-review source-trial backlog 纳入首页 next action。
 - Result Detail 新增 post-training handoff summary，把 human acceptance、
   export download readiness、automated delivery checks 和 source-trial quality
   汇总成单个 Ready/Needs review/Blocked/Checking 结论。

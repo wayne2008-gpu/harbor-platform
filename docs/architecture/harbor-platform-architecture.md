@@ -136,11 +136,14 @@ dataset IDs, source task IDs, sample counts, reviewer, labels, and request ID.
 Result dataset detail shows a post-training handoff summary that combines human
 acceptance, export/download readiness, automatic delivery checks, and source
 trial quality into one operator-facing decision before downstream training use.
-The Results inventory can also batch-query source-trial quality for the visible
-result datasets through the Synthetic API and render a compact badge linking to
-the source-trial section in Result Detail. This inventory signal is page-scoped
-and reuses existing trial review evidence; full inventory filtering or summary
-by source-trial quality still requires materialized SQL-backed review evidence.
+The Results inventory can batch-query source-trial quality for visible result
+datasets and materialize the computed snapshot into
+`synthetic_result_dataset_source_trial_quality`. `GET /result-datasets` and
+`GET /result-datasets/summary` accept a `source_trial_quality` filter for ready,
+needs-review, blocked, and unavailable result datasets, with summary buckets over
+the same filtered inventory. Source-trial quality snapshots are refreshed by the
+batch query path and by source review/message/publish write paths; result
+datasets without a materialized snapshot are treated as `unavailable`.
 
 Dataset inventory observability is Synthetic-owned. `GET /datasets/summary`
 summarizes dataset count, task-name coverage, COS/uploaded/registered/external

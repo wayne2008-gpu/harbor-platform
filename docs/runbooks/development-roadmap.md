@@ -1327,8 +1327,9 @@ Planned milestones:
     URL-backed handoff selector, inventory badge, summary bucket, and batch
     acceptance scope that follows the same filter. Inventory-level handoff
     readiness is derived from result sample count, export/download readiness,
-    and saved acceptance decisions; source-trial quality remains a Result Detail
-    final confirmation gate. Verification: `uv run ruff check .`,
+    and saved acceptance decisions; source-trial quality is tracked as a separate
+    inventory dimension once review evidence has been materialized.
+    Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run typecheck`,
     `npm --prefix web run test:ui -- --grep "list pages preserve query filters"`,
     `npm --prefix web run verify`, and `git diff --check`.
@@ -1340,9 +1341,24 @@ Planned milestones:
     counts, OpenAI message issue counts, guidance buckets, and priority review
     items for each visible result dataset. The Results table now displays a
     Source trials badge for current rows and links directly to Result Detail's
-    source-trial quality section. This remains a page-scoped inventory signal;
-    global result filtering or summaries by source-trial quality still require
-    materialized SQL-backed review evidence. Verification: `uv run ruff check
-    .`, `uv run pytest -q`, `npm --prefix web run typecheck`, `npm --prefix
-    web run test:ui -- --grep "list pages preserve query filters"`, `npm
-    --prefix web run verify`, and `git diff --check`.
+    source-trial quality section. This was the first page-scoped source-trial
+    inventory signal; V4-75 materializes it for global filtering and summary.
+    Verification: `uv run ruff check .`, `uv run pytest -q`, `npm --prefix web
+    run typecheck`, `npm --prefix web run test:ui -- --grep "list pages
+    preserve query filters"`, `npm --prefix web run verify`, and `git diff
+    --check`.
+76. V4-75: materialize source-trial quality for Results filtering. Current
+    status: implemented in `synthetic-data-platform`; source-trial quality
+    snapshots are stored in
+    `synthetic_result_dataset_source_trial_quality`, refreshed by the batch query
+    API and by source review/message/publish write paths, and read by
+    `GET /result-datasets` plus `GET /result-datasets/summary` through the
+    `source_trial_quality` filter. The Results console now exposes a URL-backed
+    Source quality selector, source-trial quality summary buckets, active filter
+    chips, and batch acceptance scope matching the same filter; Workbench also
+    promotes blocked, unavailable, and needs-review source-trial backlog into
+    next actions. Result datasets without a materialized snapshot are counted as
+    `unavailable`. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run typecheck`, `npm --prefix web run test:ui -- --grep
+    "list pages preserve query filters|workbench summarizes readiness"`,
+    `npm --prefix web run verify`, and `git diff --check`.
