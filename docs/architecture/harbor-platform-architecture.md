@@ -187,7 +187,9 @@ When a result dataset is published, Synthetic also stores a
 `generation_cost_snapshot` in result metadata, freezing the publish-time
 task-scope estimate and budget status with a safe config summary. Dynamic
 Workbench estimates can change with current configuration; published result
-metadata remains a handoff audit snapshot.
+metadata remains a handoff audit snapshot. Result Detail surfaces that frozen
+snapshot as the handoff cost view, so already-published result datasets are not
+recalculated against later price-table or budget-threshold changes.
 This is still an estimate layer: final account-level billing reconciliation,
 historical price-version snapshots, and invoice-grade attribution remain later
 Synthetic business-reporting work.

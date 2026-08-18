@@ -637,7 +637,8 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   configured cost estimate 和 costed model evidence；V4-79 后 Task Detail 展示
   单任务 generation cost breakdown，包括 runtime/model/provider、trial/token
   evidence、sample yield 和 configured cost estimate；V4-80 后 Workbench 和
-  Task Detail 展示 configured budget status。Settings 展示只读安全配置、
+  Task Detail 展示 configured budget status；V4-82 后 Result Detail 展示
+  发布时冻结的 `generation_cost_snapshot`，用于结果交付成本审计。Settings 展示只读安全配置、
   Local E2E readiness、COS/TKE preflight、Full COS/TKE E2E 命令和 manual
   checkpoints，Playwright 覆盖 375/768/1024/1440/wide 响应式截图和无横向溢出。
 - 前端入口已改为 route-level lazy loading：Workbench、Datasets、Tasks/Trials、
@@ -645,7 +646,7 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
 - 移动端 app shell 已修正为稳定紧凑 top rail：小屏 sidebar 不再被外层 grid stretch
   撑高，主导航保持横向滚动，Playwright 覆盖 375px 视口。
 - 本轮按 `ui-ux-pro-max` 重新确认设计冻结后，复跑前端验收命令：
-  `npm run verify` 已通过，结果为 build 通过、Playwright `20 passed`。
+  `npm run verify` 已通过，结果为 build 通过、Playwright `24 passed`。
 
 前端 MVP UI 闭环已完成。下一步建议进入后端接口/真实 E2E 差距收敛，或者启动
 tenant/auth/权限与任务管理的下一轮平台能力设计。
