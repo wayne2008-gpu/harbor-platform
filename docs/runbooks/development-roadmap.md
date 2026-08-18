@@ -1263,3 +1263,10 @@ Planned milestones:
     quality panel with review state, guidance rollups, indexed OpenAI message
     coverage, message issue counts, quality flags, and priority trial review
     links before training handoff.
+67. V4-66: persist result dataset acceptance decisions. Current status:
+    implemented in `synthetic-data-platform`; `GET/PUT
+    /result-datasets/{id}/review-decision` stores the human result handoff
+    decision with reviewer, rationale, labels, metadata, source task ID, and
+    audit event linkage. Result Detail now shows a Result acceptance decision
+    panel, derives a suggested decision from the automatic handoff state, and
+    saves/reloads the human acceptance record.
