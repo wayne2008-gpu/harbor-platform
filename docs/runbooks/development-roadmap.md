@@ -691,6 +691,15 @@ Implementation milestones:
     The Reviews frontend prefers the service field while keeping the previous
     local fallback for older responses. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+34. M66: make trial review guidance operational in queue filters. Current
+    status: implemented in `synthetic-data-platform`; `GET /reviews/trials`,
+    `GET /reviews/summary`, and filter-based
+    `POST /reviews/trials/batch-decision` now accept `guidance_decision` and
+    `guidance_source` filters, and the Reviews frontend exposes URL-backed
+    selectors so operators can isolate saved/current/suggested approvals,
+    blocks, rejections, and review-needed trials before applying batch
+    decisions. Verification: `uv run ruff check .`, `uv run pytest -q`,
+    `npm --prefix web run verify`, and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -1069,3 +1078,10 @@ Planned milestones:
     reuse the same contract, and the UI reads service guidance first with a
     compatibility fallback. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+52. V4-51: filter and batch-review trials by service guidance. Current status:
+    implemented in `synthetic-data-platform`; guidance decision/source filters
+    are now part of the review queue API, summary API, and filter-batch review
+    selection, with `/reviews/trials` exposing restorable controls and active
+    filter labels for saved/current/suggested guidance. Verification:
+    `uv run ruff check .`, `uv run pytest -q`, `npm --prefix web run verify`,
+    and `git diff --check`.
