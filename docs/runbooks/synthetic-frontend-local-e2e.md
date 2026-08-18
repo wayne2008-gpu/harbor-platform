@@ -179,8 +179,9 @@ HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
-如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish
-和 JSONL / JSON 下载，使用 super repo 内置 smoke dataset：
+如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish、
+JSONL / JSON 下载，以及 result export history 的记录级下载，使用 super repo
+内置 smoke dataset：
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
@@ -265,13 +266,17 @@ URL，不会自动生成 result dataset。当前 `otel-bench-ags` + `oracle` + f
 OpenAI messages trajectory 路径可以 ingest 1 条
 `openai_messages_trajectory` 样本，并 publish result dataset。
 
-如果你要强制验证 result dataset publish 和下载，使用带样本源的任务，并设置：
+如果你要强制验证 result dataset publish、下载和 COS-backed result export，
+使用带样本源的任务，并设置：
 
 ```bash
 HARBOR_E2E_REQUIRE_PUBLISH=1 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
-没有 ingest 到样本时脚本会失败。
+没有 ingest 到样本时脚本会失败。`HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS`
+默认跟随 `HARBOR_E2E_REQUIRE_PUBLISH`；如果只想验证记录级下载接口而不要求
+export storage 一定是 COS，可以显式设置
+`HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS=0`。
 
 ### COS I/O Gate
 

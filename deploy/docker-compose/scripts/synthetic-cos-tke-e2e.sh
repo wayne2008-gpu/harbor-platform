@@ -26,6 +26,7 @@ require_cos_artifacts=${HARBOR_E2E_REQUIRE_COS_ARTIFACTS:-1}
 require_trajectory=${HARBOR_E2E_REQUIRE_TRAJECTORY:-0}
 require_openai_trajectory=${HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY:-$require_trajectory}
 require_publish=${HARBOR_E2E_REQUIRE_PUBLISH:-0}
+require_result_export_cos=${HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS:-$require_publish}
 check_web=${HARBOR_E2E_CHECK_WEB:-1}
 frontend_live_check=${HARBOR_E2E_FRONTEND_LIVE_CHECK:-0}
 preflight_only=${HARBOR_E2E_PREFLIGHT_ONLY:-0}
@@ -101,6 +102,7 @@ append_request_headers \
 archive_path=""
 jsonl_path=""
 json_path=""
+export_download_path=""
 artifact_download_path=""
 
 cleanup() {
@@ -112,6 +114,9 @@ cleanup() {
   fi
   if [ -n "$json_path" ]; then
     rm -f "$json_path"
+  fi
+  if [ -n "$export_download_path" ]; then
+    rm -f "$export_download_path"
   fi
   if [ -n "$artifact_download_path" ]; then
     rm -f "$artifact_download_path"
@@ -148,6 +153,19 @@ curl_url() {
     return
   fi
   curl -fsS "${synthetic_curl_args[@]}" "$@" "$url"
+}
+
+synthetic_api_url_from_download_url() {
+  local value=$1
+  if [[ "$value" == http://* ]] || [[ "$value" == https://* ]]; then
+    printf '%s\n' "$value"
+    return
+  fi
+  if [[ "$value" == /api/* ]]; then
+    printf '%s/%s\n' "$synthetic_api" "${value#/api/}"
+    return
+  fi
+  printf '%s%s\n' "$synthetic_api" "$value"
 }
 
 assert_non_empty() {
@@ -533,6 +551,27 @@ curl_url "$synthetic_api/result-datasets/$result_dataset_id/download?format=json
 jq -e --arg id "$result_dataset_id" \
   '.id == $id and (.samples | length >= 1)' \
   "$json_path" >/dev/null
+
+export_json=$(
+  post_json \
+    "$synthetic_api/result-datasets/$result_dataset_id/exports" \
+    '{"format":"jsonl","metadata":{"source":"synthetic-cos-tke-e2e"}}'
+)
+export_id=$(jq -r '.id // empty' <<<"$export_json")
+export_storage_type=$(jq -r '.storage_type // empty' <<<"$export_json")
+export_download_url=$(jq -r '.download_url // empty' <<<"$export_json")
+assert_non_empty "result export id" "$export_id"
+assert_non_empty "result export download_url" "$export_download_url"
+if [ "$require_result_export_cos" -ne 0 ] && [ "$export_storage_type" != "cos" ]; then
+  echo "Expected COS result export storage, got $export_storage_type" >&2
+  exit 1
+fi
+export_download_endpoint=$(synthetic_api_url_from_download_url "$export_download_url")
+export_download_path=$(mktemp "${TMPDIR:-/tmp}/harbor-e2e-result-export.XXXXXX.jsonl")
+curl_url "$export_download_endpoint" -o "$export_download_path"
+export_jsonl_lines=$(wc -l <"$export_download_path" | tr -d ' ')
+assert_count_at_least "result export JSONL line count" "$export_jsonl_lines" 1
+echo "Verified result export record download: $export_id ($export_storage_type)."
 
 run_frontend_live_check "$dataset_id" "$task_id" "$trial_id" "$result_dataset_id"
 

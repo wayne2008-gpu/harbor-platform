@@ -493,6 +493,8 @@ Implementation milestones:
    local real COS/TKE smoke passed on August 17, 2026 with dataset `cos://`
    upload, materialized inputs, `input-manifest`, COS artifacts, artifact
    download, sample ingest, result dataset publish, and JSONL/JSON download.
+   The smoke script now also creates a result dataset export record and downloads
+   that selected export through its record-level `download_url`.
 7. M39: parameterize production E2E smoke for URLs, auth, runtime, dataset, and
    timeout. Current status: `synthetic-cos-tke-e2e.sh` supports production
    synthetic API, harbor API, Web base URLs, runtime, dataset path, timeout,
@@ -621,6 +623,13 @@ Implementation milestones:
     instead of always regenerating by format. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+26. M58: add record-level result export download to COS/TKE smoke acceptance.
+    Current status: implemented in the super repo; `synthetic-cos-tke-e2e.sh`
+    now creates a JSONL result dataset export after publish, optionally requires
+    `storage_type = "cos"` through `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS`, follows
+    the returned record `download_url`, and verifies the downloaded JSONL object
+    is non-empty. Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
+    and `git diff --check`.
 
 ## Phase 11: Synthetic Platform V4 Productization
 
@@ -935,3 +944,11 @@ Planned milestones:
     legacy dataset-level JSONL/JSON download endpoint remains available for
     ad-hoc regeneration. Verification: `uv run ruff check .`,
     `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
+44. V4-43: cover record-specific exports in the local COS/TKE acceptance script.
+    Current status: implemented in the super repo; the full smoke script now
+    validates the handoff path from published result dataset to export record,
+    export object storage type, record-level download URL, and non-empty JSONL
+    bytes. `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS` defaults to the publish
+    requirement so production-like runs fail if result exports fall back to
+    `api_stream`. Verification: `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh`
+    and `git diff --check`.
