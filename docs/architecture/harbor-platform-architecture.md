@@ -177,9 +177,12 @@ trial-result usage fields when they are present. Synthetic can also compute an
 estimated `cost_estimate` from configured `generation_cost` model prices. No
 provider prices are built into the platform; deployments must provide prices from
 their own billing contract, and unmatched model tokens remain visible instead of
-being silently treated as real zero-cost usage. This is still an estimate layer:
-final account-level billing reconciliation and task/detail-level cost attribution
-remain later Synthetic business-reporting work.
+being silently treated as real zero-cost usage. Task detail result reads also
+return a live task-level `generation_metrics` object with the same cost estimate
+contract, derived from the task job config plus current Harbor job/trial evidence.
+This is still an estimate layer: final account-level billing reconciliation,
+historical price-version snapshots, and invoice-grade attribution remain later
+Synthetic business-reporting work.
 Result dataset export delivery is also Synthetic-owned. The synthetic platform
 can create JSONL/JSON export records for published result datasets, either as
 `api_stream` records pointing at the existing download endpoint or as COS-backed

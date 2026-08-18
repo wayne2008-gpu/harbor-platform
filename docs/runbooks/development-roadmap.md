@@ -1404,8 +1404,19 @@ Planned milestones:
     cost and costed model evidence beside runtime/model/provider/token usage.
     The platform still ships no built-in provider prices; deployments must
     configure prices from their own billing contract, and final billing
-    reconciliation/task-level attribution remains later work. Verification:
+    reconciliation remains later work. Verification:
     `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run typecheck`, `npm --prefix web run test:ui -- --grep
     "workbench summarizes readiness"`, `npm --prefix web run verify`, and
     `git diff --check`.
+80. V4-79: surface task-level generation cost breakdown. Current status:
+    implemented in `synthetic-data-platform`; `GET
+    /synthetic-tasks/{id}/results` now includes a live task-level
+    `generation_metrics` object derived from the synthetic task config plus
+    current Harbor job/trial evidence. Task Detail displays estimated cost,
+    matched/unmatched token coverage, runtime/model/provider/agent, trial counts,
+    observed runtime, sample yield, and per-model cost evidence beside the
+    existing run-control and review panels. This remains configured-price
+    estimate data, not invoice-grade billing reconciliation or historical
+    price-version accounting. Verification: `uv run ruff check .`,
+    `uv run pytest -q`, `npm --prefix web run verify`, and `git diff --check`.
