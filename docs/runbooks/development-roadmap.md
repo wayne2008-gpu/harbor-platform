@@ -164,6 +164,7 @@ GET /synthetic-tasks/{id}
 GET /synthetic-tasks/{id}/samples
 GET /synthetic-tasks/{id}/samples/summary
 GET /synthetic-tasks/{id}/samples/field-profile
+POST /synthetic-tasks/{id}/samples/review-decisions/batch
 GET /synthetic-tasks/{id}/results
 GET /synthetic-tasks/{id}/events
 GET /synthetic-tasks/{id}/logs
@@ -193,6 +194,7 @@ PUT /result-datasets/{id}/review-decision
 POST /result-datasets/review-decisions/batch
 GET /result-datasets/{id}/samples/summary
 GET /result-datasets/{id}/samples/field-profile
+POST /result-datasets/{id}/samples/review-decisions/batch
 POST /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports
 GET /result-datasets/{id}/exports/{export_id}

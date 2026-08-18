@@ -167,6 +167,14 @@ Result sample field-profile observability is Synthetic-owned. `GET
 counts, type buckets, and example values over the same server-side sample
 search/quality filters as the sample list and summary APIs, so Result Detail
 does not derive full dataset field coverage from one paginated browser page.
+Sample review decisions are Synthetic-owned. `POST
+/synthetic-tasks/{id}/samples/review-decisions/batch` and `POST
+/result-datasets/{id}/samples/review-decisions/batch` apply one human decision
+to a bounded server-side sample filter selection guarded by `expected_total`.
+Decisions are stored in sample `_review` metadata, negative decisions contribute
+`review_needs_review`, `review_rejected`, or `review_blocked` quality flags, and
+automatic quality signals remain intact so approval does not silently override
+missing content, missing reward, or low reward checks.
 Generation usage observability is Synthetic-owned. `/workbench/summary` embeds a
 `generation_metrics` snapshot, and `GET /generation-metrics/summary` exposes the
 same rollup directly. The snapshot summarizes task/result counts, generated
