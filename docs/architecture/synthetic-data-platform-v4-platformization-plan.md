@@ -472,4 +472,6 @@ V4 完成时必须能证明：
 - Review queue 是一级生产入口，审核状态可保存、可搜索、可深链。
 - Workbench 不依赖全量 task/result 列表才能展示关键摘要。
 - 关键写动作和下载动作有 request ID 和 audit evidence。
+- result dataset 交付支持 approved-only 样本口径，并由本地 COS + TKE
+  E2E gate 验证 direct download、COS export record 和 `sample_selection`。
 - 本地 COS + TKE smoke、前端 `npm run verify`、后端 `uv run pytest -q` 均通过。

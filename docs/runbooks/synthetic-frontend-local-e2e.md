@@ -185,8 +185,9 @@ HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
 ```
 
 如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish、
-JSONL / JSON 下载，以及 result export history 的 background 创建和记录级下载，
-使用 super repo 内置 smoke dataset：
+JSONL / JSON 下载、result export history 的 background 创建和记录级下载，以及
+approved-only 样本审核口径的下载和 COS export，使用 super repo 内置 smoke
+dataset：
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
@@ -284,6 +285,18 @@ export storage 一定是 COS，可以显式设置
 `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS=0`。
 脚本会用 `mode = "background"` 创建 JSONL export record，轮询到
 `completed` 后再跟随该记录的 `download_url` 下载固定导出对象。
+发布 result dataset 后，脚本还会把当前 result dataset 的所有
+`review_decision=unreviewed` 样本批量标记为 `approved`，再验证：
+
+- `download?format=jsonl&review_decision=approved` 只返回 approved 样本。
+- `download?format=json&review_decision=approved` 返回
+  `sample_selection.filters.review_decision = approved`。
+- `POST /result-datasets/{id}/exports` 携带
+  `filters.review_decision = approved` 时，export record 的
+  `metadata.sample_selection` 固化 source/matching sample count。
+- approved-only export record 的 `download_url` 可以下载非空 JSONL；当
+  `HARBOR_E2E_REQUIRE_RESULT_EXPORT_COS=1` 时，全量 export 和 approved-only
+  export 都必须是 COS-backed。
 
 ### COS I/O Gate
 
@@ -305,6 +318,9 @@ HARBOR_E2E_REQUIRE_COS_ARTIFACTS=1
 - runner 登记 `input-manifest`。
 - runner 上传结果 artifacts 到 COS。
 - synthetic API 通过 harbor-api 获取 artifact download URL，并下载非空内容。
+- synthetic API 发布 result dataset 后，写入 approved sample review decisions。
+- direct result download 和 COS result export 都按
+  `review_decision=approved` 验证 sample scope。
 
 2026-08-17 本地 M38 smoke 已使用
 `deploy/docker-compose/smoke/synthetic-trajectory-sample-dataset`、runtime `tke`

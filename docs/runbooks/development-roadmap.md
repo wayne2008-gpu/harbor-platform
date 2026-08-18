@@ -1529,3 +1529,14 @@ Planned milestones:
     downloads and new export records, and export history shows each record's
     scope. Verification: `uv run ruff check .`, `uv run pytest -q`,
     `npm --prefix web run verify`, and `git diff --check`.
+91. V4-90: make approved-only result handoff part of the COS/TKE E2E gate.
+    Current status: implemented in the super repo; `synthetic-cos-tke-e2e.sh`
+    keeps the existing full result dataset download/export checks, then marks
+    the current result dataset's unreviewed samples as `approved` and validates
+    `review_decision=approved` for direct JSONL/JSON downloads plus background
+    COS export record download. The gate asserts export `sample_selection`,
+    source/matching sample counts, `-approved.jsonl` filename suffix, and COS
+    storage URI whenever COS result export is required. Verification:
+    `bash -n deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh` and
+    `git diff --check`; live COS/TKE execution remains the next environment
+    smoke step.

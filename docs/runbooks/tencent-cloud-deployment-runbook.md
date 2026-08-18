@@ -358,7 +358,8 @@ ServiceAccount 默认发现。
 13. 上传一个小 Harbor dataset 到 COS。
 14. 创建 synthetic task，runtime 选择 `tke`。
 15. 等待 job 成功，验证 input materialization、artifact 上传、trajectory、
-    OpenAI messages trajectory、sample ingest、result dataset publish/download。
+    OpenAI messages trajectory、sample ingest、result dataset publish/download、
+    approved-only sample review、scoped direct download 和 scoped COS export。
 
 ## 冒烟验收
 
@@ -385,6 +386,11 @@ artifact download: non-empty
 sample ingest: >= 1
 result dataset publish: succeeded
 JSONL / JSON download: non-empty
+full result export: storage_type=cos, download non-empty
+sample review: all unreviewed samples approved
+approved-only direct download: JSONL/JSON count matches approved samples
+approved-only result export: storage_type=cos, sample_selection.review_decision=approved
+approved-only result export download: non-empty
 ```
 
 本地脚本 `deploy/docker-compose/scripts/synthetic-cos-tke-e2e.sh` 已覆盖同一条
@@ -445,6 +451,6 @@ COS 回滚：
 | M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、synthetic result export worker、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
 | M36 | TencentDB migration gate | 已完成：启动自动 migration，`/ready` 校验 head version，失败会阻止服务就绪 |
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
-| M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；生产复用同脚本和线上配置 |
+| M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；脚本已追加 full/approved-only COS result export 和 approved-only scoped download gate；生产复用同脚本和线上配置 |
 | M39 | 生产 E2E 脚本 | 已完成：`synthetic-cos-tke-e2e.sh` 支持生产 base URL、runtime、dataset、timeout、统一或分服务 auth header/bearer token |
 | M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；harbor-api 支持 `read/write/internal` token scopes；synthetic API 支持多入站 token 和 `read/write` scope；runner 和 synthetic 出站 harbor-api client 会携带对应 header；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离；control-plane API audit events 已持久化并可通过 internal query 查询。剩余：完整用户登录、细粒度 RBAC、end-user audit correlation |
