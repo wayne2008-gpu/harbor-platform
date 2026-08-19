@@ -56,7 +56,9 @@
   数据低估整条轨迹。
 - Workbench 已切到 repository summary snapshot；review queue 目前仍以现有 Harbor
   artifact/trial 接口聚合为主，数据量增长后需要 SQL 聚合或专用 summary endpoint。
-- 安全侧仍是服务级 token/scope baseline，不是最终用户权限模型。
+- 安全侧已有服务级 token/scope baseline 和最小 `[end_user_permissions]`
+  门禁；它依赖可信上游提供 `X-End-User`，仍不是完整用户登录或细粒度
+  RBAC。
 
 ## UI/UX 设计依据
 
