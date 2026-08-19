@@ -389,8 +389,11 @@ platform cannot call runner-only endpoints and runner tokens can be separated
 from user-facing workflow calls. `synthetic-data-platform` also supports
 multiple inbound `[auth.tokens]` with coarse `read` / `write` scopes so console
 read traffic can be separated from dataset upload, task mutation, publish, and
-review-decision writes. This is a minimum deployment gate, not a replacement
-for future user login, fine-grained RBAC, or end-user permission modeling.
+review-decision writes. A separate `[end_user_permissions]` gate can treat
+`X-End-User` as the authenticated upstream identity and enforce coarse
+end-user `read` / `write` permissions; `write` also satisfies read-only routes.
+This remains a minimum deployment gate, not a replacement for future user
+login and fine-grained RBAC.
 Synthetic API requests propagate `X-Request-ID` and `X-End-User` to harbor-api
 calls. Control-plane API calls are persisted as `api_audit_events` with tenant,
 service principal, optional end user, scopes, required scope, path, status,
@@ -405,9 +408,10 @@ Web auth and tenant headers without printing token values.
 
 The Synthetic Settings API may expose aggregate auth readiness, such as whether
 auth is enabled, whether anonymous access is active, configured/missing token
-counts, scope coverage, tenant-scoped/global token counts, and tenant header
-name. It must not expose bearer token values, token environment variable names,
-tenant IDs, tenant environment variable names, or signed URLs.
+counts, scope coverage, tenant-scoped/global token counts, tenant header name,
+and end-user permission gate counts. It must not expose bearer token values,
+token environment variable names, tenant IDs, tenant environment variable
+names, configured end-user names, or signed URLs.
 Workbench readiness should surface the same Synthetic API auth posture so the
 first screen shows whether the deployment is anonymous, scoped, or missing
 read/write token coverage before operators start new synthesis runs.
