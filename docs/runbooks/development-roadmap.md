@@ -1589,3 +1589,11 @@ Planned milestones:
     the Settings UI shows the gate without exposing usernames. Verification:
     synthetic pytest reports `159 passed`; synthetic frontend verify reports
     `25 passed`; `uv run ruff check .` passes.
+96. V4-95: design full user auth and fine-grained RBAC for
+    `synthetic-data-platform`. Current status: documented in
+    [`synthetic-data-platform-auth-rbac-design.md`](../architecture/synthetic-data-platform-auth-rbac-design.md);
+    the design keeps business-user identity and permissions in
+    `synthetic-data-platform`, leaves `harbor-api` on service/tenant/scope
+    auth, defines the `access_control` module interface, sketches trusted-header
+    and JWT identity adapters, proposes SQL subject/role/binding tables, and
+    defines route-level business actions for future implementation.
