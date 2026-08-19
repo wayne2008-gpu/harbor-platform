@@ -458,8 +458,8 @@ escape the job directory through a link target.
 
 Hardening backlog:
 
-- add full user/session auth, fine-grained RBAC, and end-user permission
-  enforcement before exposing query endpoints to end users directly
+- add full user/session auth and fine-grained RBAC before exposing query
+  endpoints to end users directly
 - define production migration rollout rules for TencentDB, including backup,
   rollback, and multi-version service compatibility checks
 
@@ -534,9 +534,12 @@ Implementation milestones:
    K8s manifests inject component Secrets. Cancel/retry/artifact retry
    idempotency persistence is tenant-scoped. Control-plane API calls are
    persisted in `api_audit_events` and queryable through
-   `POST /internal/audit-events/query`, including by `end_user`. Remaining
-   security scope: full user/session auth, fine-grained RBAC, and end-user
-   permission modeling.
+   `POST /internal/audit-events/query`, including by `end_user`.
+   `synthetic-data-platform` also has a minimal config-driven
+   `[end_user_permissions]` gate that treats `X-End-User` as the authenticated
+   upstream identity and enforces coarse `read` / `write` permissions on API
+   routes. Remaining security scope: full user/session auth and fine-grained
+   RBAC.
 9. M41: expose safe control-plane settings summary for production readiness.
    Current status: implemented in `harbor-control-plane`; authenticated
    `GET /settings` returns database migration readiness, RabbitMQ/RocketMQ
@@ -1577,3 +1580,12 @@ Planned milestones:
     `8 passed`; control-plane pytest reports `97 passed`; synthetic pytest
     reports `152 passed`; synthetic frontend verify reports `25 passed`; ruff
     checks pass for control-plane and the touched synthetic files.
+95. V4-94: add a config-driven end-user permission gate to
+    `synthetic-data-platform`. Current status: implemented in
+    `synthetic-data-platform`; `[end_user_permissions]` can require a trusted
+    `X-End-User` header, deny unconfigured users, and enforce coarse
+    `read` / `write` permissions where `write` also satisfies read routes.
+    `/settings.auth.end_user_permissions` exposes only aggregate readiness, and
+    the Settings UI shows the gate without exposing usernames. Verification:
+    synthetic pytest reports `159 passed`; synthetic frontend verify reports
+    `25 passed`; `uv run ruff check .` passes.
