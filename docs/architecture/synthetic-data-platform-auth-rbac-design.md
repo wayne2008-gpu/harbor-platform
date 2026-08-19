@@ -299,7 +299,7 @@ clock skew，JWKS 缓存要有 TTL 和失败降级策略。
 | 版本 | 内容 | 验收 |
 | --- | --- | --- |
 | V4-95 | 设计 auth/RBAC seam、权限矩阵、SQL 模型和部署约束 | 本文档 + roadmap 更新 |
-| V4-96 | 抽 `access_control` 模块，保留现有 token/gate 行为 | 现有 auth 测试不变；route 只声明 action |
+| V4-96 | 已完成：抽 `access_control` 模块，保留现有 token/gate 行为 | `app.py` 中间件只把 `AccessDecision` 转成审计和 HTTP 响应；模块单测覆盖现有 gate 语义 |
 | V4-97 | 增加 SQL PolicyStore 和 Alembic migrations | role/subject/binding CRUD repo 测试通过 |
 | V4-98 | 增加 `/me` 和 trusted-header IdentityProvider | 能返回当前用户、角色、permission summary |
 | V4-99 | 前端按 `/me` 做动作降级和 403 恢复提示 | Playwright 覆盖 viewer/reviewer/operator |
