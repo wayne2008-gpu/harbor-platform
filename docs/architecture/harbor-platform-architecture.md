@@ -284,6 +284,8 @@ Frontend information architecture and UI/UX rules are documented in
 [`synthetic-data-platform-frontend-design.md`](synthetic-data-platform-frontend-design.md).
 The next platformization iteration is documented in
 [`synthetic-data-platform-v4-platformization-plan.md`](synthetic-data-platform-v4-platformization-plan.md).
+The user auth and RBAC seam for the next security iteration is documented in
+[`synthetic-data-platform-auth-rbac-design.md`](synthetic-data-platform-auth-rbac-design.md).
 
 ### Harbor Platform Super Repo
 
