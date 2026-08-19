@@ -1597,3 +1597,11 @@ Planned milestones:
     auth, defines the `access_control` module interface, sketches trusted-header
     and JWT identity adapters, proposes SQL subject/role/binding tables, and
     defines route-level business actions for future implementation.
+97. V4-96: extract the synthetic access-control module. Current status:
+    implemented in `synthetic-data-platform`; `app.py` now delegates service
+    token, tenant, scope, public-path, end-user permission, and safe auth summary
+    logic to `synthetic_data_platform.access_control`, while the FastAPI
+    middleware remains responsible for audit events and HTTP error responses.
+    Verification: synthetic `uv run ruff check .` passes, synthetic pytest
+    reports `164 passed`, and synthetic frontend `npm --prefix web run verify`
+    reports `25 passed`.
