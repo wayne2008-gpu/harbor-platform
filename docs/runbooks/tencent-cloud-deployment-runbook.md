@@ -14,7 +14,7 @@ TKE + TencentDB MySQL + TDMQ for RabbitMQ + COS + TCR。
 synthetic-data-platform Web
   -> synthetic-data-platform API
   -> synthetic-result-export-worker
-  -> harbor-api
+  -> harbor-control-plane
   -> TencentDB MySQL
   -> TDMQ for RabbitMQ
   -> harbor-runner Pods
@@ -28,7 +28,7 @@ synthetic-data-platform Web
 - `synthetic-data-platform` 是业务平台，负责 dataset、task、result dataset。
 - `synthetic-result-export-worker` 是 synthetic 平台的结果导出 worker，负责从
   MySQL 认领 pending/stale COS result export 记录并上传 JSONL/JSON 到 COS。
-- `harbor-api` 是控制面，负责 job、trial、artifact、runner、lease、retry、cancel。
+- `harbor-control-plane` 是控制面，负责 job、trial、artifact、runner、lease、retry、cancel。
 - `harbor-runner` 和 `harbor-runtime` 在同一个 runner 镜像/Pod 内。
 - `agent-runtime` 由 Harbor provider 创建，TKE 场景下是目标 namespace 内的 Pod。
 
@@ -55,7 +55,7 @@ harbor/config/tke.production.example.toml
 推荐线上挂载路径：
 
 ```text
-harbor-api Pod:
+harbor-control-plane Pod:
   /config/control-plane.toml
 
 synthetic-data-platform API Pod:
@@ -96,17 +96,17 @@ COS `secret_id`、`secret_key`、可选 `session_token`、MySQL `database_url`
 
 ```text
 database: harbor_control_plane
-user: harbor_api
+user: harbor_control_plane
 ```
 
 要求：
 
-- `harbor-api` Pod 可以访问 TencentDB 内网地址。
+- `harbor-control-plane` Pod 可以访问 TencentDB 内网地址。
 - 用户具备建表、建索引、写入 `alembic_version` 的权限。
 - 上线前创建快照或备份。
-- `harbor-api` 启动时会执行 Alembic migration 到 head。
-- `harbor-api /ready` 会检查数据库可访问且 `alembic_version` 等于当前 head。
-- `harbor-api /health` 只作为进程 liveness，不代表数据库 readiness。
+- `harbor-control-plane` 启动时会执行 Alembic migration 到 head。
+- `harbor-control-plane /ready` 会检查数据库可访问且 `alembic_version` 等于当前 head。
+- `harbor-control-plane /health` 只作为进程 liveness，不代表数据库 readiness。
 
 验收：
 
@@ -130,7 +130,7 @@ queue: harbor_jobs
 
 要求：
 
-- `harbor-api` 可以 publish。
+- `harbor-control-plane` 可以 publish。
 - `harbor-runner` 可以 consume。
 - RabbitMQ 只作为唤醒/派发通道，MySQL lease 仍是唯一执行判定。
 - 消息重复投递或 runner 重启时，runner 必须重新通过 `POST /internal/jobs/claim`
@@ -151,11 +151,11 @@ cd /home/ubuntu/project/harbor-platform
 amqp://guest:guest@localhost:5672/%2F
 ```
 
-指向 TDMQ for RabbitMQ 时，先确保 `harbor-api` 的
+指向 TDMQ for RabbitMQ 时，先确保 `harbor-control-plane` 的
 `control-plane.toml [dispatch]` 和 runner 使用同一 TDMQ queue/exchange，然后设置：
 
 ```bash
-HARBOR_RABBITMQ_SMOKE_API_BASE=https://<harbor-api-base-url> \
+HARBOR_RABBITMQ_SMOKE_API_BASE=https://<harbor-control-plane-base-url> \
 HARBOR_RABBITMQ_SMOKE_RABBITMQ_URL='amqps://<user>:<password>@<tdmq-host>:5671/%2F' \
 HARBOR_RABBITMQ_SMOKE_RABBITMQ_QUEUE=harbor_jobs \
 HARBOR_RABBITMQ_SMOKE_PURGE_QUEUE=0 \
@@ -165,7 +165,7 @@ HARBOR_RABBITMQ_SMOKE_PURGE_QUEUE=0 \
 脚本会启动一个临时 RabbitMQ-only runner，`poll_control_plane_jobs = false`，
 提交一个 Docker smoke job，并断言 job 成功、`runner_id` 匹配、trial/artifact
 metadata 写回。因为 runner 不启用 polling，成功结果证明链路是
-`harbor-api publish -> RabbitMQ/TDMQ consume -> MySQL specific claim -> runner execute`。
+`harbor-control-plane publish -> RabbitMQ/TDMQ consume -> MySQL specific claim -> runner execute`。
 如果 `HARBOR_RABBITMQ_SMOKE_RABBITMQ_URL` 带凭证，临时 runner config 会写到
 已 git-ignore 的 `deploy/docker-compose/.local/rabbitmq-claim-smoke/`。
 
@@ -183,14 +183,14 @@ artifacts prefix: <env>/artifacts/
 - `synthetic-data-platform` 上传输入 dataset archive 到 datasets prefix。
 - `harbor-runner` 下载输入 dataset archive。
 - `harbor-runner` 上传所有 job_dir 普通文件到 artifacts prefix。
-- `harbor-api` 读取 artifacts prefix，返回 signed URL 或 proxy stream。
+- `harbor-control-plane` 读取 artifacts prefix，返回 signed URL 或 proxy stream。
 
 推荐权限拆分：
 
 - synthetic API：datasets prefix 的 `PutObject`、`HeadObject`、`GetObject`。
 - runner：datasets prefix 的 `GetObject`、`HeadObject`，artifacts prefix 的
   `PutObject`、`HeadObject`。
-- harbor-api：artifacts prefix 的 `GetObject`、`HeadObject` 和签名 URL 所需权限。
+- harbor-control-plane：artifacts prefix 的 `GetObject`、`HeadObject` 和签名 URL 所需权限。
 
 当前 artifact key 默认布局：
 
@@ -206,7 +206,7 @@ artifacts prefix: <env>/artifacts/
 准备服务镜像仓库：
 
 ```text
-harbor-api
+harbor-control-plane
 synthetic-data-platform-api
 synthetic-data-platform-web
 harbor-runner
@@ -220,7 +220,7 @@ harbor-runner
 建议拆分两个 namespace：
 
 ```text
-harbor-platform     # harbor-api, synthetic API/Web, harbor-runner
+harbor-platform     # harbor-control-plane, synthetic API/Web, harbor-runner
 harbor-agent-runtime # agent-runtime Pods
 ```
 
@@ -240,7 +240,7 @@ deploy/k8s/base/
 该 base 同时包含第一版服务 Deployment/Service manifests：
 
 ```text
-harbor-api
+harbor-control-plane
 synthetic-data-platform
 synthetic-result-export-worker
 synthetic-data-platform-web
@@ -283,7 +283,7 @@ namespace。只有 runner 部署在目标集群外，或需要临时调试 kubec
 - `[artifact_storage] backend = "cos"`。
 - `[artifact_storage.cos]` 指向 artifact bucket、region、prefix。
 
-`harbor-api` 只读 artifact，不上传运行结果。
+`harbor-control-plane` 只读 artifact，不上传运行结果。
 
 ### platform.toml
 
@@ -301,7 +301,7 @@ namespace。只有 runner 部署在目标集群外，或需要临时调试 kubec
 
 必须包含：
 
-- `control_plane_url` 指向线上 `harbor-api`。
+- `control_plane_url` 指向线上 `harbor-control-plane`。
 - RabbitMQ consumer 配置，指向 TDMQ for RabbitMQ。
 - `[artifact_storage] backend = "cos"`。
 - `[artifact_storage] upload_policy = "job_dir_all"`。
@@ -350,8 +350,8 @@ TKE context。
 6. 创建 ConfigMaps、Secrets、TKE namespace、RBAC、image pull secret 后，跑集群
    preflight：
    `HARBOR_K8S_KUSTOMIZE_DIR=/path/to/production/overlay deploy/k8s/scripts/tke-preflight.sh --cluster`。
-7. 部署 `harbor-api`。
-8. 检查 `harbor-api /ready`，并确认 MySQL `alembic_version` 到 head。
+7. 部署 `harbor-control-plane`。
+8. 检查 `harbor-control-plane /ready`，并确认 MySQL `alembic_version` 到 head。
 9. 部署 `synthetic-data-platform` API、result export worker 和 Web。
 10. 检查 synthetic API `/health`、Settings 的 result export worker readiness
     和 Web 首屏。
@@ -369,8 +369,8 @@ TKE context。
 线上冒烟至少通过以下检查：
 
 ```text
-harbor-api health: succeeded
-harbor-api readiness: succeeded
+harbor-control-plane health: succeeded
+harbor-control-plane readiness: succeeded
 synthetic API health: succeeded
 frontend reachable: succeeded
 MySQL alembic head: 0009_api_audit_end_user
@@ -406,7 +406,7 @@ approved-only result export download: non-empty
 
 1. 先把 `harbor-runner` 副本数降到 0，避免继续 claim 新任务。
 2. 回滚 `synthetic-data-platform` Web/API 镜像。
-3. 回滚 `harbor-api` 镜像。
+3. 回滚 `harbor-control-plane` 镜像。
 4. 恢复 `harbor-runner` 副本数。
 
 任务处理：
@@ -437,10 +437,10 @@ COS 回滚：
 - COS credential、RabbitMQ URL、MySQL URL、API token 和 tenant ID 的 env/K8s
   Secret 引用已补齐。
 - 已有最小服务间 Bearer token + tenant header + token scope gate。
-  `harbor-api` 可将 synthetic 平台 token 限制为 `read/write`，将 runner token
+  `harbor-control-plane` 可将 synthetic 平台 token 限制为 `read/write`，将 runner token
   配成 `read/write/internal`；cancel/retry/artifact retry 的 idempotency
   persistence 已按 tenant 隔离；synthetic API 会把入站 `X-Request-ID` 和
-  `X-End-User` 透传到 harbor-api；control-plane API 调用会写入
+  `X-End-User` 透传到 harbor-control-plane；control-plane API 调用会写入
   `api_audit_events`，并可通过 `POST /internal/audit-events/query` 按
   `end_user` 查询。synthetic API 已有最小配置驱动 `[end_user_permissions]`
   门禁，可基于可信网关注入的 `X-End-User` 做粗粒度 `read/write` 拦截。对
@@ -454,9 +454,9 @@ COS 回滚：
 | --- | --- | --- |
 | M33 | 生产配置模板 | 已完成：三个子项目各有不含真实 secret 的 `.example.toml` |
 | M34 | TKE namespace/RBAC manifests | 已完成：`deploy/k8s/base` 渲染通过，runner ServiceAccount 具备最小 Pod/exec/log 权限 |
-| M35 | 服务 Deployment/Service manifests | 已完成：harbor-api、synthetic API/Web、synthetic result export worker、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
+| M35 | 服务 Deployment/Service manifests | 已完成：harbor-control-plane、synthetic API/Web、synthetic result export worker、runner Deployment/Service、PDB、API/Web HPA manifests 通过 kustomize 和 preflight 渲染；production overlay 模板包含 Ingress 和入站 NetworkPolicy |
 | M36 | TencentDB migration gate | 已完成：启动自动 migration，`/ready` 校验 head version，失败会阻止服务就绪 |
 | M37 | TDMQ RabbitMQ smoke | 已完成本地 RabbitMQ 兼容 smoke：`rabbitmq-claim-smoke.sh` 通过；真实 TDMQ 复用同脚本和线上配置 |
 | M38 | COS dataset/artifact smoke | 已完成本地真实 COS/TKE smoke：dataset `cos://`、materialized inputs、input-manifest、COS artifacts、artifact download、publish/download 全部通过；脚本已追加 full/approved-only COS result export 和 approved-only scoped download gate；生产复用同脚本和线上配置 |
 | M39 | 生产 E2E 脚本 | 已完成：`synthetic-cos-tke-e2e.sh` 支持生产 base URL、runtime、dataset、timeout、统一或分服务 auth header/bearer token |
-| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-api/synthetic API 支持 Bearer token + tenant header；harbor-api 支持 `read/write/internal` token scopes；synthetic API 支持多入站 token 和 `read/write` scope；runner 和 synthetic 出站 harbor-api client 会携带对应 header；synthetic 会透传 `X-Request-ID` 和 `X-End-User` 到 harbor-api；synthetic API 支持最小 `[end_user_permissions]` 粗粒度 `read/write` 门禁；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离；control-plane API audit events 已持久化并可通过 internal query 按 `end_user` 查询。剩余：完整用户登录、细粒度 RBAC |
+| M40 | 安全加固 | 已完成：COS credential、RabbitMQ URL、MySQL URL、API token、tenant ID 的 env/K8s Secret 引用；harbor-control-plane/synthetic API 支持 Bearer token + tenant header；harbor-control-plane 支持 `read/write/internal` token scopes；synthetic API 支持多入站 token 和 `read/write` scope；runner 和 synthetic 出站 harbor-control-plane client 会携带对应 header；synthetic 会透传 `X-Request-ID` 和 `X-End-User` 到 harbor-control-plane；synthetic API 支持最小 `[end_user_permissions]` 粗粒度 `read/write` 门禁；cancel/retry/artifact retry 的 idempotency persistence 已按 tenant 隔离；control-plane API audit events 已持久化并可通过 internal query 按 `end_user` 查询。剩余：完整用户登录、细粒度 RBAC |

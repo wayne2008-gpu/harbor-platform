@@ -4,7 +4,7 @@ resources:
   - namespaces.yaml
   - serviceaccounts.yaml
   - runner-agent-runtime-rbac.yaml
-  - harbor-api.yaml
+  - harbor-control-plane.yaml
   - synthetic-data-platform.yaml
   - harbor-runner.yaml
   - poddisruptionbudgets.yaml

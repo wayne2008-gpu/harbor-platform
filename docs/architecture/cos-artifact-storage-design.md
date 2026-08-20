@@ -4,14 +4,14 @@
 
 Production artifact storage should use Tencent Cloud COS as the durable source of truth.
 
-`harbor-runtime` still writes job output to the runner-local `jobs_dir` first. After a job finishes, `harbor-runner` uploads every ordinary file under the job directory to COS and records durable COS locations in MySQL through `harbor-api`.
+`harbor-runtime` still writes job output to the runner-local `jobs_dir` first. After a job finishes, `harbor-runner` uploads every ordinary file under the job directory to COS and records durable COS locations in MySQL through `harbor-control-plane`.
 
 ```text
 harbor-runtime
   -> runner-local jobs_dir
   -> harbor-runner artifact collector
   -> COS artifact store
-  -> harbor-api / MySQL artifact rows
+  -> harbor-control-plane / MySQL artifact rows
 ```
 
 Runner-local files are staging/cache. COS objects are the production artifact source.
@@ -23,17 +23,17 @@ Runner-local files are staging/cache. COS objects are the production artifact so
 - scans `jobs/<job_id>/`
 - classifies artifacts
 - uploads files to COS
-- records artifact metadata through `harbor-api`
+- records artifact metadata through `harbor-control-plane`
 - optionally deletes local files after successful upload
 
-`harbor-api` owns artifact indexing and access:
+`harbor-control-plane` owns artifact indexing and access:
 
 - stores artifact metadata in MySQL
 - returns artifact lists
 - resolves COS artifacts for download through proxy streaming or signed URLs
 - does not know Harbor local directory layout beyond stored metadata
 
-`synthetic-data-platform` consumes artifacts through `harbor-api`. It should not read runner-local paths or COS directly.
+`synthetic-data-platform` consumes artifacts through `harbor-control-plane`. It should not read runner-local paths or COS directly.
 
 ## Storage Interface
 
@@ -61,7 +61,7 @@ The runner daemon should only depend on `ArtifactStore`, not COS SDK details.
 
 Artifact storage uses three IDs with different ownership:
 
-- `platform_job_id`: the Harbor platform job ID created by `harbor-api`. This is
+- `platform_job_id`: the Harbor platform job ID created by `harbor-control-plane`. This is
   the durable scheduling and query key.
 - `runtime_job_result_id`: the Harbor runtime `JobResult.id` read from
   `jobs/<job_id>/result.json`. This is retained for Harbor-native traceability
@@ -157,7 +157,7 @@ session_token = "" # optional
 Recommended production permission split:
 
 - runner credentials: `PutObject`, `HeadObject`, optional `DeleteObject` under the configured prefix
-- harbor-api credentials: `GetObject`, `HeadObject`, signed URL permission under the configured prefix
+- harbor-control-plane credentials: `GetObject`, `HeadObject`, signed URL permission under the configured prefix
 
 Do not store temporary signed URLs in MySQL. They expire and are access tokens, not durable object addresses.
 
@@ -170,10 +170,10 @@ Local Docker Compose mounts only the control-plane config because the runner run
 on the host during local end-to-end tests:
 
 ```text
-harbor-control-plane/config/control-plane.local.toml -> harbor-api:/config/control-plane.toml
+harbor-control-plane/config/control-plane.local.toml -> harbor-control-plane:/config/control-plane.toml
 ```
 
-`harbor-api` loads `/config/control-plane.toml` by default when the file exists.
+`harbor-control-plane` loads `/config/control-plane.toml` by default when the file exists.
 `HARBOR_CONTROL_PLANE_CONFIG` remains only an override hook.
 For local validation, run `harbor-runner` from the Harbor submodule with
 `uv run harbor runner start --config config/runner.local.toml --keep-alive`.
@@ -183,7 +183,7 @@ Security hardening backlog:
 
 - replace `secret_id`, `secret_key`, and `session_token` literal TOML fields with env/K8s Secret references
 - keep TOML as the non-secret config source for bucket, region, prefix, retention, and download mode
-- update compose/K8s manifests so only runner and harbor-api pods receive the minimum COS credentials they need
+- update compose/K8s manifests so only runner and harbor-control-plane pods receive the minimum COS credentials they need
 
 ## Artifact Metadata
 
@@ -254,10 +254,10 @@ trial-a/agent/trajectory.openai-messages.json    metadata.schema = openai_messag
 5. `CosArtifactStore` uploads each file to attempt/execution-scoped COS keys.
 6. Upload result returns `storage_type = "cos"` and `storage_key = cos://...`.
 7. `harbor-runner` records each artifact through `POST /internal/jobs/{job_id}/artifacts`.
-8. `harbor-api` persists artifact rows in MySQL.
+8. `harbor-control-plane` persists artifact rows in MySQL.
 9. Clients list artifacts through `GET /jobs/{job_id}/artifacts`.
 10. Clients fetch content through `GET /jobs/{job_id}/artifacts/{artifact_id}/content`.
-11. `harbor-api` either redirects to a signed COS URL or proxies the object stream.
+11. `harbor-control-plane` either redirects to a signed COS URL or proxies the object stream.
 
 ## Failure Semantics
 
@@ -284,10 +284,10 @@ Public clients should never receive COS credentials.
 Preferred access path:
 
 ```text
-client -> harbor-api -> signed URL or proxy stream -> COS
+client -> harbor-control-plane -> signed URL or proxy stream -> COS
 ```
 
-`harbor-api` should enforce platform auth before returning a signed URL or streaming content. The signed URL TTL should be short, defaulting to 10 minutes.
+`harbor-control-plane` should enforce platform auth before returning a signed URL or streaming content. The signed URL TTL should be short, defaulting to 10 minutes.
 
 ## Migration Plan
 
@@ -298,11 +298,11 @@ client -> harbor-api -> signed URL or proxy stream -> COS
 5. Extend artifacts table and service contracts with `relative_path`, `checksum_sha256`, `etag`, and `uploaded_at`.
 6. Add control-plane artifact resolver for `runner-local` and `cos`.
 7. Add compose config examples for COS without enabling it by default.
-8. Add synthetic-data-platform result and trajectory query endpoints that proxy through `harbor-api`.
+8. Add synthetic-data-platform result and trajectory query endpoints that proxy through `harbor-control-plane`.
 9. Add an integration smoke that uses a fake store or a real COS bucket when credentials are present.
 
 ## Open Decisions
 
-- Whether `harbor-api` should proxy COS content by default or return signed URLs.
+- Whether `harbor-control-plane` should proxy COS content by default or return signed URLs.
 - Whether env/K8s Secret credential references should use env names, mounted file paths, or both.
 - Whether COS upload retries are runner-local only or also triggered by a control-plane retry endpoint.

@@ -6,7 +6,7 @@ platform deployment path.
 Current scope:
 
 - `base/`: namespaces, runner RBAC, service accounts, Deployments,
-  ClusterIP Services, PodDisruptionBudgets, and API/Web HPAs for `harbor-api`,
+  ClusterIP Services, PodDisruptionBudgets, and API/Web HPAs for `harbor-control-plane`,
   synthetic API/Web, and `harbor-runner`.
 - `overlays/production/`: production template overlay with TCR image
   replacements, a synthetic web Ingress, and ingress-only NetworkPolicies.
@@ -59,11 +59,11 @@ Kubernetes Secrets.
 Create required Secrets outside git:
 
 ```bash
-kubectl -n harbor-platform create secret generic harbor-api-secret \
+kubectl -n harbor-platform create secret generic harbor-control-plane-secret \
   --from-literal=HARBOR_CONTROL_PLANE_DATABASE_URL='mysql+pymysql://<user>:<password>@<mysql-host>:3306/harbor_control_plane' \
   --from-literal=HARBOR_CONTROL_PLANE_RABBITMQ_URL='amqps://<user>:<password>@<tdmq-host>:5671/%2F' \
-  --from-literal=HARBOR_SYNTHETIC_HARBOR_API_TOKEN='<synthetic-to-harbor-api-token>' \
-  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-api-token>' \
+  --from-literal=HARBOR_SYNTHETIC_CONTROL_PLANE_TOKEN='<synthetic-to-harbor-control-plane-token>' \
+  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-control-plane-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_KEY='<cos-secret-key>' \
@@ -73,7 +73,7 @@ kubectl -n harbor-platform create secret generic synthetic-data-platform-secret 
   --from-literal=SYNTHETIC_DATA_PLATFORM_DATABASE_URL='mysql+pymysql://<user>:<password>@<mysql-host>:3306/synthetic_data_platform' \
   --from-literal=SYNTHETIC_DATA_PLATFORM_READ_TOKEN='<synthetic-platform-read-token>' \
   --from-literal=SYNTHETIC_DATA_PLATFORM_WRITE_TOKEN='<synthetic-platform-write-token>' \
-  --from-literal=HARBOR_SYNTHETIC_HARBOR_API_TOKEN='<synthetic-to-harbor-api-token>' \
+  --from-literal=HARBOR_SYNTHETIC_CONTROL_PLANE_TOKEN='<synthetic-to-harbor-control-plane-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=SYNTHETIC_DATASET_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=SYNTHETIC_DATASET_COS_SECRET_KEY='<cos-secret-key>' \
@@ -81,7 +81,7 @@ kubectl -n harbor-platform create secret generic synthetic-data-platform-secret 
 
 kubectl -n harbor-platform create secret generic harbor-runner-secret \
   --from-literal=HARBOR_RUNNER_RABBITMQ_URL='amqps://<user>:<password>@<tdmq-host>:5671/%2F' \
-  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-api-token>' \
+  --from-literal=HARBOR_RUNNER_CONTROL_PLANE_TOKEN='<runner-to-harbor-control-plane-token>' \
   --from-literal=HARBOR_TENANT_ID='<tenant-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_ID='<cos-secret-id>' \
   --from-literal=HARBOR_ARTIFACT_COS_SECRET_KEY='<cos-secret-key>' \
@@ -103,10 +103,10 @@ kubectl -n harbor-platform create secret generic harbor-runner-kubeconfig \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Use the same `HARBOR_TENANT_ID` in `harbor-api-secret`,
+Use the same `HARBOR_TENANT_ID` in `harbor-control-plane-secret`,
 `synthetic-data-platform-secret`, and `harbor-runner-secret`. The
 control-plane production template uses separate inbound tokens:
-`HARBOR_SYNTHETIC_HARBOR_API_TOKEN` has read/write scope for the synthetic
+`HARBOR_SYNTHETIC_CONTROL_PLANE_TOKEN` has read/write scope for the synthetic
 platform, while `HARBOR_RUNNER_CONTROL_PLANE_TOKEN` has read/write/internal
 scope for runner calls. The synthetic platform production template also supports
 separate inbound tokens: `SYNTHETIC_DATA_PLATFORM_READ_TOKEN` protects read-only
@@ -125,11 +125,11 @@ SYNTHETIC_DATASET_COS_SESSION_TOKEN
 `harbor-runner-agent-env` is optional. Use it only when the selected Harbor
 agents require model credentials from the runner environment.
 
-`harbor-api` uses `/health` for liveness and `/ready` for readiness. `/ready`
+`harbor-control-plane` uses `/health` for liveness and `/ready` for readiness. `/ready`
 checks the database connection and verifies that `alembic_version` is at the
 current migration head.
 
-The base includes PodDisruptionBudgets for `harbor-api`, synthetic API/Web, and
+The base includes PodDisruptionBudgets for `harbor-control-plane`, synthetic API/Web, and
 `harbor-runner`. It also includes CPU-based HPAs for the stateless API/Web
 Deployments. `harbor-runner` intentionally has no HPA in the base because a
 scale-down while a Pod owns active Harbor work can interrupt a run; scale
@@ -146,7 +146,7 @@ repo, then replace:
 - `synthetic-data-platform-tls`
 
 The overlay exposes only `synthetic-data-platform-web`. The web service should
-proxy API calls to `synthetic-data-platform` inside the cluster; `harbor-api`
+proxy API calls to `synthetic-data-platform` inside the cluster; `harbor-control-plane`
 stays internal and is reachable only from synthetic API and runner Pods.
 
 Before applying the production overlay, label the namespace that runs the

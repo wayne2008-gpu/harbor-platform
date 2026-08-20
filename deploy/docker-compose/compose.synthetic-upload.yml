@@ -1,3 +1,8 @@
+# Legacy compatibility override.
+#
+# COS dataset upload and the result export worker are now included in
+# compose.dev.yml by default. Keeping this file lets older runbooks/commands
+# that still pass "-f compose.synthetic-upload.yml" continue to work.
 services:
   synthetic-data-platform:
     environment:
@@ -14,6 +19,8 @@ services:
       SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
     depends_on:
       mysql:
+        condition: service_healthy
+      synthetic-data-platform:
         condition: service_healthy
     volumes:
       - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro

@@ -1,16 +1,16 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: harbor-api-pdb
+  name: harbor-control-plane-pdb
   namespace: harbor-platform
   labels:
-    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/name: harbor-control-plane
     app.kubernetes.io/part-of: harbor-platform
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: harbor-api
+      app.kubernetes.io/name: harbor-control-plane
       app.kubernetes.io/part-of: harbor-platform
 ---
 apiVersion: policy/v1

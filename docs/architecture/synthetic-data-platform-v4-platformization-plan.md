@@ -366,7 +366,7 @@ V4 增强：
 
 V4 增强：
 
-- 展示 synthetic API、Harbor API、COS、RabbitMQ/TDMQ、TencentDB migration、
+- 展示 synthetic API、Harbor control-plane、COS、RabbitMQ/TDMQ、TencentDB migration、
   runtime capabilities 的 readiness。
 - 展示 local/production E2E command template。
 - 展示 secret configured flags 和 auth scope summary，不展示 secret 明文。

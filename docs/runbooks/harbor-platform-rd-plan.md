@@ -5,7 +5,7 @@
 以 `harbor/` 现有执行能力为基础，交付一个可分布式运行 Harbor job 的平台：
 
 ```text
-harbor-api -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
+harbor-control-plane -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
 ```
 
 第一阶段目标不是完整合成数据平台，而是先让 Harbor job 能被 API 提交、被 runner 消费、被 MySQL 查询状态，并能用本地 Compose 控制面加宿主机 runner 跑通。
@@ -22,13 +22,13 @@ harbor-api -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
 MVP 完成时必须满足：
 
 - 可以通过 `POST /jobs` 提交一个 Harbor `JobConfig`。
-- `harbor-api` 将 job 写入 MySQL 并发布 RabbitMQ 消息。
+- `harbor-control-plane` 将 job 写入 MySQL 并发布 RabbitMQ 消息。
 - 两个 `harbor-runner` 实例订阅同一 RabbitMQ queue，只有一个 runner 成功拿到 job lease。
 - runner 使用现有 `harbor run` 能力运行 Docker/AGS/TKE job。
 - runner 周期性把 job/trial progress 写入 MySQL。
 - `GET /jobs/{job_id}` 能查询 queued/running/succeeded/failed/cancelled 状态。
 - `POST /jobs/{job_id}/cancel` 能取消 queued 或 running job。
-- Docker Compose 能一键启动 MySQL、RabbitMQ、harbor-api；runner 从 `harbor/` 子项目在宿主机启动。
+- Docker Compose 能一键启动 MySQL、RabbitMQ、harbor-control-plane；runner 从 `harbor/` 子项目在宿主机启动。
 
 ## 不在 MVP 范围
 
@@ -45,7 +45,7 @@ MVP 完成时必须满足：
 | M0 | 2 天 | 规格冻结 | 架构方案、研发计划、contracts 草案 |
 | M1 | 1 周 | runner run-once | `harbor runner run-once`、进程监管、result 扫描 |
 | M2 | 1 周 | runner daemon | 本地并发、快照、取消、优雅退出 |
-| M3 | 1 到 1.5 周 | harbor-api MVP | FastAPI、MySQL migration、jobs/runners API |
+| M3 | 1 到 1.5 周 | harbor-control-plane MVP | FastAPI、MySQL migration、jobs/runners API |
 | M4 | 1.5 到 2 周 | MySQL/RabbitMQ 集成 | lease、heartbeat、consumer、状态写回 |
 | M5 | 1 周 | Compose 联调 | 本地分布式环境、双 runner 验证 |
 | M6 | 1 周 | 日志和产物 PoC | runner-local artifact proxy、artifact manifest |
@@ -165,7 +165,7 @@ uv run harbor runner start --config runner.toml
 - `runner_concurrency` 和 Harbor `n_concurrent_trials` 明确分离。
 - 本阶段仍不引入 MySQL/RabbitMQ。
 
-## M3: Harbor API MVP
+## M3: Harbor control-plane MVP
 
 时间盒：1 到 1.5 周。
 
@@ -267,7 +267,7 @@ WHERE id = :job_id
   - RabbitMQ
   - optional RabbitMQ management UI
   - optional RabbitMQ dashboard
-  - harbor-api
+  - harbor-control-plane
   - synthetic-data-platform
 - 准备本地 smoke JobConfig。
 - 准备 AGS/TKE 可选 smoke JobConfig。
@@ -313,7 +313,7 @@ WHERE id = :job_id
 - 创建 `synthetic-data-platform/` 最小服务。
 - 实现 synthetic task CRUD。
 - 生成 Harbor `JobConfig`。
-- 调用 `harbor-api POST /jobs`。
+- 调用 `harbor-control-plane POST /jobs`。
 - 保存 `synthetic_task_id -> harbor_job_id`。
 - 查询 Harbor job status。
 - 从 Harbor artifacts 读取样本结果。
@@ -332,7 +332,7 @@ WHERE id = :job_id
 
 - MySQL 替换为 TencentDB。
 - RabbitMQ 替换为 TDMQ for RabbitMQ。
-- harbor-api 部署到 TKE。
+- harbor-control-plane 部署到 TKE。
 - harbor-runner 以 TKE Deployment 运行。
 - 配置 AGS/TKE provider secrets。
 - artifact storage 从 runner-local 切到 COS。
@@ -351,32 +351,32 @@ WHERE id = :job_id
 
 - M1/M2 runner 基础能力：`harbor runner run-once`、`harbor runner start`、并发控制、snapshot、取消和 artifact metadata 回写。
 - M3/M4 控制面和调度链路：FastAPI、SQL repository、MySQL schema、RabbitMQ producer/consumer、heartbeat、lease、expired lease recovery、runner offline marking、snapshot 回写和 trial 明细同步。
-- M5 本地 Compose 栈已调整为 MySQL、RabbitMQ、harbor-api、synthetic-data-platform；runner 在宿主机从 `harbor/config/runner.local.toml` 启动。
+- M5 本地 Compose 栈已调整为 MySQL、RabbitMQ、harbor-control-plane、synthetic-data-platform；runner 在宿主机从 `harbor/config/runner.local.toml` 启动。
 - M6 artifact PoC：artifact list endpoint、受限 runner-local content proxy、runner 生成 `artifacts/runner-manifest.json`、job `config.json`/`result.json`、trial `result.json`、`exception.txt`、agent/verifier logs、Harbor artifact `manifest.json` 和 `samples*.json` 索引。
-- M7 synthetic PoC：`POST /synthetic-tasks` 可直传 Harbor JobConfig，也可从 dataset/tasks/environment/agent/model 等业务字段生成 Harbor JobConfig；创建 Harbor job 后保存 `synthetic_task_id -> harbor_job_id`，支持查询 Harbor job、同步状态、通过 harbor-api artifacts endpoint ingest samples。
+- M7 synthetic PoC：`POST /synthetic-tasks` 可直传 Harbor JobConfig，也可从 dataset/tasks/environment/agent/model 等业务字段生成 Harbor JobConfig；创建 Harbor job 后保存 `synthetic_task_id -> harbor_job_id`，支持查询 Harbor job、同步状态、通过 harbor-control-plane artifacts endpoint ingest samples。
 
 已验证：
 
-- `POST /synthetic-tasks` 能通过 Compose 内部 HTTP 调用 `harbor-api POST /jobs`。
-- `GET /synthetic-tasks/{id}/harbor-job` 能通过 harbor-api 查询 Harbor job 状态。
+- `POST /synthetic-tasks` 能通过 Compose 内部 HTTP 调用 `harbor-control-plane POST /jobs`。
+- `GET /synthetic-tasks/{id}/harbor-job` 能通过 harbor-control-plane 查询 Harbor job 状态。
 - `POST /synthetic-tasks/{id}/sync` 能把 Harbor `failed/running/succeeded/...` 状态同步成本地 synthetic task 状态。
 - 过期 `leased` job 会被重新排队，`acquire_lease` 在处理 RabbitMQ redelivery 时也会先回收过期 lease。
 - 带 `trial_results` 的 runner snapshot 会同步写入 `trials` 表，`GET /jobs/{job_id}/trials` 能返回 task、agent、model、reward、exception 和 trial result JSON。
 - `GET /runners` 可按 `stale_after_sec` 将超时 heartbeat 的 runner 标记为 `offline`。
-- runner terminal 后会生成并回写 job-level `artifacts/runner-manifest.json`，同时把 Harbor trial artifact `manifest.json` 记为 `artifact-manifest`、把 `samples*.json` 记为 `samples`，供 synthetic 平台通过 harbor-api artifacts endpoint ingest。
-- `POST /synthetic-tasks/{id}/ingest-samples` 只通过 harbor-api artifacts endpoint 读取样本，不读取 runner-local `jobs/`；只从 `sample`/`samples` artifact 和带 `samples` 字段的 `trial-result` 解析样本，避免把 job-level `result.json` 误入库。
+- runner terminal 后会生成并回写 job-level `artifacts/runner-manifest.json`，同时把 Harbor trial artifact `manifest.json` 记为 `artifact-manifest`、把 `samples*.json` 记为 `samples`，供 synthetic 平台通过 harbor-control-plane artifacts endpoint ingest。
+- `POST /synthetic-tasks/{id}/ingest-samples` 只通过 harbor-control-plane artifacts endpoint 读取样本，不读取 runner-local `jobs/`；只从 `sample`/`samples` artifact 和带 `samples` 字段的 `trial-result` 解析样本，避免把 job-level `result.json` 误入库。
 - `POST /synthetic-tasks` 支持从 `dataset_path`/`dataset_name`、`tasks`、`environment`、`agent_name`、`model_name`、`n_concurrent_trials`、`artifacts` 生成 Harbor JobConfig，并保留 `harbor_job_config` 直传兼容路径。
 - `docker compose -f compose.dev.yml config` 可正常渲染本地控制面栈。
 - `smoke/ags-otel-bench-smoke-job.json` 已通过 JSON 和 Harbor `JobConfig` 静态校验，`harbor/generated/otel-bench-ags-smoke/go-http-tracing` 已通过 `Task.is_valid_dir` 和 `DatasetConfig.get_task_configs` 静态校验。
 - `smoke/docker-touch-file-smoke-job.local.json` 已通过 JSON 和 Harbor `JobConfig` 静态校验；`harbor/generated/harbor-platform-docker-smoke/touch-file` 已通过 `Task.is_valid_dir` 和 `DatasetConfig.get_task_configs` 静态校验。
-- `scripts/submit-and-wait-job.sh` 已通过 `bash -n` 和本地 fake harbor-api 成功路径验证，可复用提交 Docker/AGS smoke，并断言 runner 在线数量、terminal succeeded、非空 runner assignment、trial 明细、`result` 和 `artifact-manifest` metadata；terminal 后会等待 metadata 回写，避免 artifact/trial 写入竞态。
+- `scripts/submit-and-wait-job.sh` 已通过 `bash -n` 和本地 fake harbor-control-plane 成功路径验证，可复用提交 Docker/AGS smoke，并断言 runner 在线数量、terminal succeeded、非空 runner assignment、trial 明细、`result` 和 `artifact-manifest` metadata；terminal 后会等待 metadata 回写，避免 artifact/trial 写入竞态。
 - 旧的 runner 容器访问宿主机 Docker 验证路径已下线，当前使用宿主机 runner + 宿主机 Docker。
 - 并发双 job smoke 已验证双 runner 分担：`60707c0367a54f68a72017f5b145ff42` 由 `runner-1` 执行，`3849c6f61c5a4c56a976690c196cc7af` 由 `runner-2` 执行，二者均 `succeeded` 且 trial/artifact metadata 完整。
 - runner 在 RabbitMQ 本轮无消息且启用 `poll_control_plane_jobs` 时会 fallback 到控制面 queued-job polling，再由 MySQL lease 保证不会重复执行；该行为补齐了 Compose 双 runner 分担验证所需的空闲抢占能力。
 - `cd harbor && uv run pytest tests/unit/runner -q` 已通过 23 个 runner 单测；`uv run ruff check src/harbor/runner tests/unit/runner` 已通过。
 - `cd harbor-control-plane && uv run pytest tests -q` 已通过 32 个控制面单测；`uv run ruff check src tests` 已通过。
 - 本轮复跑 `cd harbor-control-plane && uv run pytest tests -q`、`cd harbor && uv run pytest tests/unit/runner -q`、`cd synthetic-data-platform && uv run pytest tests -q` 均通过，覆盖控制面、runner、synthetic 三段当前回归。
-- `cd synthetic-data-platform && uv run pytest tests -q` 已通过 8 个 synthetic 平台单测；`uv run ruff check src tests` 已通过，其中覆盖 succeeded Harbor job 通过 harbor-api artifacts endpoint ingest samples 的成功路径。
+- `cd synthetic-data-platform && uv run pytest tests -q` 已通过 8 个 synthetic 平台单测；`uv run ruff check src tests` 已通过，其中覆盖 succeeded Harbor job 通过 harbor-control-plane artifacts endpoint ingest samples 的成功路径。
 
 仍未满足：
 

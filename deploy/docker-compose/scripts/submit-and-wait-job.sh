@@ -2,7 +2,7 @@
 set -euo pipefail
 
 job_file=${1:?usage: submit-and-wait-job.sh JOB_JSON [API_BASE_URL] [TIMEOUT_SEC]}
-api_base=${2:-http://localhost:8080}
+api_base=${2:-http://localhost:18080}
 timeout_sec=${3:-600}
 interval_sec=${HARBOR_SMOKE_POLL_INTERVAL_SEC:-2}
 runner_timeout_sec=${HARBOR_SMOKE_RUNNER_TIMEOUT_SEC:-120}

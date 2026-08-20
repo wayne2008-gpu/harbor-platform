@@ -6,7 +6,7 @@ compose_dir=$(cd "$script_dir/.." && pwd)
 platform_root=$(cd "$compose_dir/../.." && pwd)
 harbor_dir="$platform_root/harbor"
 
-api_base=${HARBOR_RABBITMQ_SMOKE_API_BASE:-http://localhost:8080}
+api_base=${HARBOR_RABBITMQ_SMOKE_API_BASE:-http://localhost:18080}
 rabbitmq_url=${HARBOR_RABBITMQ_SMOKE_RABBITMQ_URL:-amqp://guest:guest@localhost:5672/%2F}
 rabbitmq_exchange=${HARBOR_RABBITMQ_SMOKE_RABBITMQ_EXCHANGE:-}
 rabbitmq_queue=${HARBOR_RABBITMQ_SMOKE_RABBITMQ_QUEUE:-harbor_jobs}

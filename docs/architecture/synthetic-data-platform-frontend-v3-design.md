@@ -105,7 +105,7 @@ Workbench | Datasets | Tasks | Results | Settings
 
 页面顺序：
 
-1. Readiness strip：Synthetic API、Harbor API、Dataset COS、COS credentials、
+1. Readiness strip：Synthetic API、Harbor control-plane、Dataset COS、COS credentials、
    runtime provider。
 2. Next actions：按 blocker、failed、active、publish candidate、latest result 排序。
 3. Failure causes：dataset materialization、runtime/trial、artifact upload、
@@ -304,7 +304,7 @@ download JSONL / JSON
 
 允许展示：
 
-- Harbor API base URL。
+- Harbor control-plane base URL。
 - dataset storage backend。
 - COS bucket、region、prefix、endpoint。
 - secret configured flags。

@@ -6,8 +6,8 @@ resources:
   - networkpolicies.yaml
 
 images:
-  - name: example.tencentcloudcr.com/harbor-platform/harbor-api
-    newName: change-me.tencentcloudcr.com/harbor-platform/harbor-api
+  - name: example.tencentcloudcr.com/harbor-platform/harbor-control-plane
+    newName: change-me.tencentcloudcr.com/harbor-platform/harbor-control-plane
     newTag: v0.0.0-replace-me
   - name: example.tencentcloudcr.com/harbor-platform/synthetic-data-platform-api
     newName: change-me.tencentcloudcr.com/harbor-platform/synthetic-data-platform-api

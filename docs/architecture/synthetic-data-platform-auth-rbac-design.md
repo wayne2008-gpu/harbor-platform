@@ -6,7 +6,7 @@
 登录和细粒度 RBAC：
 
 - 保留现有 service token、tenant header、`X-End-User` audit correlation。
-- 不把业务用户权限下沉到 `harbor-api`；`harbor-api` 继续只理解服务间调用、
+- 不把业务用户权限下沉到 `harbor-control-plane`；`harbor-control-plane` 继续只理解服务间调用、
   tenant、runner/control-plane scope。
 - 在 `synthetic-data-platform` 内集中实现用户身份解析、权限判断和审计上下文，
   避免每个 route 自己拼权限逻辑。
@@ -27,7 +27,7 @@
 1. Service access：`synthetic-data-platform [auth]` 支持 Bearer token、
    `X-Tenant-ID` 和 `read/write` token scopes。
 2. End-user correlation：synthetic API 会把入站 `X-Request-ID` 和
-   `X-End-User` 透传到 `harbor-api`，control-plane audit events 可按
+   `X-End-User` 透传到 `harbor-control-plane`，control-plane audit events 可按
    `end_user` 查询。
 3. Minimal user gate：`[end_user_permissions]` 可基于可信 `X-End-User` 做粗粒度
    `read/write` 拦截，`/settings` 只暴露聚合配置状态。
@@ -48,14 +48,14 @@ Browser
      - resolves RequestIdentity
      - authorizes BusinessAction against ResourceRef
      - records audit metadata
-  -> harbor-api
+  -> harbor-control-plane
      - validates service token / tenant / scope
      - persists control-plane audit correlation
   -> harbor-runner / harbor-runtime / agent-runtime
 ```
 
 `synthetic-data-platform` owns business auth because it owns dataset、task、trial
-review、result dataset、export、audit 等业务对象。`harbor-api` 不应该知道“谁能
+review、result dataset、export、audit 等业务对象。`harbor-control-plane` 不应该知道“谁能
 审核样本”或“谁能发布结果集”。
 
 ## 核心模块

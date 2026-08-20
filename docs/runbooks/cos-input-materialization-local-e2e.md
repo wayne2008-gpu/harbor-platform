@@ -9,7 +9,7 @@ The intended local topology is:
 
 ```text
 synthetic-data-platform API :8081
-  -> harbor-api :8080
+  -> harbor-control-plane :8080
   -> MySQL + RabbitMQ in Compose
   -> host-side harbor-runner
   -> harbor-runtime
@@ -51,11 +51,13 @@ From the super repo:
 
 ```bash
 cd deploy/docker-compose
-docker compose -f compose.dev.yml -f compose.synthetic-upload.yml up --build -d
+docker compose -f compose.dev.yml up --build -d
 ```
 
-The overlay mounts `synthetic-data-platform/config/platform.local.toml` so
-`POST /datasets/upload` can write archives to COS.
+The default dev compose mounts `synthetic-data-platform/config/platform.local.toml`
+so `POST /datasets/upload` can write archives to COS. The old
+`compose.synthetic-upload.yml` file is kept only as a compatibility override for
+older commands.
 
 Start the host-side runner from the Harbor submodule:
 
@@ -106,7 +108,7 @@ export HARBOR_SMOKE_INPUT_DATASET_SHA256=$(
 )
 ```
 
-## Run The Harbor API Smoke
+## Run The Harbor control-plane Smoke
 
 The smoke payload intentionally omits `job_config.datasets`. Runner materializes
 `input_datasets`, rewrites the runtime config to local paths, and then starts
@@ -122,7 +124,7 @@ HARBOR_SMOKE_REQUIRE_ARTIFACT_MANIFEST=1 \
 HARBOR_SMOKE_METADATA_TIMEOUT_SEC=120 \
 ./scripts/submit-and-wait-job.sh \
   smoke/cos-input-materialization-smoke-job.json \
-  http://localhost:8080 \
+  http://localhost:18080 \
   1800
 ```
 
@@ -136,7 +138,7 @@ Successful output must show:
 
 ## Synthetic Task Pass-Through Smoke
 
-To validate `synthetic-data-platform -> harbor-api` pass-through without the
+To validate `synthetic-data-platform -> harbor-control-plane` pass-through without the
 frontend, submit:
 
 ```bash
@@ -165,11 +167,11 @@ curl -fsS -X POST http://localhost:8081/synthetic-tasks \
 JSON
 ```
 
-Then inspect the returned `harbor_job_id` through `harbor-api`:
+Then inspect the returned `harbor_job_id` through `harbor-control-plane`:
 
 ```bash
-curl -fsS "http://localhost:8080/jobs/<harbor_job_id>" | jq .
-curl -fsS "http://localhost:8080/jobs/<harbor_job_id>/artifacts" | jq .
+curl -fsS "http://localhost:18080/jobs/<harbor_job_id>" | jq .
+curl -fsS "http://localhost:18080/jobs/<harbor_job_id>/artifacts" | jq .
 ```
 
 ## Troubleshooting
@@ -178,9 +180,9 @@ curl -fsS "http://localhost:8080/jobs/<harbor_job_id>/artifacts" | jq .
   credentials, missing object, checksum mismatch, unsupported archive format, or
   an archive that does not contain valid Harbor task directories.
 - Job stays queued: confirm the runner is online through
-  `curl -fsS http://localhost:8080/runners?stale_after_sec=60 | jq .`.
+  `curl -fsS http://localhost:18080/runners?stale_after_sec=60 | jq .`.
 - No `input-manifest` artifact: confirm runner `[artifact_storage]` uses
   `upload_policy = "job_dir_all"` and `upload_manifest = true`.
-- Synthetic upload returns 503: confirm `compose.synthetic-upload.yml` was used
-  and `synthetic-data-platform/config/platform.local.toml` has COS dataset
-  storage configured.
+- Synthetic upload returns 503: confirm `compose.dev.yml` mounts
+  `synthetic-data-platform/config/platform.local.toml` and that the file has COS
+  dataset storage configured.

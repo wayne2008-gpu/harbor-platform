@@ -3,9 +3,9 @@
 本 runbook 用于本地验证 synthetic-data-platform 前端闭环：
 
 ```text
-Browser :5173
+Browser :8080
   -> synthetic-data-platform API :8081
-  -> harbor-api :8080
+  -> harbor-control-plane :18080 on host / :8080 in compose
   -> MySQL + RabbitMQ in Compose
   -> host-side harbor-runner
   -> harbor-runtime
@@ -18,12 +18,11 @@ Browser :5173
 - 上传本地 Harbor benchmark 归档到 COS。
 - 从前端或脚本创建 TKE synthetic task。
 - 等待 Harbor job 完成并上传 artifacts。
-- 查看 Task、Trial、Artifact download URL，并实际下载一个结果 artifact。
-- 当 agent 产出 trajectory 时，查看 Trajectory 和 OpenAI messages。
-- 执行 samples ingest。
-- 当样本源存在时 publish result dataset，并下载 JSONL / JSON。
-- 验证 full result export 和 approved-only result export 都可上传 COS 并下载。
-- 前端 live test 会同步 OpenAI message index，再检查 indexed message review UI。
+- 查看任务实例日志、artifact download URL，并实际下载一个结果 artifact。
+- 查看合成结果中的 OpenAI messages trajectory 和 `result.json`。
+- 对 trajectory 做通过/不通过评审。
+- 兼容验证 legacy sample ingest / result dataset publish / JSONL export。
+- 前端 live test 会打开新版四模块页面：候选集、合成任务实例、合成结果。
 
 ## 代码和配置目录
 
@@ -62,7 +61,7 @@ Browser :5173
    - COS bucket、region、prefix 指向输入 dataset 上传位置。
    - `[result_export_storage] backend = "cos"` 时，默认可以继续使用 API
      in-process background export；如果设置 `[result_export_worker] enabled = true`，
-     `compose.synthetic-upload.yml` 会同时启动 `synthetic-result-export-worker`
+     默认 `compose.dev.yml` 会同时启动 `synthetic-result-export-worker`
      认领 pending/stale result export 记录。
 4. TKE 运行时配置已按 `harbor/readme-tke.md` 准备。
 5. 本机有 `curl`、`jq`、`tar`、`sha256sum`、`docker compose`、`uv`。
@@ -73,15 +72,15 @@ Browser :5173
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
-docker compose -f compose.dev.yml -f compose.synthetic-upload.yml up --build -d
+docker compose -f compose.dev.yml up --build -d
 ```
 
 服务地址：
 
 ```text
-harbor-api:                 http://localhost:8080
+harbor-control-plane:                 http://localhost:18080
 synthetic-data-platform API: http://localhost:8081
-synthetic-data-platform Web: http://localhost:5173
+synthetic-data-platform Web: http://localhost:8080
 synthetic result export worker: compose service synthetic-result-export-worker
 RabbitMQ management:         http://localhost:15672
 ```
@@ -114,7 +113,7 @@ HARBOR_E2E_TASK_NAME=go-http-tracing \
 
 ```bash
 SYNTHETIC_API_BASE=https://<synthetic-api> \
-HARBOR_API_BASE=https://<harbor-api> \
+HARBOR_CONTROL_PLANE_BASE=https://<harbor-control-plane> \
 SYNTHETIC_WEB_BASE=https://<synthetic-web> \
 HARBOR_E2E_BEARER_TOKEN='<token>' \
 HARBOR_E2E_TENANT_ID='<tenant-id>' \
@@ -138,7 +137,7 @@ HARBOR_E2E_TENANT_ID='<tenant-id>' \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
-如果 synthetic API、harbor API、Web 经过不同入口或不同认证，可分别设置：
+如果 synthetic API、harbor-control-plane、Web 经过不同入口或不同认证，可分别设置：
 
 ```text
 HARBOR_E2E_SYNTHETIC_AUTH_HEADER
@@ -181,15 +180,15 @@ HARBOR_E2E_TASK_NAME=go-http-tracing \
 HARBOR_E2E_TIMEOUT_SEC=1800 \
 HARBOR_E2E_REQUIRE_TRAJECTORY=1 \
 HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY=1 \
-HARBOR_E2E_REQUIRE_PUBLISH=1 \
+HARBOR_E2E_REQUIRE_COS_ARTIFACTS=1 \
 HARBOR_E2E_FRONTEND_LIVE_CHECK=1 \
 ./scripts/synthetic-cos-tke-e2e.sh
 ```
 
-如果要稳定覆盖 trajectory、OpenAI messages、样本导入、result dataset publish、
-JSONL / JSON 下载、result export history 的 background 创建和记录级下载，以及
-approved-only 样本审核口径的下载和 COS export，使用 super repo 内置 smoke
-dataset：
+如果要额外覆盖 legacy sample ingest、result dataset publish、JSONL / JSON 下载、
+result export history 的 background 创建和记录级下载，以及 approved-only 样本审核
+口径的下载和 COS export，使用 super repo 内置 smoke dataset，并显式打开
+`HARBOR_E2E_REQUIRE_PUBLISH=1`：
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
@@ -217,7 +216,7 @@ runner 收集阶段会把 ATIF trajectory 转换并登记为
 
 脚本会：
 
-1. 检查 `http://localhost:5173`、`http://localhost:8081/health`、online runner。
+1. 检查 `http://localhost:8080`、`http://localhost:8081/health`、online runner。
 2. 打包并上传 `otel-bench-ags` 到 synthetic dataset storage COS。传入
    benchmark 集合目录时，脚本会打包目录内容，确保归档根目录直接包含
    Harbor task 子目录；传入单个 task 目录时，脚本会把该 task 目录作为
@@ -235,10 +234,10 @@ runner 收集阶段会把 ATIF trajectory 转换并登记为
 6. 如果存在 OpenAI messages trajectory，通过 synthetic API 获取并校验。
 7. 通过 synthetic API 获取 artifact download URL，并下载一个非空 artifact 文件。
 8. 调用 `POST /synthetic-tasks/{task_id}/ingest-samples`。
-9. 如果 ingest 到样本，则 publish result dataset，并下载 JSONL / JSON。
+9. 如果 ingest 到样本，则兼容验证 publish result dataset，并下载 JSONL / JSON。
 10. 如果设置 `HARBOR_E2E_FRONTEND_LIVE_CHECK=1`，脚本会把本次真实
     dataset/task/trial/result ID 传给 `synthetic-data-platform/web` 的
-    Playwright live test，实际打开前端页面验证工作流。
+    Playwright live test，实际打开新版候选集、合成任务实例和合成结果页面验证工作流。
 
 ### Trajectory 验证说明
 
@@ -258,7 +257,11 @@ HARBOR_E2E_REQUIRE_OPENAI_TRAJECTORY=1 \
 
 没有对应 artifact 时脚本会失败。
 
-### 样本 publish 说明
+### Legacy 样本 publish 说明
+
+第一版平台不把 sample / result dataset 作为用户主路径。主结果是
+OpenAI messages trajectory 和 `result.json`。下面逻辑只用于兼容旧链路和额外
+交付格式验证。
 
 当前 synthetic-data-platform 的样本导入仍然依赖 Harbor artifact 中存在：
 
@@ -315,14 +318,37 @@ HARBOR_E2E_REQUIRE_COS_ARTIFACTS=1
 这组断言覆盖：
 
 - synthetic API 上传 dataset archive 到 COS。
-- harbor-api 把 `input_datasets` 透传给 runner。
+- harbor-control-plane 把 `input_datasets` 透传给 runner。
 - runner 从 COS 下载、校验、解压输入 dataset，并写回 `materialized_inputs`。
 - runner 登记 `input-manifest`。
 - runner 上传结果 artifacts 到 COS。
-- synthetic API 通过 harbor-api 获取 artifact download URL，并下载非空内容。
-- synthetic API 发布 result dataset 后，写入 approved sample review decisions。
-- direct result download 和 COS result export 都按
+- synthetic API 通过 harbor-control-plane 获取 artifact download URL，并下载非空内容。
+- 第一版主路径通过 synthetic API 获取 OpenAI messages trajectory 和 `result.json`。
+- legacy publish 扩展路径中，synthetic API 发布 result dataset 后，写入 approved
+  sample review decisions；direct result download 和 COS result export 都按
   `review_decision=approved` 验证 sample scope。
+
+2026-08-20 第一版四模块 E2E 已使用
+`/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`、runtime `tke`、
+task `go-http-tracing` 跑通：
+
+- dataset `f5090befe9044f229852d300d67d49ec` 上传到 COS。
+- synthetic task `2ca836d50bb44641a4c4da6bdf0f8709` 成功。
+- Harbor job `282182c916494674a4255417665dd050` 进入 `succeeded`。
+- `input_state = succeeded`。
+- 1 个 trial，155 个 COS artifacts。
+- 2 个 trajectory artifacts，其中 1 个为 OpenAI messages schema。
+- `input-manifest` artifact 存在。
+- artifact download URL 下载非空文件。
+- 脚本内自动运行新版 `npm run test:live`，Playwright `1 passed`，浏览器实际
+  打开候选集详情、合成任务实例和合成结果详情。
+- 第一版前端复核入口：
+  - Candidate set:
+    `http://localhost:8080/candidate-sets/f5090befe9044f229852d300d67d49ec`
+  - Synthesis task:
+    `http://localhost:8080/synthesis-tasks/2ca836d50bb44641a4c4da6bdf0f8709`
+  - Synthesis result:
+    `http://localhost:8080/synthesis-results/2ca836d50bb44641a4c4da6bdf0f8709/34c9fb50-f6ad-480d-843f-5514ba4f4bb4`
 
 2026-08-17 本地 M38 smoke 已使用
 `deploy/docker-compose/smoke/synthetic-trajectory-sample-dataset`、runtime `tke`
@@ -346,7 +372,7 @@ task `go-http-tracing` 跑通：
 - sample ingest 得到 1 条 sample。
 - result dataset `dd57447867404faba36ea0b333a37738` 发布成功。
 - JSONL 下载 8756 bytes，JSON 下载 9467 bytes。
-- 已追加 live 前端验收：
+- 已追加旧版 live 前端验收：
   `SYNTHETIC_LIVE_* npm run test:live` 通过，浏览器实际打开 Workbench、
   Dataset Detail、Task Detail、Trial OpenAI Messages、Result Detail，并触发
   `Download JSONL` 前端下载流程。
@@ -381,41 +407,40 @@ task `go-http-tracing` 再次跑通完整脚本，并新增 approved-only handof
 - approved-only result export `2898e3687dfa415da91020d138be3397` 为
   COS-backed，`sample_selection.filters.review_decision = approved`，并通过
   record-level download。
-- 脚本内自动运行 `npm run test:live`，Playwright `1 passed`，其中 Trial 页会点击
+- 脚本内自动运行旧版 `npm run test:live`，Playwright `1 passed`，其中 Trial 页会点击
   `Sync index` 并验证 indexed OpenAI messages。
-- 前端复核入口：
-  - Dataset: `http://localhost:5173/datasets/f745443ff8ce4983bc299fe60f3b16f5`
-  - Task: `http://localhost:5173/tasks/60b1e61f069b468688dc0ec6e1d4d397`
+- 旧版前端复核入口：
+  - Dataset: `http://localhost:8080/datasets/f745443ff8ce4983bc299fe60f3b16f5`
+  - Task: `http://localhost:8080/tasks/60b1e61f069b468688dc0ec6e1d4d397`
   - Trial:
-    `http://localhost:5173/tasks/60b1e61f069b468688dc0ec6e1d4d397/trials/00409b6c-b45a-4b60-a1c1-4ef92a5cf741`
-  - Result: `http://localhost:5173/results/fda6fc22527141f7a9bc805d2977571b`
+    `http://localhost:8080/tasks/60b1e61f069b468688dc0ec6e1d4d397/trials/00409b6c-b45a-4b60-a1c1-4ef92a5cf741`
+  - Result: `http://localhost:8080/results/fda6fc22527141f7a9bc805d2977571b`
 
 ## 前端手工验收
 
 脚本跑完后打开：
 
 ```text
-http://localhost:5173
+http://localhost:8080
 ```
 
 按脚本输出的 URL 检查：
 
-1. `Datasets`
-   - 新 dataset 可见。
-   - Detail 页面显示 COS URI、checksum、task name。
-2. `Tasks`
+1. `候选集管理`
+   - 新候选集可见。
+   - 详情页面显示 COS URI、checksum、task name。
+2. `合成任务管理`
    - 新 task 可见，runtime 为 `tke`。
-   - Detail 页面 `Input ready`、`Runtime`、`Artifacts` 阶段状态正确。
-   - Artifacts 表格显示 `kind`、`schema`、`relative_path`、`storage_key`。
-   - `Download` 按钮显示 pending/success 状态。
-3. `Trial Detail`
-   - `Timeline` 可查看。
-   - `OpenAI Messages` tab 请求 `schema=openai_messages`。
-   - 页面展示 schema 摘要和 message role 计数。
+   - 任务实例页面显示状态、Harbor job、runtime、input/artifact 状态。
+   - 运行日志在任务实例详情中查看。
+3. `合成结果管理`
+   - 结果详情默认展示 OpenAI messages trajectory。
+   - 结果详情展示 `result.json`。
+   - 日志不出现在结果详情里。
+   - 可以点击通过/不通过保存 trajectory 评审。
    - 长 trace / URL / COS key 在 375px 和 812x375 下不横向溢出。
-4. `Results`
-   - 如果已 publish，Result Detail 显示 lineage、source trials、source artifacts、samples。
-   - `Download JSONL` 和 `Download JSON` 都有 pending/success 反馈。
+4. `平台设置`
+   - 显示 harbor-control-plane、COS、runtime capability 的安全摘要。
 
 ## 前端质量门禁
 
@@ -439,27 +464,23 @@ npm run verify
 ```bash
 cd /home/ubuntu/project/harbor-platform/synthetic-data-platform/web
 
-SYNTHETIC_LIVE_BASE_URL=http://localhost:5173 \
+SYNTHETIC_LIVE_BASE_URL=http://localhost:8080 \
 SYNTHETIC_LIVE_DATASET_ID=<dataset_id> \
 SYNTHETIC_LIVE_DATASET_NAME=<dataset_name> \
 SYNTHETIC_LIVE_TASK_ID=<synthetic_task_id> \
 SYNTHETIC_LIVE_TASK_NAME=<task_name> \
 SYNTHETIC_LIVE_TRIAL_ID=<trial_id> \
-SYNTHETIC_LIVE_RESULT_DATASET_ID=<result_dataset_id> \
 SYNTHETIC_LIVE_RUNTIME=tke \
 npm run test:live
 ```
 
 该 live test 不 mock API。它验证：
 
-- Workbench 和 run readiness 可渲染。
-- Dataset Detail 显示真实 dataset 和 task name。
-- Task Detail 显示 published/succeeded 状态、input/artifact/sample 阶段和
-  trajectory review queue。
-- Trial 页面可通过 `?view=messages` 打开 OpenAI Messages tab。
-- Result Detail 显示 lineage、review checklist、export contract、samples，并
-  通过浏览器 download 事件校验 `Download JSONL` 和 `Download JSON` 都能落地
-  非空文件。
+- 新版四模块导航可渲染，且不显示 Workbench/Reviews/Audit 顶级入口。
+- Candidate set detail 显示真实 dataset 和 task name。
+- Synthesis task detail 显示运行状态、runtime 和日志。
+- Synthesis result detail 显示 OpenAI messages trajectory 和 `result.json`。
+- Synthesis result detail 显示通过/不通过评审入口。
 
 ## 清理
 
@@ -467,7 +488,7 @@ npm run test:live
 
 ```bash
 cd /home/ubuntu/project/harbor-platform/deploy/docker-compose
-docker compose -f compose.dev.yml -f compose.synthetic-upload.yml down
+docker compose -f compose.dev.yml down
 ```
 
 runner 进程在其终端用 `Ctrl+C` 停止。

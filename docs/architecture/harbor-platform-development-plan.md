@@ -8,10 +8,10 @@ development plan for the distributed Harbor platform.
 The first target is a distributed execution platform:
 
 ```text
-harbor-api -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
+harbor-control-plane -> MySQL -> RabbitMQ -> harbor-runner -> harbor run -> Docker/AGS/TKE
 ```
 
-The synthetic data platform comes later and must treat `harbor-api` as the only
+The synthetic data platform comes later and must treat `harbor-control-plane` as the only
 Harbor integration boundary.
 
 ## Current Baseline
@@ -45,7 +45,7 @@ Harbor's existing trial scheduler remains responsible for `n_concurrent_trials`.
 
 ### AD-2: Control Plane Owns Durable State
 
-`harbor-api` owns MySQL state and RabbitMQ publication. It does not run jobs
+`harbor-control-plane` owns MySQL state and RabbitMQ publication. It does not run jobs
 directly.
 
 MySQL is the source of truth for:
@@ -246,7 +246,7 @@ RunnerHeartbeatResponse
 ```
 
 These contracts should be pure Pydantic/Python types until another language
-consumer exists. Publish OpenAPI from `harbor-api` for external clients.
+consumer exists. Publish OpenAPI from `harbor-control-plane` for external clients.
 
 ### Synthetic Data Platform
 
@@ -256,7 +256,7 @@ Location:
 synthetic-data-platform/
 ```
 
-This is deferred until the Harbor API is stable.
+This is deferred until the Harbor control-plane is stable.
 
 Its only Harbor integration should be:
 
@@ -541,7 +541,7 @@ Allowed secret flow:
 - AGS/TKE/Codex credentials live in runner environment, mounted config, or
   secret manager.
 - `JobConfig` may reference environment variable names.
-- `harbor-api` should redact sensitive agent/verifier env values before logging.
+- `harbor-control-plane` should redact sensitive agent/verifier env values before logging.
 
 Runner containers need:
 
@@ -603,7 +603,7 @@ Validation:
 - Cancelling one job does not kill the runner or other jobs.
 - Restart can read existing job directories and report terminal snapshots.
 
-### Phase 3: Harbor API
+### Phase 3: Harbor control-plane
 
 Deliverables:
 
@@ -656,7 +656,7 @@ Services:
 - MySQL
 - RabbitMQ
 - optional RabbitMQ management UI
-- harbor-api
+- harbor-control-plane
 - synthetic-data-platform
 
 Local runner processes run from the `harbor/` submodule on the host. Start

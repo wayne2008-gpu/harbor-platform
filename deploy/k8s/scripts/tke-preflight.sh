@@ -157,24 +157,24 @@ kubectl kustomize "$KUSTOMIZE_DIR" >"$RENDERED_MANIFEST"
 ok "rendered manifests to $RENDERED_MANIFEST"
 
 log "Checking rendered manifest references"
-require_rendered_text "name: harbor-api"
+require_rendered_text "name: harbor-control-plane"
 require_rendered_text "name: harbor-runner"
 require_rendered_text "name: synthetic-data-platform"
 require_rendered_text "name: synthetic-result-export-worker"
 require_rendered_text "name: synthetic-data-platform-web"
-require_rendered_text "name: harbor-api-pdb"
+require_rendered_text "name: harbor-control-plane-pdb"
 require_rendered_text "name: harbor-runner-pdb"
 require_rendered_text "name: synthetic-data-platform-pdb"
 require_rendered_text "name: synthetic-result-export-worker-pdb"
 require_rendered_text "name: synthetic-data-platform-web-pdb"
-require_rendered_text "name: harbor-api-hpa"
+require_rendered_text "name: harbor-control-plane-hpa"
 require_rendered_text "name: synthetic-data-platform-hpa"
 require_rendered_text "name: synthetic-data-platform-web-hpa"
 require_rendered_text "name: harbor-control-plane-config"
 require_rendered_text "name: synthetic-data-platform-config"
 require_rendered_text "name: harbor-runner-config"
 require_rendered_text "name: harbor-tke-config"
-require_rendered_text "name: harbor-api-secret"
+require_rendered_text "name: harbor-control-plane-secret"
 require_rendered_text "name: synthetic-data-platform-secret"
 require_rendered_text "name: harbor-runner-secret"
 
@@ -195,7 +195,7 @@ if grep -q '^kind: NetworkPolicy$' "$RENDERED_MANIFEST"; then
   require_rendered_text "name: harbor-platform-default-deny-ingress"
   require_rendered_text "name: synthetic-data-platform-web-network-ingress"
   require_rendered_text "name: synthetic-data-platform-api-ingress"
-  require_rendered_text "name: harbor-api-ingress"
+  require_rendered_text "name: harbor-control-plane-ingress"
 fi
 
 if [[ "$MODE" == "static" ]]; then
@@ -221,19 +221,19 @@ require_configmap_key "$PLATFORM_NS" "harbor-tke-config" "tke.toml"
 for key in \
   HARBOR_CONTROL_PLANE_DATABASE_URL \
   HARBOR_CONTROL_PLANE_RABBITMQ_URL \
-  HARBOR_SYNTHETIC_HARBOR_API_TOKEN \
+  HARBOR_SYNTHETIC_CONTROL_PLANE_TOKEN \
   HARBOR_RUNNER_CONTROL_PLANE_TOKEN \
   HARBOR_TENANT_ID \
   HARBOR_ARTIFACT_COS_SECRET_ID \
   HARBOR_ARTIFACT_COS_SECRET_KEY; do
-  require_secret_key "$PLATFORM_NS" "harbor-api-secret" "$key"
+  require_secret_key "$PLATFORM_NS" "harbor-control-plane-secret" "$key"
 done
 
 for key in \
   SYNTHETIC_DATA_PLATFORM_DATABASE_URL \
   SYNTHETIC_DATA_PLATFORM_READ_TOKEN \
   SYNTHETIC_DATA_PLATFORM_WRITE_TOKEN \
-  HARBOR_SYNTHETIC_HARBOR_API_TOKEN \
+  HARBOR_SYNTHETIC_CONTROL_PLANE_TOKEN \
   HARBOR_TENANT_ID \
   SYNTHETIC_DATASET_COS_SECRET_ID \
   SYNTHETIC_DATASET_COS_SECRET_KEY; do
@@ -277,7 +277,7 @@ check_can_i watch pods/log
 
 if [[ "$CHECK_ROLLOUT" == "1" ]]; then
   log "Checking Deployment rollouts"
-  kubectl -n "$PLATFORM_NS" rollout status deployment/harbor-api
+  kubectl -n "$PLATFORM_NS" rollout status deployment/harbor-control-plane
   kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-data-platform
   kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-result-export-worker
   kubectl -n "$PLATFORM_NS" rollout status deployment/synthetic-data-platform-web
