@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harbor-api
+  name: harbor-control-plane
   namespace: harbor-platform
   labels:
-    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/name: harbor-control-plane
     app.kubernetes.io/part-of: harbor-platform
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: harbor-api
+      app.kubernetes.io/name: harbor-control-plane
       app.kubernetes.io/part-of: harbor-platform
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: harbor-api
+        app.kubernetes.io/name: harbor-control-plane
         app.kubernetes.io/part-of: harbor-platform
     spec:
       containers:
-        - name: harbor-api
-          image: example.tencentcloudcr.com/harbor-platform/harbor-api:CHANGE_ME
+        - name: harbor-control-plane
+          image: example.tencentcloudcr.com/harbor-platform/harbor-control-plane:CHANGE_ME
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -30,7 +30,7 @@ spec:
               value: /config/control-plane.toml
           envFrom:
             - secretRef:
-                name: harbor-api-secret
+                name: harbor-control-plane-secret
           readinessProbe:
             httpGet:
               path: /ready
@@ -63,15 +63,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: harbor-api
+  name: harbor-control-plane
   namespace: harbor-platform
   labels:
-    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/name: harbor-control-plane
     app.kubernetes.io/part-of: harbor-platform
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/name: harbor-control-plane
     app.kubernetes.io/part-of: harbor-platform
   ports:
     - name: http

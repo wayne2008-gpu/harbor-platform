@@ -2,8 +2,8 @@
 set -euo pipefail
 
 synthetic_api=${SYNTHETIC_API_BASE:-http://localhost:8081}
-harbor_api=${HARBOR_API_BASE:-http://localhost:8080}
-frontend_url=${SYNTHETIC_WEB_BASE:-http://localhost:5173}
+control_plane=${HARBOR_CONTROL_PLANE_BASE:-${HARBOR_API_BASE:-http://localhost:18080}}
+frontend_url=${SYNTHETIC_WEB_BASE:-http://localhost:8080}
 dataset_dir=${HARBOR_E2E_DATASET_DIR:-/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags}
 dataset_name=${HARBOR_E2E_DATASET_NAME:-$(basename "$dataset_dir")}
 dataset_version=${HARBOR_E2E_DATASET_VERSION:-local-e2e-$(date -u +%Y%m%dT%H%M%SZ)}
@@ -156,7 +156,7 @@ post_json() {
 curl_url() {
   local url=$1
   shift
-  if [[ "$url" == "$harbor_api"* ]]; then
+  if [[ "$url" == "$control_plane"* ]]; then
     curl -fsS "${harbor_curl_args[@]}" "$@" "$url"
     return
   fi
@@ -245,7 +245,7 @@ wait_for_runners() {
   local deadline=$((SECONDS + runner_timeout_sec))
   local runners_json online_count
   while [ "$SECONDS" -lt "$deadline" ]; do
-    runners_json=$(fetch_json "$harbor_api/runners?stale_after_sec=$stale_after_sec")
+    runners_json=$(fetch_json "$control_plane/runners?stale_after_sec=$stale_after_sec")
     online_count=$(
       jq -r '[.[] | select(.state == "online")] | length' <<<"$runners_json"
     )
@@ -406,7 +406,7 @@ if [ "$check_web" -ne 0 ]; then
   curl_url "$frontend_url" >/dev/null
 fi
 fetch_json "$synthetic_api/health" >/dev/null
-fetch_json "$harbor_api/ready" >/dev/null
+fetch_json "$control_plane/ready" >/dev/null
 echo "Preflight: services reachable, dataset_dir=$dataset_dir runtime=$runtime task=$task_name"
 wait_for_runners
 if [ "$preflight_only" -ne 0 ]; then
@@ -576,9 +576,9 @@ if [ "$ingested" -lt 1 ]; then
   fi
   echo "No sample source artifact was found; result dataset publish/download skipped."
   run_frontend_live_check "$dataset_id" "$task_id" "$trial_id"
-  echo "Frontend dataset URL: $frontend_url/datasets/$dataset_id"
-  echo "Frontend task URL: $frontend_url/tasks/$task_id"
-  echo "Frontend trial URL: $frontend_url/tasks/$task_id/trials/$trial_id"
+  echo "Frontend candidate set URL: $frontend_url/candidate-sets/$dataset_id"
+  echo "Frontend synthesis task URL: $frontend_url/synthesis-tasks/$task_id"
+  echo "Frontend synthesis result URL: $frontend_url/synthesis-results/$task_id/$trial_id"
   exit 0
 fi
 
@@ -777,7 +777,7 @@ echo \
 run_frontend_live_check "$dataset_id" "$task_id" "$trial_id" "$result_dataset_id"
 
 echo "Synthetic COS/TKE E2E passed."
-echo "Frontend dataset URL: $frontend_url/datasets/$dataset_id"
-echo "Frontend task URL: $frontend_url/tasks/$task_id"
-echo "Frontend trial URL: $frontend_url/tasks/$task_id/trials/$trial_id"
-echo "Frontend result URL: $frontend_url/results/$result_dataset_id"
+echo "Frontend candidate set URL: $frontend_url/candidate-sets/$dataset_id"
+echo "Frontend synthesis task URL: $frontend_url/synthesis-tasks/$task_id"
+echo "Frontend synthesis result URL: $frontend_url/synthesis-results/$task_id/$trial_id"
+echo "Legacy published result dataset URL: $frontend_url/results/$result_dataset_id"

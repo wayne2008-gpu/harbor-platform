@@ -8,7 +8,7 @@ The target runtime flow is:
 
 ```text
 synthetic-data-platform
-  -> harbor-api
+  -> harbor-control-plane
   -> MySQL + RabbitMQ
   -> harbor-runner instances
   -> harbor-runtime subprocesses
@@ -39,7 +39,7 @@ harbor-runner Pod/container
 ```text
 harbor-platform/
   harbor/                         # Harbor fork submodule
-  harbor-control-plane/            # harbor-api/control-plane submodule
+  harbor-control-plane/            # Harbor Control Plane service submodule
   synthetic-data-platform/         # synthetic data platform submodule
   harbor-service-contracts/        # shared schemas/contracts submodule
   deploy/
@@ -71,14 +71,14 @@ super repo.
 
 It owns:
 
-- `harbor-api` HTTP service
+- Harbor Control Plane HTTP service
 - MySQL schema and migrations
 - RabbitMQ dispatch producer and optional legacy RocketMQ adapters
 - runner registry, heartbeat, lease, and retry logic
 - job cancellation and status APIs
 - service-local configuration and migrations
 
-`harbor-api` should not run jobs directly. It writes DB state, publishes dispatch messages, and returns DB-backed job status.
+`harbor-control-plane` should not run jobs directly. It writes DB state, publishes dispatch messages, and returns DB-backed job status.
 
 ### Synthetic Data Platform
 
@@ -93,11 +93,11 @@ above Harbor. It owns:
 - generation usage, cost, and business reporting
 - user-facing API request tracing and business audit events
 
-It should call `harbor-api` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
+It should call `harbor-control-plane` and store `synthetic_task_id -> harbor_job_id` mappings. It should not read runner-local files or import Harbor runner internals.
 
 Task detail diagnostics are also Harbor-backed. The synthetic platform exposes
 task event timelines and run log previews by querying Harbor job/trial/artifact
-metadata through `harbor-api`; log bytes are fetched through the artifact content
+metadata through `harbor-control-plane`; log bytes are fetched through the artifact content
 proxy and returned as bounded previews plus download URLs. The web console never
 needs runner-local paths or COS credentials.
 
@@ -298,7 +298,7 @@ The super repo owns integration assets only:
 
 It should not become the owner of component implementation code or concrete
 component runtime configuration. `harbor-runner` config lives in `harbor/config/`;
-TKE provider config lives in `harbor/config/`; `harbor-api` config lives in
+TKE provider config lives in `harbor/config/`; `harbor-control-plane` config lives in
 `harbor-control-plane/config/`; synthetic platform config lives in
 `synthetic-data-platform/config/`.
 
@@ -321,7 +321,7 @@ Use RabbitMQ as the default dispatch channel:
 
 The message queue does not own durable job state. If a message is redelivered, the runner must consult MySQL lease/status before executing.
 
-`harbor-api` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RabbitMQ message. `harbor-runner` instances consume messages or poll queued jobs, claim a MySQL-backed lease, then invoke the local `harbor-runtime`.
+`harbor-control-plane` does not directly call a specific `harbor-runner` for job dispatch. It writes MySQL state and publishes a RabbitMQ message. `harbor-runner` instances consume messages or poll queued jobs, claim a MySQL-backed lease, then invoke the local `harbor-runtime`.
 
 The preferred runner acquisition path is `POST /internal/jobs/claim`. Claiming
 combines capability matching and lease creation in one control-plane operation.
@@ -349,8 +349,8 @@ Detailed COS input dataset materialization design lives in
 
 The platform currently supports two artifact storage modes:
 
-- `runner-local`: default local development mode. Each runner keeps its own local `jobs/` directory and `harbor-api` may serve files only from an explicitly allowed local root.
-- `cos`: production-oriented mode. `harbor-runner` uploads collected artifacts to Tencent Cloud COS, records `cos://<bucket>/<key>` metadata in MySQL, and `harbor-api` serves either signed URLs or proxy streams.
+- `runner-local`: default local development mode. Each runner keeps its own local `jobs/` directory and `harbor-control-plane` may serve files only from an explicitly allowed local root.
+- `cos`: production-oriented mode. `harbor-runner` uploads collected artifacts to Tencent Cloud COS, records `cos://<bucket>/<key>` metadata in MySQL, and `harbor-control-plane` serves either signed URLs or proxy streams.
 
 In both modes:
 
@@ -361,10 +361,10 @@ In both modes:
 - artifact manifests such as `artifacts/manifest.json` are metadata overlays only:
   they can declare `kind`, `trial_id`, `schema`, `content_type`, and extra
   metadata, but they do not decide whether a file is uploaded
-- runner records artifact rows through `harbor-api`
+- runner records artifact rows through `harbor-control-plane`
 - MySQL remains the artifact index
 - `synthetic-data-platform` reads results, trajectories, and run log previews
-  through `harbor-api`, not runner-local paths or COS credentials
+  through `harbor-control-plane`, not runner-local paths or COS credentials
 - `synthetic-data-platform` may persist derived, business-facing indexes such as
   OpenAI message trajectory rows, but the original artifact bytes remain owned
   by Harbor artifact storage
@@ -375,16 +375,16 @@ templates use `secret_id_env`, `secret_key_env`, and optional
 `session_token_env` fields. The referenced environment variables are injected by
 Kubernetes Secrets in TKE manifests. The local runner reads
 `harbor/config/runner.local.toml`; the local control-plane stack mounts
-`harbor-control-plane/config/control-plane.local.toml` into `harbor-api`.
+`harbor-control-plane/config/control-plane.local.toml` into `harbor-control-plane`.
 Production templates also reference database and RabbitMQ connection strings via
 `database_url_env` and `rabbitmq_url_env`, keeping concrete passwords out of
 ConfigMaps and git-tracked TOML files.
 
 Production service-to-service access can be protected by config-driven Bearer
-token, tenant header, and coarse token scopes. `harbor-api` reads `[auth]` from
+token, tenant header, and coarse token scopes. `harbor-control-plane` reads `[auth]` from
 `harbor-control-plane/config/control-plane.<env>.toml`; `synthetic-data-platform`
-uses `[auth]` for its own API and `[harbor_api_auth]` for outbound calls to
-`harbor-api`; `harbor-runner` uses `control_plane_bearer_token(_env)` and
+uses `[auth]` for its own API and `[harbor_control_plane_auth]` for outbound calls to
+`harbor-control-plane`; `harbor-runner` uses `control_plane_bearer_token(_env)` and
 `control_plane_tenant_id(_env)` when calling the control plane. Control-plane
 tokens can be split into `read`, `write`, and `internal` scopes so the synthetic
 platform cannot call runner-only endpoints and runner tokens can be separated
@@ -396,7 +396,7 @@ review-decision writes. A separate `[end_user_permissions]` gate can treat
 end-user `read` / `write` permissions; `write` also satisfies read-only routes.
 This remains a minimum deployment gate, not a replacement for future user
 login and fine-grained RBAC.
-Synthetic API requests propagate `X-Request-ID` and `X-End-User` to harbor-api
+Synthetic API requests propagate `X-Request-ID` and `X-End-User` to harbor-control-plane
 calls. Control-plane API calls are persisted as `api_audit_events` with tenant,
 service principal, optional end user, scopes, required scope, path, status,
 request ID, and derived job ID; internal callers can query them through
@@ -447,7 +447,7 @@ Both files are recorded as `kind = "trajectory"` and are distinguished through
 `metadata.schema`.
 
 Input datasets are handled separately from output artifacts. `synthetic-data-platform`
-can submit `input_datasets` with COS URIs to `harbor-api`; `harbor-api` stores
+can submit `input_datasets` with COS URIs to `harbor-control-plane`; `harbor-control-plane` stores
 those declarations in MySQL; `harbor-runner` downloads and validates them under
 `jobs/<job_id>/inputs/`, rewrites Harbor `JobConfig.datasets` to local paths, and
 then starts `harbor-runtime`. The runner also records `inputs/manifest.json` as
@@ -480,7 +480,7 @@ Development uses Docker Compose with:
 - MySQL
 - RabbitMQ
 - optional RabbitMQ management UI
-- harbor-api
+- harbor-control-plane
 - synthetic-data-platform
 
 Local `harbor-runner` processes run from the `harbor/` submodule on the host.
@@ -490,7 +490,7 @@ Production replaces these with:
 
 - TencentDB MySQL
 - TDMQ for RabbitMQ
-- TKE harbor-api active/standby
+- TKE harbor-control-plane active/standby
 - TKE harbor-runner deployment
 - COS/object storage for artifacts
 

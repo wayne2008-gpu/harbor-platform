@@ -9,7 +9,7 @@ The production flow is:
 
 ```text
 synthetic-data-platform
-  -> harbor-api POST /jobs with input_datasets
+  -> harbor-control-plane POST /jobs with input_datasets
   -> MySQL job row stores the input dataset declarations
   -> harbor-runner leases the job and fetches full job status
   -> harbor-runner downloads COS archives into jobs/<job_id>/inputs/
@@ -27,9 +27,9 @@ catalog.
 
 - accepts dataset references from product workflows
 - validates business-level dataset availability in later iterations
-- calls `harbor-api` with `input_datasets`
+- calls `harbor-control-plane` with `input_datasets`
 
-`harbor-api` owns durable job state:
+`harbor-control-plane` owns durable job state:
 
 - stores the original `input_datasets`
 - exposes them through `GET /jobs/{job_id}`
@@ -161,7 +161,7 @@ before runtime starts because its input could not be materialized.
 
 1. Extend shared contracts with `InputDataset`, `MaterializedInputDataset`, and
    `InputState`.
-2. Persist input declarations and materialization state in `harbor-api`.
+2. Persist input declarations and materialization state in `harbor-control-plane`.
 3. Add `/internal/jobs/{job_id}/input-state`.
 4. Change runner job lookup from config-only to full job status lookup.
 5. Add runner input materializer interface with `none` and `cos` adapters.
@@ -169,7 +169,7 @@ before runtime starts because its input could not be materialized.
 7. Rewrite `JobConfig.datasets` to local materialized paths before starting
    `harbor-runtime`.
 8. Emit `inputs/manifest.json` and collect it as `kind = "input-manifest"`.
-9. Let `synthetic-data-platform` pass `input_datasets` through to `harbor-api`.
+9. Let `synthetic-data-platform` pass `input_datasets` through to `harbor-control-plane`.
 10. Add unit coverage for contracts, API persistence, runner success/failure,
     artifact collection, and synthetic pass-through.
 

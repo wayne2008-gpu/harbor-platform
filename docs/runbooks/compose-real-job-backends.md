@@ -84,7 +84,7 @@ HARBOR_RABBITMQ_SMOKE_PURGE_QUEUE=1 \
 因为 runner 没有 polling，成功结果说明消息经过：
 
 ```text
-harbor-api publish -> RabbitMQ consume -> POST /internal/jobs/claim -> runner execute
+harbor-control-plane publish -> RabbitMQ consume -> POST /internal/jobs/claim -> runner execute
 ```
 
 要指向 TDMQ for RabbitMQ，设置 `HARBOR_RABBITMQ_SMOKE_RABBITMQ_URL`、
@@ -130,7 +130,7 @@ terminal snapshot、trial 明细和 artifact metadata 都必须可查。
 - `materialized_inputs` 非空
 - artifacts 中存在 `kind = "input-manifest"`
 
-如果要从 synthetic-data-platform 前端入口验证上传 dataset、创建 TKE task、
-查看 trajectory / artifacts、ingest samples、publish result dataset 和下载结果，
+如果要从 synthetic-data-platform 前端入口验证上传候选集、创建 TKE 合成任务、
+查看任务实例日志、合成结果 trajectory / result.json 和 COS artifact 下载，
 使用：
 [`synthetic-frontend-local-e2e.md`](synthetic-frontend-local-e2e.md)。

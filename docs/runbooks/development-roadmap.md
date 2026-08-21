@@ -8,7 +8,7 @@ Spec should define:
 
 - project boundaries
 - `harbor-runner` interface
-- `harbor-api` interface
+- `harbor-control-plane` interface
 - MySQL tables
 - dispatch message schema
 - job/trial/runner state machines
@@ -55,7 +55,7 @@ Minimum behavior:
 - isolate subprocess state per job
 - scan local `jobs/` and emit progress snapshots
 
-## Phase 3: Harbor Control Plane / Harbor API
+## Phase 3: Harbor Control Plane
 
 Create `harbor-control-plane/`.
 
@@ -104,7 +104,7 @@ Create `deploy/docker-compose/compose.dev.yml` with:
 - MySQL
 - RabbitMQ
 - optional RabbitMQ management UI
-- harbor-api
+- harbor-control-plane
 - synthetic-data-platform
 
 Run `harbor-runner` from the `harbor/` submodule with
@@ -148,7 +148,7 @@ Hardening backlog:
 
 ## Phase 7: Synthetic Data Platform
 
-Create `synthetic-data-platform/` after Harbor API is stable.
+Create `synthetic-data-platform/` after Harbor control-plane is stable.
 
 Current first version:
 
@@ -229,10 +229,10 @@ Flow:
 
 1. create synthetic task
 2. generate Harbor JobConfig
-3. call `harbor-api POST /jobs`
+3. call `harbor-control-plane POST /jobs`
 4. store `synthetic_task_id -> harbor_job_id`
 5. poll/query Harbor status
-6. read trial results, trajectory, and artifact metadata through `harbor-api`
+6. read trial results, trajectory, and artifact metadata through `harbor-control-plane`
 7. parse samples into business tables when sample artifacts exist, or derive one
    training sample from `trajectory` artifacts with `metadata.schema =
    "openai_messages"`
@@ -336,7 +336,7 @@ Current sample ingestion behavior:
 Current target:
 
 - `synthetic-data-platform` can submit `input_datasets` with COS URIs.
-- `harbor-api` stores original input declarations and materialization state in
+- `harbor-control-plane` stores original input declarations and materialization state in
   MySQL.
 - `harbor-runner` fetches full job status, downloads COS archives, verifies
   checksum, safely extracts task datasets, rewrites Harbor `JobConfig.datasets`
@@ -348,7 +348,7 @@ Current target:
 Implementation checkpoints:
 
 1. M17: shared contract models and state enum.
-2. M18: harbor-api persistence, migration, and input-state endpoint.
+2. M18: harbor-control-plane persistence, migration, and input-state endpoint.
 3. M19: runner input materializer interface and TOML config.
 4. M20: COS download, checksum verification, safe tar extraction, and task
    validation.
@@ -359,7 +359,7 @@ Implementation checkpoints:
 
 Current status:
 
-- M17-M23 are implemented across contracts, harbor-api, harbor-runner, and
+- M17-M23 are implemented across contracts, harbor-control-plane, harbor-runner, and
   synthetic-data-platform.
 - M24 adds the local COS input materialization smoke payload, optional smoke
   assertions for `input_state` and `input-manifest`, and the local E2E runbook:
@@ -414,7 +414,7 @@ Current target:
 - control-plane startup reconciles additive legacy schema gaps for
   `jobs.priority`, `jobs.queue`, and their claim scheduling indexes
 - runner control-plane polling treats transient claim/queue lookup failures as
-  retryable, so a brief `harbor-api` restart does not terminate keep-alive
+  retryable, so a brief `harbor-control-plane` restart does not terminate keep-alive
   runners
 - control-plane startup runs Alembic migrations to head for versioned databases;
   existing unversioned local schemas are reconciled and stamped to head
@@ -487,7 +487,7 @@ Implementation milestones:
    `harbor/config/tke.production.example.toml`.
 2. M34: add TKE namespace/RBAC manifests for runner-managed agent-runtime Pods.
    Current status: implemented in `deploy/k8s/base`.
-3. M35: add TKE Deployment/Service manifests for `harbor-api`, synthetic API/Web,
+3. M35: add TKE Deployment/Service manifests for `harbor-control-plane`, synthetic API/Web,
    and `harbor-runner`. Current status: implemented in `deploy/k8s/base`, with
    PodDisruptionBudgets for all service Deployments and CPU-based HPAs for the
    stateless API/Web Deployments. Runner horizontal scale remains deliberate via
@@ -498,7 +498,7 @@ Implementation milestones:
    image tags, and egress allowlists remain deployment-time overlay inputs.
 4. M36: add TencentDB migration readiness gate and startup failure behavior.
    Current status: implemented with startup migration, `/ready` head-version
-   check, and K8s readinessProbe on `harbor-api`.
+   check, and K8s readinessProbe on `harbor-control-plane`.
 5. M37: validate TDMQ for RabbitMQ publish/consume plus MySQL claim. Current
    status: `deploy/docker-compose/scripts/rabbitmq-claim-smoke.sh` implemented;
    local RabbitMQ-compatible smoke passed on August 17, 2026 with polling
@@ -519,16 +519,16 @@ Implementation milestones:
 8. M40: replace TOML secrets with env/K8s Secret references and add tenant/auth
    scope before broad exposure. Current status: COS credential env references
    are implemented for runner artifact upload, runner input materialization,
-   harbor-api artifact reads, and synthetic dataset upload. Production TOML
+   harbor-control-plane artifact reads, and synthetic dataset upload. Production TOML
    examples now reference env var names for COS credentials, database URLs,
-   RabbitMQ URLs, API tokens, and tenant IDs. `harbor-api` and
+   RabbitMQ URLs, API tokens, and tenant IDs. `harbor-control-plane` and
    `synthetic-data-platform` can enforce Bearer token plus `X-Tenant-ID`;
-   `harbor-api` can bind tokens to `read`, `write`, and `internal` scopes, and
+   `harbor-control-plane` can bind tokens to `read`, `write`, and `internal` scopes, and
    `synthetic-data-platform` can bind inbound tokens to coarse `read` / `write`
    scopes.
-   `harbor-runner` and the synthetic platform harbor-api client attach matching
+   `harbor-runner` and the synthetic platform harbor-control-plane client attach matching
    outbound headers with separate production token env names. Synthetic API
-   requests also propagate `X-Request-ID` and `X-End-User` into harbor-api
+   requests also propagate `X-Request-ID` and `X-End-User` into harbor-control-plane
    calls so control-plane `api_audit_events` can be correlated back to the
    operator without mixing end-user identity into service-token `principal`.
    K8s manifests inject component Secrets. Cancel/retry/artifact retry
@@ -548,20 +548,20 @@ Implementation milestones:
    URLs, COS secrets, bearer tokens, tenant values, or env var names.
 10. M42: surface Harbor control-plane readiness in the synthetic console.
     Current status: implemented in `synthetic-data-platform`; synthetic exposes
-    `GET /settings/harbor-api` as a safe proxy to harbor-api `GET /settings`,
+    `GET /settings/harbor-control-plane` as a safe proxy to harbor-control-plane `GET /settings`,
     and Settings renders database migration, dispatch backend, artifact
     storage/COS, and control-plane auth readiness without exposing database
     URLs, RabbitMQ URLs, COS secrets, bearer tokens, tenant values, or env var
     names.
 11. M43: surface remote Harbor control-plane readiness on the synthetic
     Workbench first screen. Current status: implemented in
-    `synthetic-data-platform`; Workbench queries `GET /settings/harbor-api`
-    when Harbor API is configured and adds a `Harbor control-plane` run
+    `synthetic-data-platform`; Workbench queries `GET /settings/harbor-control-plane`
+    when Harbor control-plane is configured and adds a `Harbor control-plane` run
     readiness gate for database migration, dispatch, artifact storage/COS, and
     control-plane auth.
 12. M44: include remote Harbor readiness in local COS/TKE E2E acceptance.
     Current status: implemented in `synthetic-data-platform`; Settings Local
-    E2E validation now blocks the full COS/TKE run until harbor-api `/settings`
+    E2E validation now blocks the full COS/TKE run until harbor-control-plane `/settings`
     confirms remote database migration, dispatch, artifact storage/COS, and
     control-plane auth readiness.
 13. M45: add action-oriented readiness diagnostics for platform operators.
@@ -844,7 +844,7 @@ Planned milestones:
 9. V4-8: run backend tests, frontend verify, and COS + TKE E2E smoke as the
    release gate. Current status: passed locally on August 18, 2026
    (Asia/Shanghai). Verification covered `harbor-control-plane` tests/ruff,
-   compose rebuild, `harbor-api` MySQL migration readiness at
+   compose rebuild, `harbor-control-plane` MySQL migration readiness at
    `0008_api_audit_events`, real COS dataset upload from
    `/home/ubuntu/project/harbor/benchmark_verify/otel-bench-ags`, TKE runtime
    execution, COS artifact upload/download, sample ingest, result dataset
@@ -996,26 +996,26 @@ Planned milestones:
     and split-entrance readiness, plus a copyable production auth smoke command
     with gateway URLs, bearer token, tenant header, publish requirement, and
     live Playwright header assertion.
-27. V4-26: expose Harbor API outbound auth readiness. Current status:
-    implemented in `synthetic-data-platform`; `/settings.harbor_api.auth` now
+27. V4-26: expose Harbor control-plane outbound auth readiness. Current status:
+    implemented in `synthetic-data-platform`; `/settings.harbor_control_plane.auth` now
     returns safe configured flags for outbound bearer token, tenant ID, and tenant
     header, while Settings and Workbench show whether synthetic-data-platform
-    calls to `harbor-api` are anonymous, bearer-authenticated, or tenant-scoped
+    calls to `harbor-control-plane` are anonymous, bearer-authenticated, or tenant-scoped
     without exposing token values, tenant values, or env var names.
 28. V4-27: expose Harbor control-plane readiness in Settings. Current status:
-    implemented in `synthetic-data-platform`; `GET /settings/harbor-api`
-    proxies the harbor-api safe settings summary, and Settings shows remote
+    implemented in `synthetic-data-platform`; `GET /settings/harbor-control-plane`
+    proxies the harbor-control-plane safe settings summary, and Settings shows remote
     database migration, RabbitMQ/RocketMQ dispatch, artifact storage/COS, and
     control-plane auth gates without duplicating or leaking low-level secrets.
 29. V4-28: expose Harbor control-plane readiness in Workbench. Current status:
     implemented in `synthetic-data-platform`; Workbench now queries
-    `GET /settings/harbor-api` and adds a first-screen `Harbor control-plane`
+    `GET /settings/harbor-control-plane` and adds a first-screen `Harbor control-plane`
     run readiness gate, marking request failures or missing remote DB/dispatch/
     artifact storage/auth gates as actionable blockers.
 30. V4-29: gate local COS/TKE E2E on Harbor control-plane readiness. Current
     status: implemented in `synthetic-data-platform`; Settings Local E2E
     validation includes the remote `Harbor control-plane` gate and keeps the
-    full-run acceptance blocked until harbor-api settings are reachable and
+    full-run acceptance blocked until harbor-control-plane settings are reachable and
     required DB/dispatch/artifact storage/auth gates are ready.
 31. V4-30: add readiness diagnostics to Settings and Workbench. Current status:
     implemented in `synthetic-data-platform`; a shared front-end diagnostics
@@ -1575,7 +1575,7 @@ Planned milestones:
     `synthetic-data-platform`; API audit contracts now include `end_user`,
     control-plane persists and filters it through Alembic revision
     `0009_api_audit_end_user`, and synthetic forwards per-request
-    `X-Request-ID` plus `X-End-User` on harbor-api calls while keeping static
+    `X-Request-ID` plus `X-End-User` on harbor-control-plane calls while keeping static
     service auth headers authoritative. Verification: contracts pytest reports
     `8 passed`; control-plane pytest reports `97 passed`; synthetic pytest
     reports `152 passed`; synthetic frontend verify reports `25 passed`; ruff
@@ -1593,7 +1593,7 @@ Planned milestones:
     `synthetic-data-platform`. Current status: documented in
     [`synthetic-data-platform-auth-rbac-design.md`](../architecture/synthetic-data-platform-auth-rbac-design.md);
     the design keeps business-user identity and permissions in
-    `synthetic-data-platform`, leaves `harbor-api` on service/tenant/scope
+    `synthetic-data-platform`, leaves `harbor-control-plane` on service/tenant/scope
     auth, defines the `access_control` module interface, sketches trusted-header
     and JWT identity adapters, proposes SQL subject/role/binding tables, and
     defines route-level business actions for future implementation.

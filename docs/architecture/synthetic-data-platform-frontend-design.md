@@ -119,7 +119,7 @@ Workbench | Datasets | Tasks | Results | Settings
 
 首屏顺序：
 
-1. Readiness strip：Synthetic API、Harbor API、Dataset COS、COS credential flag。
+1. Readiness strip：Synthetic API、Harbor control-plane、Dataset COS、COS credential flag。
 2. Next actions：按 blocker、failed、active、publish candidate、latest result 排序。
 3. Failure causes：input materialization、runtime/trial、artifact persistence、sample/publish。
 4. Active runs 和 recent runs。
@@ -253,7 +253,7 @@ download: JSONL / JSON
 
 必须隐藏 database password、COS secret_id、secret_key、session_token 明文。可以展示：
 
-- Harbor API base URL。
+- Harbor control-plane base URL。
 - dataset storage backend。
 - COS bucket、region、prefix、endpoint。
 - secret configured flags。
@@ -503,7 +503,7 @@ Settings
 
 布局：
 
-- 顶部 readiness strip：Synthetic API、Harbor API、dataset storage、dataset count。
+- 顶部 readiness strip：Synthetic API、Harbor control-plane、dataset storage、dataset count。
 - Metrics：datasets、task_names、active runs、result datasets。
 - Next actions：按 setup blocker、failed runs、active runs、publish candidates、latest result、create task 生成首屏动作队列。
 - Quick start：创建任务、上传/登记 dataset、打开本地 E2E、查看 results。
@@ -655,11 +655,11 @@ Settings
 可以显示：
 
 - API base path
-- Harbor API base URL
+- Harbor control-plane base URL
 - dataset storage backend
 - COS bucket/region/prefix/endpoint
 - secret 是否 configured
-- 安全和本地 E2E readiness gates：secret display、Harbor API、Database、Dataset COS、COS credential flags、E2E commands
+- 安全和本地 E2E readiness gates：secret display、Harbor control-plane、Database、Dataset COS、COS credential flags、E2E commands
 - 本地验证命令
 
 ## 视觉系统
@@ -754,7 +754,7 @@ Settings
 - Task detail generation cost breakdown：通过 `/synthetic-tasks/{id}/results`
   返回的 `generation_metrics` 展示单任务 runtime/model/provider、trial/token
   evidence、sample yield、configured cost estimate 和 task budget status。
-- Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor API、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
+- Settings security and E2E readiness：只显示 secret configured flags，检查 Harbor control-plane、Database、Dataset COS、COS credential flags 和 copyable E2E commands。
 - Settings result export worker readiness：显示 COS export worker 是否启用、是否具备
   durable queue，以及 stale running export recovery 窗口，不暴露数据库或 COS secret。
 - Tasks/Results 列表 active filter summary：URL query 中的筛选条件可见、可单项移除、可一键清空。
@@ -923,7 +923,7 @@ Settings
 
 - 首屏能定位平台阻塞点和恢复入口。
 - 失败任务、运行中任务、最新结果都有直达链接。
-- Settings readiness summary 能判断 secret display、Harbor API、Database、Dataset COS、COS credentials、E2E commands 是否 ready。
+- Settings readiness summary 能判断 secret display、Harbor control-plane、Database、Dataset COS、COS credentials、E2E commands 是否 ready。
 - 本地 E2E 上传 COS、TKE runtime、结果下载的验证命令可复制。
 
 ### FE7：前端验收和回归
@@ -1080,7 +1080,7 @@ worker claim 元数据可视化，以及 Results 列表/摘要层的 export read
 目标：
 
 - 只读展示运行配置，不暴露 database password、COS secret_id、secret_key、session_token 明文。
-- 用 readiness gates 判断 Harbor API、Database、Dataset COS、COS credential flags 和 E2E commands 是否可用于本地验证。
+- 用 readiness gates 判断 Harbor control-plane、Database、Dataset COS、COS credential flags 和 E2E commands 是否可用于本地验证。
 - 本地 E2E 上传 COS、TKE runtime、结果下载的验证命令可复制。
 
 验收：

@@ -79,7 +79,7 @@ Workbench | Datasets | Tasks | Results | Settings
 
 首屏顺序：
 
-1. Readiness strip：Synthetic API、Harbor API、Dataset COS、COS credential flag、runner/runtime readiness。
+1. Readiness strip：Synthetic API、Harbor control-plane、Dataset COS、COS credential flag、runner/runtime readiness。
 2. Next actions：setup blocker、failed task、active task、publish candidate、latest result。
 3. Failure causes：dataset materialization、runtime/trial、artifact upload、sample ingest、publish。
 4. Recent runs 和 latest result datasets。
@@ -225,7 +225,7 @@ download JSONL / JSON
 
 允许展示：
 
-- Harbor API base URL。
+- Harbor control-plane base URL。
 - dataset storage backend。
 - COS bucket、region、prefix、endpoint。
 - secret configured flags。
@@ -278,7 +278,7 @@ FE-N1、FE-N2、FE-N3、FE-N5，Trajectory Review 保留基础 Raw/Message 查�
   readiness panel、pending live feedback、登记 integrity metadata readiness、UI
   smoke 覆盖均已落地。
 - `FE-N2 TKE Task Builder` 已完成：Task builder/input/request contract 检查项
-  增加显式状态标签，TKE execution handoff 明确展示 harbor-api 到
+  增加显式状态标签，TKE execution handoff 明确展示 harbor-control-plane 到
   harbor-runner 再到 Harbor runtime 的 `provider=tke` / `environment.type=tke`
   路径，URL 预填、runtime radio、payload preview 和错误恢复继续由 UI smoke 覆盖。
 - `FE-N3 Task 运行恢复` 已完成：Task Detail 已覆盖 status overview、execution
@@ -401,7 +401,7 @@ Workbench | Datasets | Tasks | Results | Settings
 
 首屏顺序：
 
-1. Readiness：Synthetic API、Harbor API、Dataset COS、COS credential flag。
+1. Readiness：Synthetic API、Harbor control-plane、Dataset COS、COS credential flag。
 2. Next actions：blocked、failed、active、publish candidate、latest result。
 3. Failure causes：input materialization、runtime/trial、artifact persistence、sample/publish。
 4. Active runs、recent runs、latest results。
@@ -495,7 +495,7 @@ Summary | Timeline | OpenAI Messages | Raw JSON
 
 允许展示：
 
-- Harbor API base URL。
+- Harbor control-plane base URL。
 - dataset storage backend。
 - COS bucket、region、prefix、endpoint。
 - secret configured flags。
@@ -629,7 +629,7 @@ HARBOR_E2E_TIMEOUT_SEC=1800 \
   samples、trajectory audit、downloads 三个审核落点；Playwright 覆盖结果交付决策、
   lineage、source trial 回跳、artifact 下载入口、samples review、后端 field
   profile 和 JSONL/JSON download feedback。
-- FE-5 已完成：Workbench 首屏覆盖 Platform API、Harbor API、Dataset COS、
+- FE-5 已完成：Workbench 首屏覆盖 Platform API、Harbor control-plane、Dataset COS、
   COS credentials、Datasets readiness，并保留 next actions、failure causes、
   runtime/provider load、recent runs、latest results；V4-77 后 Summary API 区块
   展示 generation usage metrics，包括 sample yield、observed runtime、

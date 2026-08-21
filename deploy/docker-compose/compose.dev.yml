@@ -25,7 +25,7 @@ services:
       timeout: 5s
       retries: 10
 
-  harbor-api:
+  harbor-control-plane:
     build:
       context: ../..
       dockerfile: deploy/docker-compose/Dockerfile.control-plane
@@ -36,8 +36,19 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health').read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     ports:
-      - "8080:8080"
+      - "18080:8080"
     volumes:
       - ../../harbor-control-plane/config/control-plane.local.toml:/config/control-plane.toml:ro
 
@@ -46,15 +57,45 @@ services:
       context: ../..
       dockerfile: deploy/docker-compose/Dockerfile.synthetic-data-platform
     environment:
-      HARBOR_API_BASE_URL: http://harbor-api:8080
+      SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
+      HARBOR_CONTROL_PLANE_BASE_URL: http://harbor-control-plane:8080
       SYNTHETIC_DATA_PLATFORM_DATABASE_URL: mysql+pymysql://harbor:harbor@mysql:3306/harbor_control_plane
     depends_on:
-      harbor-api:
-        condition: service_started
+      harbor-control-plane:
+        condition: service_healthy
       mysql:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health').read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     ports:
       - "8081:8081"
+    volumes:
+      - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro
+
+  synthetic-result-export-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker-compose/Dockerfile.synthetic-data-platform
+    command: ["uv", "run", "--no-sync", "synthetic-result-export-worker"]
+    environment:
+      SYNTHETIC_DATA_PLATFORM_CONFIG: /config/platform.local.toml
+      SYNTHETIC_DATA_PLATFORM_DATABASE_URL: mysql+pymysql://harbor:harbor@mysql:3306/harbor_control_plane
+    depends_on:
+      mysql:
+        condition: service_healthy
+      synthetic-data-platform:
+        condition: service_healthy
+    volumes:
+      - ../../synthetic-data-platform/config/platform.local.toml:/config/platform.local.toml:ro
 
   synthetic-data-platform-web:
     build:
@@ -63,6 +104,7 @@ services:
     environment:
       SYNTHETIC_DATA_PLATFORM_API_TARGET: http://synthetic-data-platform:8081
     depends_on:
-      - synthetic-data-platform
+      synthetic-data-platform:
+        condition: service_healthy
     ports:
-      - "5173:5173"
+      - "8080:8080"

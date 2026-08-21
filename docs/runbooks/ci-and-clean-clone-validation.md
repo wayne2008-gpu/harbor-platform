@@ -67,7 +67,7 @@ In another shell, submit the smoke job:
 ```bash
 cd /tmp/harbor-platform-clean/deploy/docker-compose
 export HARBOR_PLATFORM_ROOT=/tmp/harbor-platform-clean
-./scripts/submit-and-wait-job.sh smoke/docker-touch-file-smoke-job.local.json http://localhost:8080 900
+./scripts/submit-and-wait-job.sh smoke/docker-touch-file-smoke-job.local.json http://localhost:18080 900
 ```
 
 Expected result:

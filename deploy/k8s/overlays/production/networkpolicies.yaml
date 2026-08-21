@@ -59,12 +59,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: harbor-api-ingress
+  name: harbor-control-plane-ingress
   namespace: harbor-platform
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: harbor-api
+      app.kubernetes.io/name: harbor-control-plane
       app.kubernetes.io/part-of: harbor-platform
   policyTypes:
     - Ingress

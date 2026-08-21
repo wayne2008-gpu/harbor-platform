@@ -1,16 +1,16 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: harbor-api-hpa
+  name: harbor-control-plane-hpa
   namespace: harbor-platform
   labels:
-    app.kubernetes.io/name: harbor-api
+    app.kubernetes.io/name: harbor-control-plane
     app.kubernetes.io/part-of: harbor-platform
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: harbor-api
+    name: harbor-control-plane
   minReplicas: 1
   maxReplicas: 3
   metrics:
