@@ -204,6 +204,30 @@
   - `npm run test:ui` 通过，当前默认运行 `v1-platform-smoke.spec.ts`。
   - `npm run test:live` 已用真实 COS/TKE E2E 产生的 dataset/task/trial 通过。
 
+2026-08-20 任务定义 / 运行实例 / 合成结果关系已按最新产品口径调整：
+
+- 合成任务管理现在管理“任务定义”，创建任务只保存配置，不再立即提交 Harbor job。
+- 每个任务定义详情页展示“运行实例列表”；运行结果挂在 `任务定义 + 运行实例` 这两个维度下。
+- 新增显式“运行实例”动作，运行时可以覆盖默认 runtime、并发数、agent、model、数据集中具体 task names 或 n_tasks。
+- 运行实例创建时会提交 Harbor job，并在 `job_config.metadata` 中写入 `definition_id` / `definition_name` / `run_overrides`，用于平台把实例归属回任务定义。
+- “审核通过/不通过”动作已从合成结果管理移到任务实例详情页。实例运行完成后对 trial 结果做审核，审核通过后才进入合成结果管理列表。
+- 合成结果管理不再承担审核入口，只展示已通过审核的 trajectory / result.json 查询入口。
+- 后端新增 `synthetic_task_definitions` 表和 `/task-definitions` API：
+  - `POST /task-definitions`
+  - `GET /task-definitions`
+  - `GET /task-definitions/{definition_id}`
+  - `PATCH /task-definitions/{definition_id}`
+  - `DELETE /task-definitions/{definition_id}`
+  - `GET /task-definitions/{definition_id}/instances`
+  - `POST /task-definitions/{definition_id}/run`
+- 已执行并通过：
+  - `cd synthetic-data-platform && uv run pytest tests/test_app.py tests/test_sql_repository.py -q`，135 passed。
+  - `cd synthetic-data-platform/web && npm run build`。
+  - `cd synthetic-data-platform/web && npm run test:ui`，5 passed。
+- 本地 compose 已重建并重启：
+  - `docker compose -f deploy/docker-compose/compose.dev.yml up -d --build synthetic-data-platform synthetic-result-export-worker synthetic-data-platform-web`
+  - 当前访问 `http://localhost:8080` 能渲染新版页面；API `http://localhost:8081/task-definitions` 返回正常。
+
 ## 当前代码状态
 
 super repo 当前有较多未提交改动，主要集中在：
